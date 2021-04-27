@@ -55,10 +55,6 @@ from telethon.utils import get_extension
 
 import logging
 
-import watchdog.events
-import watchdog.observers
-import threading
-
 '''
 LOGGER
 '''
