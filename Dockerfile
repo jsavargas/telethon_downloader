@@ -1,15 +1,44 @@
-FROM python:3-slim
+FROM ghcr.io/linuxserver/baseimage-ubuntu:bionic
+ENV DEBIAN_FRONTEND="noninteractive" 	
 
 
-MAINTAINER Basado en el contenedor de rodriguezst <github.com/rodriguezst> rodriguezst/telethon_downloader
-
-RUN pip install -U cryptg telethon[cryptg] 
-COPY tg_downloader.py /app/tg_downloader.py
-
-#RUN chown -R 99:100 /app
-RUN chmod +x /app/tg_downloader.py 
-
-#USER 99:100 
- 
 WORKDIR /app
-ENTRYPOINT ["/app/tg_downloader.py"]
+COPY requirements.txt requirements.txt
+
+# install packages
+RUN apt-get update && \
+ apt-get install -y --no-install-recommends \
+	ncdu \
+	python3 \
+	python3-dev \
+	python3-pip \
+	python3-setuptools \
+	python3-wheel \
+	build-essential && \
+ usermod -d /app abc && \
+	python3 -m pip install --upgrade pip && \
+	pip3 install -r requirements.txt  && \
+	apt-get remove --purge -y build-essential && \
+	# cleanup
+ apt-get autoclean -y && apt-get autoremove -y && \
+ rm -rf \
+	/config/ \
+	/default/ \
+	/etc/default/ \
+	/tmp/* \
+	/etc/cont-init.d/* \
+	/var/lib/apt/lists/* \
+	/var/tmp/* 
+
+
+
+COPY bottorrent.py /app/bottorrent.py
+
+RUN chmod 777 /app/bottorrent.py 
+
+# add local files
+COPY root/ /
+
+VOLUME /download /watch
+
+#ENTRYPOINT ["/app/bottorrent.py"]
