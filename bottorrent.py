@@ -323,7 +323,7 @@ try:
 
 	# Pulsa Ctrl+C para detener
 	print('Arranque correcto!! (Pulsa Ctrl+C para detener)')
-	loop.run_until_complete(tg_send_message("START BOT_TORRENT_DOWNLOADER"))
+	loop.run_until_complete(tg_send_message("START BOT TORRENT DOWNLOADER"))
 	logger.info("********** START BOT_TORRENT_DOWNLOADER **********")
 
 

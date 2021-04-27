@@ -1,4 +1,2 @@
 cryptg 
 telethon 
-telethon[cryptg]
-watchdog

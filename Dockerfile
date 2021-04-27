@@ -2,8 +2,10 @@ FROM ghcr.io/linuxserver/baseimage-ubuntu:bionic
 ENV DEBIAN_FRONTEND="noninteractive" 	
 
 
-WORKDIR /app
+COPY bottorrent.py /app/bottorrent.py
 COPY requirements.txt requirements.txt
+COPY root/ /
+RUN chmod 777 /app/bottorrent.py 
 
 # install packages
 RUN apt-get update && \
@@ -32,13 +34,9 @@ RUN apt-get update && \
 
 
 
-COPY bottorrent.py /app/bottorrent.py
 
-RUN chmod 777 /app/bottorrent.py 
 
-# add local files
-COPY root/ /
-
+WORKDIR /app
 VOLUME /download /watch
 
 #ENTRYPOINT ["/app/bottorrent.py"]
