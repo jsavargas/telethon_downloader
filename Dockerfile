@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM ghcr.io/linuxserver/baseimage-ubuntu:bionic
 ENV DEBIAN_FRONTEND="noninteractive" 	
 
 
