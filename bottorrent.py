@@ -55,10 +55,6 @@ from telethon.utils import get_extension
 
 import logging
 
-import watchdog.events
-import watchdog.observers
-import threading
-
 '''
 LOGGER
 '''
@@ -87,7 +83,7 @@ def get_env(name, message, cast=str):
             time.sleep(1)
 
 # Define some variables so the code reads easier
-session = os.environ.get('TG_SESSION', 'bottorrent_downloader')
+session = os.environ.get('TG_SESSION', 'bottorrent')
 api_id = get_env('TG_API_ID', 'Enter your API ID: ', int)
 api_hash = get_env('TG_API_HASH', 'Enter your API hash: ')
 bot_token = get_env('TG_BOT_TOKEN', 'Enter your Telegram BOT token: ')
