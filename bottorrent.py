@@ -320,7 +320,7 @@ async def handler(update):
 			else:
 				message = await update.reply('reply Keep-Alive: ' + update.message.message)
 				await queue.put([update, message])
-				logger.info("Eco del BOT :[%s]",message)
+				logger.info("Eco del BOT :[%s]", update.message.message)
 				
 			#print('Eco del BOT: ' + update.message.message)
 	else:
