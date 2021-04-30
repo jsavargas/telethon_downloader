@@ -67,13 +67,13 @@ services:
 
   telethon_downloader:
     image: jsavargas/telethon_downloader
-    container_name: telethon_downloader_develop
+    container_name: telethon_downloader
     restart: unless-stopped
     network_mode: host
     environment:
       - 'PUID=1000'
       - 'PGID=1000'
-      - 'TG_AUTHORIZED_USER_ID=63460,645261' #<chat_id authorized>
+      - 'TG_AUTHORIZED_USER_ID=63460,645261' #<telegram chat_id authorized>
       - 'TG_API_ID=<telegram API key generated at ´Generating Telegram API keys´>'
       - 'TG_API_HASH=<telegram API hash generated at ´Generating Telegram API keys´>' 
       - 'TG_BOT_TOKEN=<telegram BOT token generated at ´Creating a Telegram Bot´>'
