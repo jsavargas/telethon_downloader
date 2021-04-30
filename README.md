@@ -7,7 +7,7 @@ Running Telethon Downloader
 =================
  Pull or build the docker image and launch it with the following environment variables:
 
- **TG_AUTHORIZED_USER_ID** : <chat_id authorized>
+ **TG_AUTHORIZED_USER_ID** : <telegram ´chat_id´ authorized> 
  
  **TG_API_ID** : <telegram API key generated at ´Generating Telegram API keys´>
 
@@ -23,6 +23,10 @@ Running Telethon Downloader
 
  **TG_DOWNLOAD_PATH** : <download folder inside the docker container where the files will be downloaded (full path)>
 >NOTE: THIS FOLDER SHOULD BE MOUNTED AS A VOLUME TO HAVE ACCESS TO THE DOWNLOADED FILES FROM THE HOST OS
+
+ **YOUTUBE_LINKS_SOPORTED** [OPTIONAL]: <YouTube links supported for downloading videos (default: youtube.com,youtu.be)>
+>NOTE: NOTE: THIS VARIABLE MUST BE UPDATED IF MORE URL IS REQUIRED TO BE ADDED TO THE YOUTUBE DOWNLOAD SUPPORT
+
 
 Generating Telegram API keys
 =================
