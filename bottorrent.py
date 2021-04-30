@@ -53,6 +53,8 @@ from telethon import TelegramClient, events
 from telethon.tl import types
 from telethon.utils import get_extension
 
+import youtube_dl
+
 import logging
 
 '''
@@ -71,16 +73,13 @@ logger.setLevel(logging.DEBUG)
 # This is a helper method to access environment variables or
 # prompt the user to type them in the terminal if missing.
 def get_env(name, message, cast=str):
-    if name in os.environ:
-        print("os.environ[name]",name,os.environ[name])
-        return os.environ[name]
-    while True:
-        value = input(message)
-        try:
-            return cast(value)
-        except ValueError as e:
-            print(e, file=sys.stderr)
-            time.sleep(1)
+	if name in os.environ:
+		logger.info('%s: %s' % (name , os.environ[name]))
+		return os.environ[name]
+	else:
+		logger.info('%s: %s' % (name , message))
+		return message
+
 
 # Define some variables so the code reads easier
 session = os.environ.get('TG_SESSION', 'bottorrent')
@@ -89,35 +88,17 @@ api_hash = get_env('TG_API_HASH', 'Enter your API hash: ')
 bot_token = get_env('TG_BOT_TOKEN', 'Enter your Telegram BOT token: ')
 TG_AUTHORIZED_USER_ID = get_env('TG_AUTHORIZED_USER_ID', 'Enter your Telegram BOT token: ')
 #TG_DOWNLOAD_PATH = get_env('TG_DOWNLOAD_PATH', 'Enter full path to downloads directory: ')
-TG_DOWNLOAD_PATH = os.getenv('TG_DOWNLOAD_PATH', '/download')
-TG_DOWNLOAD_PATH_TORRENTS = os.getenv('TG_DOWNLOAD_PATH_TORRENTS', '/watch')
+TG_DOWNLOAD_PATH = get_env('TG_DOWNLOAD_PATH', '/download')
+TG_DOWNLOAD_PATH_TORRENTS = get_env('TG_DOWNLOAD_PATH_TORRENTS', '/watch')
+YOUTUBE_LINKS_SOPORTED = get_env('YOUTUBE_LINKS_SOPORTED', 'youtube.com,youtu.be')
 
 download_path = TG_DOWNLOAD_PATH
 download_path_torrent = TG_DOWNLOAD_PATH_TORRENTS # Directorio bajo vigilancia de DSDownload u otro.
 
-logger.info('TG_API_ID: %s',api_id)
-logger.info('TG_API_HASH: %s',api_hash)
-logger.info('TG_BOT_TOKEN: %s',bot_token)
-logger.info('TG_DOWNLOAD_PATH: %s',download_path)
-logger.info('DOWNLOAD_PATH_TORRENTS: %s',download_path_torrent)
-
-#api_id = 161 # Vuestro api_id. Cambiar
-#api_hash = '3ef04ad'
-#bot_token = '3945:09m-p4'
-#download_path = '/download'
-#download_path_torrent = '/volume1/vuestros directorios' # Directorio bajo vigilancia de DSDownload u otro.
-#usuarios = {6537361:'yo'} # <--- IDs de usuario autorizados. Los mismos de la versión 2.1. Cambiar
 usuarios = list(map(int, TG_AUTHORIZED_USER_ID.replace(" ", "").split(','))) 
-logger.info('TG_AUTHORIZED_USER_ID: %s',usuarios)
+youtube_list = list(map(str, YOUTUBE_LINKS_SOPORTED.replace(" ", "").split(','))) 
 
-##################################################
-################# LOG
-#f = open( 'log.txt', 'a')
-# Creación del logger que muestra la información únicamente por fichero.
-#logging.basicConfig(format = '[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s',	level = logging.DEBUG, filename = 'logs_info.txt', filemode = 'a')
-#logger = logging.getLogger(__name__)
-################# LOG
-# Cola de descargas.
+
 queue = asyncio.Queue()
 number_of_parallel_downloads = int(os.environ.get('TG_MAX_PARALLEL',4))
 maximum_seconds_per_download = int(os.environ.get('TG_DL_TIMEOUT',3600))
@@ -135,7 +116,6 @@ os.makedirs(os.path.join(download_path,'torrent'), exist_ok = True)
 os.makedirs(os.path.join(download_path,'sendFiles'), exist_ok = True)
 
 FOLDER_GROUP = ''
-
 
 
 async def tg_send_message(msg):
@@ -167,6 +147,44 @@ async def worker(name):
 		file_name = 'Fichero ...';
 		if isinstance(update.message.media, types.MessageMediaPhoto):
 			file_name = '{}{}'.format(update.message.media.photo.id, get_extension(update.message.media))
+		elif any(x in update.message.message for x in youtube_list):
+			try:
+				url = update.message.message
+				youtube_path = os.path.join(download_path,'youtube')
+
+				ydl_opts = { 'format': 'best', 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False',"retries": 10 }
+
+				with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+					info_dict = ydl.extract_info(url, download=False)
+					file_name = ydl.prepare_filename(info_dict)
+					total_downloads = 1
+					if '_type' in info_dict and info_dict["_type"] == 'playlist':
+						total_downloads = len(info_dict['entries'])
+						#logger.info('info_dict :::::::::::: [{}][{}]'.format(info_dict["_type"],len(info_dict['entries'])))
+						youtube_path = os.path.join(download_path,'youtube',info_dict['uploader'],info_dict['title'])
+						ydl_opts = { 'format': 'best', 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False','ignoreerrors': True, "retries": 10 }
+						ydl_opts.update(ydl_opts)
+						file_name = 'VIDEO PLAYLIST'
+					else:
+						youtube_path = os.path.join(download_path,'youtube',info_dict['uploader'])
+						ydl_opts = { 'format': 'best', 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False','ignoreerrors': True, "retries": 10 }
+						ydl_opts.update(ydl_opts)
+				
+				with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+					res_youtube = ydl.download([url])
+					if (res_youtube == False):
+						filename = os.path.basename(file_name)
+						logger.info(f'DOWNLOADED {total_downloads} VIDEO YOUTUBE [{file_name}] [{youtube_path}][{res_youtube}]')
+						message = await update.reply(f'downloaded {total_downloads} video \n {update.message.message}')
+					else:
+						logger.info(f'ERROR: ONE OR MORE YOUTUBE VIDEOS NOT DOWNLOADED [{total_downloads}] [{url}] [{youtube_path}]')
+						message = await update.reply(f'ERROR: one or more videos not downloaded \n {update.message.message}') 
+				continue
+			except Exception as e:
+				logger.error("An exception occurred ", update.message.message)
+				await message.edit('Error!')
+				message = await update.reply('ERROR: %s descargando : %s' % (e.__class__.__name__, str(e)))
+				continue
 		else:
 			attributes = update.message.media.document.attributes
 			for attr in attributes:
@@ -242,6 +260,9 @@ async def handler(update):
 		if isinstance(update.message.media, types.MessageMediaPhoto):
 			file_name = '{}{}'.format(update.message.media.photo.id, get_extension(update.message.media))
 			logger.info("MessageMediaPhoto  [%s]" % file_name)
+		elif any(x in update.message.message for x in youtube_list):
+			logger.info("ELSE IF YOUTUBE =====================>>>>>>>>>>")
+			file_name = 'YOUTUBE VIDEO'
 		else:	
 			attributes = update.message.media.document.attributes
 			for attr in attributes:
@@ -289,6 +310,7 @@ async def handler(update):
 						download_result = await asyncio.wait_for(task, timeout = maximum_seconds_per_download)
 						#message = await tg_send_file(fileNamePath)
 						shutil.move(fileNamePath, fileNamePath + "_process")
+
 					#path = os.path.join(basepath, files)
 			elif ((update.message.message).startswith('#')):
 				folder = update.message.message
@@ -298,7 +320,7 @@ async def handler(update):
 			else:
 				message = await update.reply('reply Keep-Alive: ' + update.message.message)
 				await queue.put([update, message])
-				logger.info("Eco del BOT :[%s]",message)
+				logger.info("Eco del BOT :[%s]", update.message.message)
 				
 			#print('Eco del BOT: ' + update.message.message)
 	else:
@@ -318,9 +340,9 @@ try:
 	client.add_event_handler(handler)
 
 	# Pulsa Ctrl+C para detener
-	print('Arranque correcto!! (Pulsa Ctrl+C para detener)')
-	loop.run_until_complete(tg_send_message("START BOT_TORRENT_DOWNLOADER"))
+	loop.run_until_complete(tg_send_message("Bot Torrent Download Started"))
 	logger.info("********** START BOT_TORRENT_DOWNLOADER **********")
+
 
 
 
