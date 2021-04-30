@@ -1,0 +1,8 @@
+
+*.testing
+
+Dockerfile.python
+
+docker-compose.yaml
+
+*~

@@ -7,6 +7,8 @@ Running Telethon Downloader
 =================
  Pull or build the docker image and launch it with the following environment variables:
 
+ **TG_AUTHORIZED_USER_ID** : <telegram ´chat_id´ authorized> 
+ 
  **TG_API_ID** : <telegram API key generated at ´Generating Telegram API keys´>
 
  **TG_API_HASH** : <telegram API hash generated at ´Generating Telegram API keys´>
@@ -21,6 +23,10 @@ Running Telethon Downloader
 
  **TG_DOWNLOAD_PATH** : <download folder inside the docker container where the files will be downloaded (full path)>
 >NOTE: THIS FOLDER SHOULD BE MOUNTED AS A VOLUME TO HAVE ACCESS TO THE DOWNLOADED FILES FROM THE HOST OS
+
+ **YOUTUBE_LINKS_SOPORTED** [OPTIONAL]: <YouTube links supported for downloading videos (default: youtube.com,youtu.be)>
+>NOTE: NOTE: THIS VARIABLE MUST BE UPDATED IF MORE URL IS REQUIRED TO BE ADDED TO THE YOUTUBE DOWNLOAD SUPPORT
+
 
 Generating Telegram API keys
 =================
@@ -50,3 +56,29 @@ Creating a Telegram Bot
    The Username is a short name, to be used in mentions and telegram.me links. Usernames are 5-32 characters long and are case insensitive, but may only include Latin characters, numbers, and underscores. Your bot's username must end in ‘bot’, e.g. ‘tetris_bot’ or ‘TetrisBot’.
 
    The token is a string along the lines of 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw that is required to authorize the bot and send requests to the Bot API. Keep your token secure and store it safely, it can be used by anyone to control your bot.
+
+docker-compose
+=================
+
+```dockerfile
+version: '3'
+
+services:
+
+  telethon_downloader:
+    image: jsavargas/telethon_downloader
+    container_name: telethon_downloader
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - 'PUID=1000'
+      - 'PGID=1000'
+      - 'TG_AUTHORIZED_USER_ID=63460,645261' #<telegram chat_id authorized>
+      - 'TG_API_ID=<telegram API key generated at ´Generating Telegram API keys´>'
+      - 'TG_API_HASH=<telegram API hash generated at ´Generating Telegram API keys´>' 
+      - 'TG_BOT_TOKEN=<telegram BOT token generated at ´Creating a Telegram Bot´>'
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - /path/to/download:/download
+      - /path/to/download/torrent/watch:/watch
+```

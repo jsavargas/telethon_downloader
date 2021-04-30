@@ -1,0 +1,4 @@
+cryptg 
+telethon 
+telethon[cryptg]
+youtube-dl
