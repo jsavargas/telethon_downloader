@@ -40,6 +40,7 @@ UPDATE = """BASADO EN EL BOT DE @DekkaR - 2021:
 - DESCARGA DE IMAGENES COMPRESS/UNCOMPRESS
 - DESCARGA DE ARCHIVOS TORRENT EN CARPETA TG_DOWNLOAD_PATH_TORRENTS
 - DESCARGA DE VIDEOS/LISTAS YOUTUBE.COM Y YOUTU.BE (SOLO ENVIANDO EL LINK DEL VIDEO/LISTA)
+- UPLOAD FILES IN /download/sendFiles CON EL COMANDO /sendfiles
 """
 
 import re
@@ -292,7 +293,7 @@ async def handler(update):
 				FOLDER_GROUP = update.message.date
 				temp_completed_path  = os.path.join(TG_DOWNLOAD_PATH,'completed',folder.replace('/folder ','')) # SI VIENE EL TEXTO '/folder NAME_FOLDER' ESTE CREARÁ UNA CARPETA Y METERÁ ADENTRO TODOS LOS ARCHIVOS A CONTINUACION 
 				logger.info("DOWNLOAD FILE IN :[%s]",temp_completed_path)
-			elif ((update.message.message).startswith('/SENDFILES')):
+			elif ((update.message.message).startswith('/sendfiles')):
 				os.makedirs(os.path.join(download_path,'sendFiles'), exist_ok = True)
 				ignored = {"*._process"}
 				basepath = os.path.join(download_path,'sendFiles')
