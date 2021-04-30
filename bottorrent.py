@@ -1,19 +1,7 @@
 #!/usr/bin/env python3
-LICENCIA = """
-BOT.Torrent - 3.1 :
-Este programa es software GRATUITO: puedes redistribuirlo y/o modificar
-bajo los términos de la Licencia Pública General GNU publicada por
-la Free Software Foundation, ya sea la versión 3 de la Licencia, o
-(a su elección) cualquier versión posterior.
-
-Este programa se distribuye con la esperanza de que sea útil,
-pero SIN NINGUNA GARANTÍA, ni RESPONSABILIDAD; sin siquiera la garantía implícita de
-COMERCIABILIDAD o APTITUD PARA UN PROPÓSITO PARTICULAR. Ver el
-Licencia pública general GNU para obtener más detalles <https://www.gnu.org/licenses/>.
-
-El USUARIO de este programa, es el UNICO RESPONSABLE, de que el USO del mismo, 
-se limita, al estricto cumplimiento, de cualquier LEY, aplicable.
-"""
+'''
+BASADO EN EL BOT DE DekkaR - 2021
+'''
 INSTALACION = """
 BOT.Torrent - 3.1 :
 *** Guía para instalar el bot ***
@@ -30,17 +18,30 @@ Instalación:
 --> sudo python3 get-pip.py
 5: Instalar telethon --> sudo python3 -m pip install telethon
 6: Instalar cryptg --> sudo python3 -m pip install cryptg
-7: Copiar BOT.torrent.py, en nuestro NAS y editar las variables propias DE CADA USUARIO. 
-8: Ejecutar BOT de forma interactiva --> python3 -u BOT.torrent.py (Por supuesto, se puede arrancar, también en background y de formar automatizada)
+7: Instalar youtube-dl --> sudo python3 -m pip install youtube-dl
+8: Copiar BOT.torrent.py, en nuestro NAS y editar las variables propias DE CADA USUARIO. 
+9: Ejecutar BOT de forma interactiva --> python3 -u bottorrent.py (Por supuesto, se puede arrancar, también en background y de formar automatizada)
 A disfrutar ;-)
 
-DekkaR - 2021
+BASADO EN EL BOT DE DekkaR - 2021
+"""
+REQUIREMENTS = """
+ Instalar telethon	 --> sudo python3 -m pip install telethon
+ Instalar cryptg	 --> sudo python3 -m pip install cryptg
+ Instalar youtube-dl --> sudo python3 -m pip install youtube-dl
 """
 AYUDA = """BOT.Torrent - 3.1 :
 /ayuda      : Esta pantalla.
 /start      : LICENCIA GPL, de este programa.
 /instalar   : Guía para instalar este programa.  
 """
+UPDATE = """BASADO EN EL BOT DE @DekkaR - 2021:
+- DESCARGA DE ARCHIVOS DE HASTA 2000MB
+- DESCARGA DE IMAGENES COMPRESS/UNCOMPRESS
+- DESCARGA DE ARCHIVOS TORRENT EN CARPETA TG_DOWNLOAD_PATH_TORRENTS
+- DESCARGA DE VIDEOS/LISTAS YOUTUBE.COM Y YOUTU.BE (SOLO ENVIANDO EL LINK DEL VIDEO/LISTA)
+"""
+
 import re
 import os
 import shutil
@@ -87,7 +88,6 @@ api_id = get_env('TG_API_ID', 'Enter your API ID: ', int)
 api_hash = get_env('TG_API_HASH', 'Enter your API hash: ')
 bot_token = get_env('TG_BOT_TOKEN', 'Enter your Telegram BOT token: ')
 TG_AUTHORIZED_USER_ID = get_env('TG_AUTHORIZED_USER_ID', 'Enter your Telegram BOT token: ')
-#TG_DOWNLOAD_PATH = get_env('TG_DOWNLOAD_PATH', 'Enter full path to downloads directory: ')
 TG_DOWNLOAD_PATH = get_env('TG_DOWNLOAD_PATH', '/download')
 TG_DOWNLOAD_PATH_TORRENTS = get_env('TG_DOWNLOAD_PATH_TORRENTS', '/watch')
 YOUTUBE_LINKS_SOPORTED = get_env('YOUTUBE_LINKS_SOPORTED', 'youtube.com,youtu.be')
@@ -175,10 +175,10 @@ async def worker(name):
 					if (res_youtube == False):
 						filename = os.path.basename(file_name)
 						logger.info(f'DOWNLOADED {total_downloads} VIDEO YOUTUBE [{file_name}] [{youtube_path}][{res_youtube}]')
-						message = await update.reply(f'downloaded {total_downloads} video \n {update.message.message}')
+						message = await update.reply(f'downloaded {total_downloads} video')
 					else:
 						logger.info(f'ERROR: ONE OR MORE YOUTUBE VIDEOS NOT DOWNLOADED [{total_downloads}] [{url}] [{youtube_path}]')
-						message = await update.reply(f'ERROR: one or more videos not downloaded \n {update.message.message}') 
+						message = await update.reply(f'ERROR: one or more videos not downloaded') 
 				continue
 			except Exception as e:
 				logger.error("An exception occurred ", update.message.message)
