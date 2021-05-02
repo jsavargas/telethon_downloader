@@ -2,6 +2,9 @@
 '''
 BASADO EN EL BOT DE DekkaR - 2021
 '''
+VERSION = """
+VERSION 2.4
+"""
 INSTALACION = """
 *** Guía para instalar el bot ***
 BOT.torrent es un sencillo script, para un BOT de Telegram, escrito en Python. 
@@ -37,6 +40,7 @@ HELP = """
 /instalar	: Guía para instalar este programa.  
 /alive		: keep-alive.
 /version	: Version.  
+/sendfiles	: upload files in sendFiles folder
 /me			: ID TELEGRAM y mas informacion en el log  
 """
 UPDATE = """BASADO EN EL BOT DE @DekkaR - 2021:
@@ -45,9 +49,6 @@ UPDATE = """BASADO EN EL BOT DE @DekkaR - 2021:
 - DESCARGA DE ARCHIVOS TORRENT EN CARPETA TG_DOWNLOAD_PATH_TORRENTS
 - DESCARGA DE VIDEOS/LISTAS YOUTUBE.COM Y YOUTU.BE (SOLO ENVIANDO EL LINK DEL VIDEO/LISTA)
 - UPLOAD FILES IN /download/sendFiles CON EL COMANDO /sendfiles
-"""
-VERSION = """
-VERSION 2.3
 """
 
 import re
@@ -94,7 +95,7 @@ session = os.environ.get('TG_SESSION', 'bottorrent')
 api_id = get_env('TG_API_ID', 'Enter your API ID: ', int)
 api_hash = get_env('TG_API_HASH', 'Enter your API hash: ')
 bot_token = get_env('TG_BOT_TOKEN', 'Enter your Telegram BOT token: ')
-TG_AUTHORIZED_USER_ID = get_env('TG_AUTHORIZED_USER_ID', 'Enter your Telegram BOT token: ')
+TG_AUTHORIZED_USER_ID = get_env('TG_AUTHORIZED_USER_ID', False)
 TG_DOWNLOAD_PATH = get_env('TG_DOWNLOAD_PATH', '/download')
 TG_DOWNLOAD_PATH_TORRENTS = get_env('TG_DOWNLOAD_PATH_TORRENTS', '/watch')
 YOUTUBE_LINKS_SOPORTED = get_env('YOUTUBE_LINKS_SOPORTED', 'youtube.com,youtu.be')
@@ -102,7 +103,7 @@ YOUTUBE_LINKS_SOPORTED = get_env('YOUTUBE_LINKS_SOPORTED', 'youtube.com,youtu.be
 download_path = TG_DOWNLOAD_PATH
 download_path_torrent = TG_DOWNLOAD_PATH_TORRENTS # Directorio bajo vigilancia de DSDownload u otro.
 
-usuarios = list(map(int, TG_AUTHORIZED_USER_ID.replace(" ", "").split(','))) 
+usuarios = list(map(int, TG_AUTHORIZED_USER_ID.replace(" ", "").split(','))) if TG_AUTHORIZED_USER_ID else False 
 youtube_list = list(map(str, YOUTUBE_LINKS_SOPORTED.replace(" ", "").split(','))) 
 
 
@@ -126,7 +127,7 @@ FOLDER_GROUP = ''
 
 
 async def tg_send_message(msg):
-    await client.send_message(usuarios[0], msg)
+    if TG_AUTHORIZED_USER_ID: await client.send_message(usuarios[0], msg)
     return True
 
 async def tg_send_file(CID,file,name=''):
@@ -148,7 +149,7 @@ async def worker(name):
 		CID , peer_type = resolve_id(real_id)
 
 		# Comprobación de usuario
-		if CID not in usuarios:
+		if TG_AUTHORIZED_USER_ID and CID not in usuarios:
 			logger.info('USUARIO: %s NO AUTORIZADO', CID)
 			continue
 		###
@@ -267,11 +268,11 @@ async def handler(update):
 		if update.message.from_id is not None:
 			logger.info("USER ON GROUP => U:[%s]G:[%s]M:[%s]" % (update.message.from_id.user_id,CID,update.message.message))
 
-		if update.message.media is not None and CID in usuarios:
+		if update.message.media is not None and ( not TG_AUTHORIZED_USER_ID or CID in usuarios):
 			if FOLDER_GROUP != update.message.date:
 				temp_completed_path  = ''
 
-		if update.message.media is not None and CID in usuarios:
+		if update.message.media is not None and ( not TG_AUTHORIZED_USER_ID or CID in usuarios):
 			file_name = 'sin nombre';
 
 			if isinstance(update.message.media, types.MessageMediaPhoto):
@@ -292,7 +293,7 @@ async def handler(update):
 			logger.info(mensaje)
 			message = await update.reply('En cola...')
 			await queue.put([update, message,temp_completed_path])
-		elif CID in usuarios:
+		elif not TG_AUTHORIZED_USER_ID or CID in usuarios:
 			if update.message.message == '/help':
 				message = await update.reply(HELP) 
 				await queue.put([update, message])
@@ -357,7 +358,7 @@ async def handler(update):
 			message = await update.reply('USUARIO: %s NO AUTORIZADO\n agregar este ID a TG_AUTHORIZED_USER_ID' % CID)
 	except Exception as e:
 		message = await update.reply('ERROR: ' + str(e))
-		logger.info('Exception USUARIO: %s NO AUTORIZADO', str(e))
+		logger.info('Exception USUARIO: %s ', str(e))
 
 try:
 	# Crear cola de procesos concurrentes.
