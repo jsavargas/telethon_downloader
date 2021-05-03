@@ -20,9 +20,13 @@
     <Overview>[Telethon](https://docs.telethon.dev/) Telethon is an asyncio Python 3 MTProto library to interact with Telegram's API as a user or through a bot account (bot API alternative).</Overview>
     <WebUI>http://[IP]:[PORT:]</WebUI>
     <TemplateURL>https://github.com/jsavargas/telethon_downloader/blob/master/templates/UNRAID/telethon-downloader.xml</TemplateURL>
-    <Icon>https://github.com/jsavargas/telethon_downloader/blob/master/templates/UNRAID/telegram_logo.png</Icon>
+    <Icon>https://raw.githubusercontent.com/jsavargas/telethon_downloader/master/templates/UNRAID/telegram_logo.png</Icon>
     <Config Name="Path: /download" Target="/download" Default="" Mode="rw" Description="files download directory." Type="Path" Display="always" Required="true" Mask="false"/>
     <Config Name="Path: /watch" Target="/watch" Default="" Mode="rw" Description="torrent file download directory" Type="Path" Display="always" Required="true" Mask="false"/>
+    <Config Name="TG_AUTHORIZED_USER_ID" Target="TG_AUTHORIZED_USER_ID" Default="" Description="Container Variable: TG_AUTHORIZED_USER_ID" Type="Variable" Display="always" Required="true" Mask="false"> </Config>
+    <Config Name="TG_API_ID" Target="TG_API_ID" Default="" Description="Container Variable: TG_API_ID" Type="Variable" Display="always" Required="true" Mask="false"> </Config>
+    <Config Name="TG_API_HASH" Target="TG_API_HASH" Default="" Description="Container Variable: TG_API_HASH" Type="Variable" Display="always" Required="true" Mask="false"> </Config>
+    <Config Name="TG_BOT_TOKEN" Target="TG_BOT_TOKEN" Default="" Description="Container Variable: TG_BOT_TOKEN" Type="Variable" Display="always" Required="true" Mask="false"></Config>
     <Config Name="PUID" Target="PUID" Default="99" Description="Container Variable: PUID" Type="Variable" Display="advanced" Required="true" Mask="false"/>
     <Config Name="PGID" Target="PGID" Default="100" Description="Container Variable: PGID" Type="Variable" Display="advanced" Required="true" Mask="false"/>
     <Config Name="Localtime" Target="/etc/localtime" Default="/etc/localtime" Mode="ro" Description="Container Path: /etc/localtime" Type="Path" Display="advanced" Required="true" Mask="false"/>
