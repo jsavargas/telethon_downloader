@@ -1,50 +1,17 @@
 #!/usr/bin/env python3
-'''
-BASADO EN EL BOT DE DekkaR - 2021
-'''
-VERSION = """
-VERSION 2.4
-"""
-INSTALACION = """
-*** Guía para instalar el bot ***
-BOT.torrent es un sencillo script, para un BOT de Telegram, escrito en Python. 
-Su función, es descargar ficheros, reenviados al BOT, en un directorio de nuestra elección.
-Este BOT está especialmente pensado, para ejecutarse en un NAS.
-Instalación:
-1: Crear nuestro BOT en Telegram y obtener su TOKEN (Guías multiples en la red)
-2: Crear nuestra App en Telegram y obtener su api_id y api_hash. (Si no las tenemos)
---> https://my.telegram.org/auth (Guías multiples en la red)
-3: Instalar python3, en nuestro NAS. (Si no lo tenemos ya instalado. No es necesario en DSM7)
-4: Instalar pip en nuestro NAS, abriendo una sesión SSH, (Si no lo tenemos ya instalado) 
---> sudo curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
---> sudo python3 get-pip.py
-5: Instalar telethon --> sudo python3 -m pip install telethon
-6: Instalar cryptg --> sudo python3 -m pip install cryptg
-7: Instalar youtube-dl --> sudo python3 -m pip install youtube-dl
-8: Copiar BOT.torrent.py, en nuestro NAS y editar las variables propias DE CADA USUARIO. 
-9: Ejecutar BOT de forma interactiva --> python3 -u bottorrent.py (Por supuesto, se puede arrancar, también en background y de formar automatizada)
-A disfrutar ;-)
 
-BASADO EN EL BOT DE DekkaR - 2021
+VERSION = """
+VERSION 2.5
 """
-REQUIREMENTS = """
- Instalar telethon	 --> sudo python3 -m pip install telethon
- Instalar cryptg	 --> sudo python3 -m pip install cryptg
- Instalar youtube-dl --> sudo python3 -m pip install youtube-dl
-"""
-LICENCIA = '''
-'''
 HELP = """
-/help		: Esta pantalla.
-/start		: LICENCIA GPL, de este programa.
-/instalar	: Guía para instalar este programa.  
-/alive		: keep-alive.
-/version	: Version.  
-/sendfiles	: upload files in sendFiles folder
-/me			: ID TELEGRAM y mas informacion en el log  
+/help		: This Screen
+/alive		: keep-alive
+/version	: Version  
+/sendfiles	: send files found in the /download/sendFiles folder
+/me			: YOUR ID TELEGRAM   
 """
-UPDATE = """BASADO EN EL BOT DE @DekkaR - 2021:
-- DESCARGA DE ARCHIVOS DE HASTA 2000MB
+UPDATE = """BASADO EN EL BOT DE @De 2021:
+- DE HASTA 2000MB
 - DESCARGA DE IMAGENES COMPRESS/UNCOMPRESS
 - DESCARGA DE ARCHIVOS TORRENT EN CARPETA TG_DOWNLOAD_PATH_TORRENTS
 - DESCARGA DE VIDEOS/LISTAS YOUTUBE.COM Y YOUTU.BE (SOLO ENVIANDO EL LINK DEL VIDEO/LISTA)
@@ -154,7 +121,7 @@ async def worker(name):
 			continue
 		###
 		file_path = tmp_path;
-		file_name = 'Fichero ...';
+		file_name = 'FILENAME';
 		if isinstance(update.message.media, types.MessageMediaPhoto):
 			file_name = '{}{}'.format(update.message.media.photo.id, get_extension(update.message.media))
 		elif any(x in update.message.message for x in youtube_list):
@@ -193,7 +160,7 @@ async def worker(name):
 			except Exception as e:
 				logger.error("An exception occurred ", update.message.message)
 				await message.edit('Error!')
-				message = await message.edit('ERROR: %s descargando : %s' % (e.__class__.__name__, str(e)))
+				message = await message.edit('ERROR: %s DOWNLOADING : %s' % (e.__class__.__name__, str(e)))
 				continue
 		else:
 			attributes = update.message.media.document.attributes
@@ -206,9 +173,9 @@ async def worker(name):
 					file_name = time.strftime('%Y%m%d %H%M%S', time.localtime())
 					file_name = '{}{}'.format(update.message.media.document.id, get_extension(update.message.media))
 		file_path = os.path.join(file_path, file_name)
-		await message.edit('Descargando ... ')
-		logger.info('Descargando ... ')
-		mensaje = 'DESCARGA INICIADA %s [%s] por %s ...' % (time.strftime('%d/%m/%Y %H:%M:%S', time.localtime()), file_path , (CID))
+		await message.edit('Downloading... ')
+		logger.info('Downloading... ')
+		mensaje = 'STARTING DOWNLOADING %s [%s] BY %s' % (time.strftime('%d/%m/%Y %H:%M:%S', time.localtime()), file_path , (CID))
 		logger.info(mensaje)
 		try:
 			loop = asyncio.get_event_loop()
@@ -237,19 +204,19 @@ async def worker(name):
 			logger.info("RENAME/MOVE [%s] [%s]" % (download_result, final_path) )
 			shutil.move(download_result, final_path)
 			######
-			mensaje = 'DESCARGA TERMINADA %s [%s]' % (end_time, file_name)
+			mensaje = 'DOWNLOAD FINISHED %s [%s]' % (end_time, file_name)
 			logger.info(mensaje)
-			await message.edit('Descarga %s terminada %s' % (file_name,end_time_short))
+			await message.edit('Downloading finished:\n%s at %s' % (file_name,end_time_short))
 		except asyncio.TimeoutError:
-			print('[%s] Tiempo excedido %s' % (file_name, time.strftime('%d/%m/%Y %H:%M:%S', time.localtime())))
+			print('[%s] Time exceeded %s' % (file_name, time.strftime('%d/%m/%Y %H:%M:%S', time.localtime())))
 			await message.edit('Error!')
-			message = await update.reply('ERROR: Tiempo excedido descargando este fichero')
+			message = await update.reply('ERROR: Time exceeded downloading this file')
 		except Exception as e:
 			logger.critical(e)
 			print('[EXCEPCION]: %s' % (str(e)))
 			print('[%s] Excepcion %s' % (file_name, time.strftime('%d/%m/%Y %H:%M:%S', time.localtime())))
 			await message.edit('Error!')
-			message = await update.reply('ERROR: %s descargando : %s' % (e.__class__.__name__, str(e)))
+			message = await update.reply('ERROR: %s downloading : %s' % (e.__class__.__name__, str(e)))
 
 		# Unidad de trabajo terminada.
 		queue.task_done()
@@ -273,13 +240,12 @@ async def handler(update):
 				temp_completed_path  = ''
 
 		if update.message.media is not None and ( not TG_AUTHORIZED_USER_ID or CID in usuarios):
-			file_name = 'sin nombre';
+			file_name = 'NONAME';
 
 			if isinstance(update.message.media, types.MessageMediaPhoto):
 				file_name = '{}{}'.format(update.message.media.photo.id, get_extension(update.message.media))
 				logger.info("MessageMediaPhoto  [%s]" % file_name)
 			elif any(x in update.message.message for x in youtube_list):
-				logger.info("ELSE IF YOUTUBE =====================>>>>>>>>>>")
 				file_name = 'YOUTUBE VIDEO'
 			else:	
 				attributes = update.message.media.document.attributes
@@ -289,20 +255,14 @@ async def handler(update):
 					elif update.message.message:
 						file_name = re.sub(r'[^A-Za-z0-9 -!\[\]\(\)]+', ' ', update.message.message)
 
-			mensaje = 'DESCARGA EN COLA %s [%s] ' % (time.strftime('%d/%m/%Y %H:%M:%S', time.localtime()),file_name)
+			mensaje = 'DOWNLOAD IN QUEUE %s [%s] ' % (time.strftime('%d/%m/%Y %H:%M:%S', time.localtime()),file_name)
 			logger.info(mensaje)
-			message = await update.reply('En cola...')
+			message = await update.reply('Download in queue...')
 			await queue.put([update, message,temp_completed_path])
 		elif not TG_AUTHORIZED_USER_ID or CID in usuarios:
 			if update.message.message == '/help':
 				message = await update.reply(HELP) 
 				await queue.put([update, message])
-			elif update.message.message == '/start': 
-				message = await update.reply(LICENCIA)
-				await queue.put([update, message])
-			elif update.message.message == '/instalar': 
-				message = await update.reply(INSTALACION)
-				await queue.put([update, message,temp_completed_path])
 			elif update.message.message == '/version': 
 				message = await update.reply(VERSION)
 				await queue.put([update, message,temp_completed_path])
@@ -312,7 +272,7 @@ async def handler(update):
 			elif update.message.message == '/me': 
 				message = await update.reply('me: {}'.format(CID) )
 				await queue.put([update, message,temp_completed_path])
-				logger.info('me :[%s] [%s]]' % (CID,update.message))
+				logger.info('me :[%s]' % (CID))
 			else: 
 				time.sleep(2)
 				if '/folder' in update.message.message:
@@ -321,7 +281,7 @@ async def handler(update):
 					temp_completed_path  = os.path.join(TG_DOWNLOAD_PATH,'completed',folder.replace('/folder ','')) # SI VIENE EL TEXTO '/folder NAME_FOLDER' ESTE CREARÁ UNA CARPETA Y METERÁ ADENTRO TODOS LOS ARCHIVOS A CONTINUACION 
 					logger.info("DOWNLOAD FILE IN :[%s]",temp_completed_path)
 				elif ((update.message.message).startswith('/sendfiles')):
-					msg = await update.reply('Enviando archivos....')
+					msg = await update.reply('Sending files...')
 					os.makedirs(os.path.join(download_path,'sendFiles'), exist_ok = True)
 					ignored = {"*._process"}
 					basepath = os.path.join(download_path,'sendFiles')
@@ -336,14 +296,14 @@ async def handler(update):
 							sending +=1
 							fileNamePath = str(os.path.join(root,item))
 							logger.info("SEND FILE :[%s]", fileNamePath)
-							await msg.edit('Enviando {}....'.format(item))
+							await msg.edit('Sending {}...'.format(item))
 							loop = asyncio.get_event_loop()
 							task = loop.create_task(tg_send_file(CID,fileNamePath,item))
 							download_result = await asyncio.wait_for(task, timeout = maximum_seconds_per_download)
 							#message = await tg_send_file(fileNamePath)
 							shutil.move(fileNamePath, fileNamePath + "_process")
-					await msg.edit('{} archivos enviados'.format(sending))
-					logger.info("FILES SENDED:[%s]", sending)
+					await msg.edit('{} files submitted'.format(sending))
+					logger.info("FILES SUBMITTED:[%s]", sending)
 				elif ((update.message.message).startswith('#')):
 					folder = update.message.message
 					FOLDER_GROUP = update.message.date
@@ -354,11 +314,11 @@ async def handler(update):
 				#	await queue.put([update, message])
 				#	logger.info("Eco del BOT :[%s]", update.message.message)
 		else:
-			logger.info('USUARIO: %s NO AUTORIZADO', CID)
-			message = await update.reply('USUARIO: %s NO AUTORIZADO\n agregar este ID a TG_AUTHORIZED_USER_ID' % CID)
+			logger.info('UNAUTHORIZED USER: %s ', CID)
+			message = await update.reply('UNAUTHORIZED USER: %s \n add this ID to TG_AUTHORIZED_USER_ID' % CID)
 	except Exception as e:
 		message = await update.reply('ERROR: ' + str(e))
-		logger.info('Exception USUARIO: %s ', str(e))
+		logger.info('EXCEPTION USER: %s ', str(e))
 
 try:
 	# Crear cola de procesos concurrentes.
@@ -390,5 +350,5 @@ finally:
 	# Cola cerrada
 	# Stop Telethon
 	client.disconnect()
-	print(' Parado!!! ')
+	logger.info("********** STOPPED **********")
 	
