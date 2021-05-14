@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = """
-VERSION 2.5
-"""
+VERSION = "VERSION 2.6"
 HELP = """
 /help		: This Screen
 /alive		: keep-alive
@@ -173,7 +171,7 @@ async def worker(name):
 					file_name = time.strftime('%Y%m%d %H%M%S', time.localtime())
 					file_name = '{}{}'.format(update.message.media.document.id, get_extension(update.message.media))
 		file_path = os.path.join(file_path, file_name)
-		await message.edit('Downloading... ')
+		await message.edit('Downloading...')
 		logger.info('Downloading... ')
 		mensaje = 'STARTING DOWNLOADING %s [%s] BY %s' % (time.strftime('%d/%m/%Y %H:%M:%S', time.localtime()), file_path , (CID))
 		logger.info(mensaje)
@@ -334,6 +332,7 @@ try:
 
 	# Pulsa Ctrl+C para detener
 	loop.run_until_complete(tg_send_message("Bot Torrent Download Started"))
+	logger.info("%s" % VERSION)
 	logger.info("********** START BOT_TORRENT_DOWNLOADER **********")
 
 

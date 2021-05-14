@@ -7,4 +7,18 @@ if [ -n "${UMASK_SET}" ] && [ -z "${UMASK}" ]; then
   umask ${UMASK_SET}
 fi
 
+
+echo "
+-------------------------------------
+-------------------------------------
+
+START /app/bottorrent.py
+
+------------------------------------- 
+------------------------------------- 
+"
+sleep 10
+
+
 exec s6-setuidgid abc /app/bottorrent.py
+
