@@ -356,8 +356,6 @@ try:
 
 
 
-
-
 	client.run_until_disconnected()
 finally:
 	# Cerrando trabajos.
