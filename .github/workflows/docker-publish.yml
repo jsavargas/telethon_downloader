@@ -1,4 +1,4 @@
-name: Docker Buildx
+name: Docker Buildx 
 
 on:
   push:
