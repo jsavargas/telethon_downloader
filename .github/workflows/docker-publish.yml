@@ -71,8 +71,8 @@ jobs:
           platforms: linux/amd64,linux/arm/v7,linux/arm64
           push: true
           tags: |
-            jsavargas/demoactions:latest
-            jsavargas/demoactions:${{ steps.vars.outputs.tag }}
+            jsavargas/telethon_downloader:latest
+            jsavargas/telethon_downloader:${{ steps.vars.outputs.tag }}
       -
         name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
