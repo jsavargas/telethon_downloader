@@ -219,6 +219,7 @@ async def worker(name):
 				if filename.endswith('.torrent'): final_path = os.path.join(download_path_torrent, filename)
 			######
 			logger.info("RENAME/MOVE [%s] [%s]" % (download_result, final_path) )
+			os.makedirs(completed_path, exist_ok = True)
 			shutil.move(download_result, final_path)
 			######
 			mensaje = 'DOWNLOAD FINISHED %s [%s]' % (end_time, file_name)
