@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 2.7"
+VERSION = "VERSION 2.8"
 HELP = """
 /help		: This Screen
 /alive		: keep-alive
@@ -273,7 +273,7 @@ async def handler(update):
 					elif update.message.message:
 						file_name = re.sub(r'[^A-Za-z0-9 -!\[\]\(\)]+', ' ', update.message.message)
 
-			mensaje = 'DOWNLOAD IN QUEUE %s [%s] ' % (time.strftime('%d/%m/%Y %H:%M:%S', time.localtime()),file_name)
+			mensaje = 'DOWNLOAD IN QUEUE [%s] [%s] => [%s]' % (time.strftime('%d/%m/%Y %H:%M:%S', time.localtime()),file_name,temp_completed_path)
 			logger.info(mensaje)
 			message = await update.reply('Download in queue...')
 			await queue.put([update, message,temp_completed_path])
