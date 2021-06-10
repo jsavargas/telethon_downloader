@@ -255,6 +255,7 @@ async def handler(update):
 
 		if update.message.media is not None and ( not TG_AUTHORIZED_USER_ID or CID in usuarios):
 			if FOLDER_GROUP != update.message.date:
+				logger.info("FOLDER_GROUP => [%s][%s][%s]" % (FOLDER_GROUP,update.message.date,temp_completed_path))
 				temp_completed_path  = ''
 
 		if update.message.media is not None and ( not TG_AUTHORIZED_USER_ID or CID in usuarios):
