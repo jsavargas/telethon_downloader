@@ -147,7 +147,7 @@ async def callback(current, total, file_path, message):
 	format_float = "{:.2f}".format(value)
 	int_value = int(float(format_float) // 1)
 	try:
-		if(int_value % 10 == 0):
+		if ((int_value != 100 ) and (int_value % 10 == 0)):
 			task = loop.create_task(message.edit('Downloading... {}%'.format(format_float)))
 	finally:
 		current
