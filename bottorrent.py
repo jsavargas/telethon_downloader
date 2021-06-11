@@ -91,7 +91,6 @@ os.makedirs(os.path.join(download_path,'sendFiles'), exist_ok = True)
 
 FOLDER_GROUP = ''
 
-
 async def tg_send_message(msg):
     if TG_AUTHORIZED_USER_ID: await client.send_message(usuarios[0], msg)
     return True
@@ -141,6 +140,21 @@ async def youtube_download(url,update,message):
 	except Exception as e:
 		logger.info('ERROR: %s DOWNLOADING YT: %s' % (e.__class__.__name__, str(e)))
 		logger.info(f'ERROR: Exception ONE OR MORE YOUTUBE VIDEOS NOT DOWNLOADED')
+
+# Printing download progress
+async def callback(current, total, file_path, message):
+	value = (current / total) * 100
+	format_float = "{:.2f}".format(value)
+	int_value = int(float(format_float) // 1)
+	try:
+		if(int_value % 10 == 0):
+			task = loop.create_task(message.edit('Downloading... {}%'.format(format_float)))
+	finally:
+		current
+ 	#logger.info('Downloaded {} out of {} {}'.format(current,total,'bytes: {:.2%}'.format(current / total)))
+	#await msg.edit("{} {}%".format(type_of, current * 100 / total))
+	#logger.info('args {}'.format(file_path))
+	#time.sleep(2)
 
 
 async def worker(name):
@@ -196,7 +210,7 @@ async def worker(name):
 		logger.info(mensaje)
 		try:
 			loop = asyncio.get_event_loop()
-			task = loop.create_task(client.download_media(update.message, file_path))
+			task = loop.create_task(client.download_media(update.message, file_path, progress_callback=lambda x,y: callback(x,y,file_path,message)))
 			download_result = await asyncio.wait_for(task, timeout = maximum_seconds_per_download)
 			end_time = time.strftime('%d/%m/%Y %H:%M:%S', time.localtime())
 			end_time_short = time.strftime('%H:%M', time.localtime())
