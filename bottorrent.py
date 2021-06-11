@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 2.8"
+VERSION = "VERSION 2.9"
 HELP = """
 /help		: This Screen
 /alive		: keep-alive
