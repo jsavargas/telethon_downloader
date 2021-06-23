@@ -6,3 +6,5 @@ Dockerfile.python
 docker-compose.yaml
 
 *~
+
+docker-compose.yml

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 2.9"
+VERSION = "VERSION 2.10"
 HELP = """
 /help		: This Screen
 /alive		: keep-alive
@@ -29,6 +29,7 @@ from telethon.tl import types
 from telethon.utils import get_extension, get_peer_id, resolve_id
 import youtube_dl
 import threading
+import zipfile
 
 import logging
 
@@ -65,6 +66,7 @@ TG_AUTHORIZED_USER_ID = get_env('TG_AUTHORIZED_USER_ID', False)
 TG_DOWNLOAD_PATH = get_env('TG_DOWNLOAD_PATH', '/download')
 TG_DOWNLOAD_PATH_TORRENTS = get_env('TG_DOWNLOAD_PATH_TORRENTS', '/watch')
 YOUTUBE_LINKS_SOPORTED = get_env('YOUTUBE_LINKS_SOPORTED', 'youtube.com,youtu.be')
+TG_UNZIP_TORRENTS = get_env('TG_UNZIP_TORRENTS', False)
 
 download_path = TG_DOWNLOAD_PATH
 download_path_torrent = TG_DOWNLOAD_PATH_TORRENTS # Directorio bajo vigilancia de DSDownload u otro.
@@ -147,8 +149,8 @@ async def callback(current, total, file_path, message):
 	format_float = "{:.2f}".format(value)
 	int_value = int(float(format_float) // 1)
 	try:
-		if ((int_value != 100 ) and (int_value % 10 == 0)):
-			task = loop.create_task(message.edit('Downloading... {}%'.format(format_float)))
+		if ((int_value != 100 ) and (int_value % 20 == 0)):
+			await message.edit('Downloading... {}%'.format(format_float))
 	finally:
 		current
  	#logger.info('Downloaded {} out of {} {}'.format(current,total,'bytes: {:.2%}'.format(current / total)))
@@ -235,8 +237,17 @@ async def worker(name):
 			logger.info("RENAME/MOVE [%s] [%s]" % (download_result, final_path) )
 			os.makedirs(completed_path, exist_ok = True)
 			shutil.move(download_result, final_path)
+			if TG_UNZIP_TORRENTS:
+				if zipfile.is_zipfile(final_path):
+					with zipfile.ZipFile(final_path, 'r') as zipObj:
+						for fileName in zipObj.namelist():
+							if fileName.endswith('.torrent'):
+								zipObj.extract(fileName, download_path_torrent)
+								logger.info("UNZIP TORRENTS [%s] to [%s]" % (fileName, download_path_torrent) )
+
+
 			######
-			mensaje = 'DOWNLOAD FINISHED %s [%s]' % (end_time, file_name)
+			mensaje = 'DOWNLOAD FINISHED %s [%s] => [%s]' % (end_time, file_name, final_path)
 			logger.info(mensaje)
 			await message.edit('Downloading finished:\n%s at %s' % (file_name,end_time_short))
 		except asyncio.TimeoutError:
