@@ -64,6 +64,7 @@ TG_DOWNLOAD_PATH = get_env('TG_DOWNLOAD_PATH', '/download')
 TG_DOWNLOAD_PATH_TORRENTS = get_env('TG_DOWNLOAD_PATH_TORRENTS', '/watch')
 YOUTUBE_LINKS_SOPORTED = get_env('YOUTUBE_LINKS_SOPORTED', 'youtube.com,youtu.be')
 TG_UNZIP_TORRENTS = get_env('TG_UNZIP_TORRENTS', False)
+TG_PROGRESS_DOWNLOAD = get_env('TG_PROGRESS_DOWNLOAD', False)
 
 download_path = TG_DOWNLOAD_PATH
 download_path_torrent = TG_DOWNLOAD_PATH_TORRENTS # Directorio bajo vigilancia de DSDownload u otro.
@@ -209,7 +210,10 @@ async def worker(name):
 		logger.info(mensaje)
 		try:
 			loop = asyncio.get_event_loop()
-			task = loop.create_task(client.download_media(update.message, file_path, progress_callback=lambda x,y: callback(x,y,file_path,message)))
+			if TG_PROGRESS_DOWNLOAD:
+				task = loop.create_task(client.download_media(update.message, file_path, progress_callback=lambda x,y: callback(x,y,file_path,message)))
+			else:
+				task = loop.create_task(client.download_media(update.message, file_path))
 			download_result = await asyncio.wait_for(task, timeout = maximum_seconds_per_download)
 			end_time = time.strftime('%d/%m/%Y %H:%M:%S', time.localtime())
 			end_time_short = time.strftime('%H:%M', time.localtime())
