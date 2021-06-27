@@ -50,8 +50,8 @@ logger.setLevel(logging.DEBUG)
 # prompt the user to type them in the terminal if missing.
 def get_env(name, message, cast=str):
 	if name in os.environ:
-		logger.info('%s: %s' % (name , os.environ[name]))
-		return os.environ[name]
+		logger.info('%s: %s' % (name , os.environ[name].strip()))
+		return os.environ[name].strip()
 	else:
 		logger.info('%s: %s' % (name , message))
 		return message
