@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 2.6"
+VERSION = "VERSION 2.10"
 HELP = """
 /help		: This Screen
 /alive		: keep-alive
@@ -28,12 +28,11 @@ from telethon import TelegramClient, events
 from telethon.tl import types
 from telethon.utils import get_extension, get_peer_id, resolve_id
 import youtube_dl
+import threading
+import zipfile
 
 import logging
 
-'''
-LOGGER
-'''
 
 logger = logging.getLogger(__name__)
 handler = logging.StreamHandler()
@@ -48,8 +47,8 @@ logger.setLevel(logging.DEBUG)
 # prompt the user to type them in the terminal if missing.
 def get_env(name, message, cast=str):
 	if name in os.environ:
-		logger.info('%s: %s' % (name , os.environ[name]))
-		return os.environ[name]
+		logger.info('%s: %s' % (name , os.environ[name].strip()))
+		return os.environ[name].strip()
 	else:
 		logger.info('%s: %s' % (name , message))
 		return message
@@ -64,6 +63,7 @@ TG_AUTHORIZED_USER_ID = get_env('TG_AUTHORIZED_USER_ID', False)
 TG_DOWNLOAD_PATH = get_env('TG_DOWNLOAD_PATH', '/download')
 TG_DOWNLOAD_PATH_TORRENTS = get_env('TG_DOWNLOAD_PATH_TORRENTS', '/watch')
 YOUTUBE_LINKS_SOPORTED = get_env('YOUTUBE_LINKS_SOPORTED', 'youtube.com,youtu.be')
+TG_UNZIP_TORRENTS = get_env('TG_UNZIP_TORRENTS', False)
 
 download_path = TG_DOWNLOAD_PATH
 download_path_torrent = TG_DOWNLOAD_PATH_TORRENTS # Directorio bajo vigilancia de DSDownload u otro.
@@ -90,7 +90,6 @@ os.makedirs(os.path.join(download_path,'sendFiles'), exist_ok = True)
 
 FOLDER_GROUP = ''
 
-
 async def tg_send_message(msg):
     if TG_AUTHORIZED_USER_ID: await client.send_message(usuarios[0], msg)
     return True
@@ -100,6 +99,62 @@ async def tg_send_file(CID,file,name=''):
     async with client.action(CID, 'document') as action:
     	await client.send_file(CID, file,caption=name,force_document=True,progress_callback=action.progress)
 	#await client.send_message(6537360, file)
+
+async def youtube_download(url,update,message):
+	await message.edit(f'downloading...')
+    
+	try:
+		url = update.message.message
+		youtube_path = os.path.join(download_path,'youtube')
+
+		ydl_opts = { 'format': 'best', 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False',"retries": 10 }
+
+		with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+			info_dict = ydl.extract_info(url, download=False)
+			file_name = ydl.prepare_filename(info_dict)
+			total_downloads = 1
+			if '_type' in info_dict and info_dict["_type"] == 'playlist':
+				total_downloads = len(info_dict['entries'])
+				#logger.info('info_dict :::::::::::: [{}][{}]'.format(info_dict["_type"],len(info_dict['entries'])))
+				youtube_path = os.path.join(download_path,'youtube',info_dict['uploader'],info_dict['title'])
+				ydl_opts = { 'format': 'best', 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False','ignoreerrors': True, "retries": 10 }
+				ydl_opts.update(ydl_opts)
+			else:
+				youtube_path = os.path.join(download_path,'youtube',info_dict['uploader'])
+				ydl_opts = { 'format': 'best', 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False','ignoreerrors': True, "retries": 10 }
+				ydl_opts.update(ydl_opts)
+		
+		with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+			logger.info(f'DOWNLOADING VIDEO YOUTUBE [{url}] [{file_name}]')
+			await message.edit(f'downloading {total_downloads} videos...')
+			res_youtube = ydl.download([url])
+
+			if (res_youtube == False):
+				filename = os.path.basename(file_name)
+				logger.info(f'DOWNLOADED {total_downloads} VIDEO YOUTUBE [{file_name}] [{youtube_path}][{filename}]')
+				await message.edit(f'downloaded {total_downloads} video')
+			else:
+				logger.info(f'ERROR: ONE OR MORE YOUTUBE VIDEOS NOT DOWNLOADED [{total_downloads}] [{url}] [{youtube_path}]')
+				await message.edit(f'ERROR: one or more videos not downloaded') 
+	except Exception as e:
+		logger.info('ERROR: %s DOWNLOADING YT: %s' % (e.__class__.__name__, str(e)))
+		logger.info(f'ERROR: Exception ONE OR MORE YOUTUBE VIDEOS NOT DOWNLOADED')
+
+# Printing download progress
+async def callback(current, total, file_path, message):
+	value = (current / total) * 100
+	format_float = "{:.2f}".format(value)
+	int_value = int(float(format_float) // 1)
+	try:
+		if ((int_value != 100 ) and (int_value % 20 == 0)):
+			await message.edit('Downloading... {}%'.format(format_float))
+	finally:
+		current
+ 	#logger.info('Downloaded {} out of {} {}'.format(current,total,'bytes: {:.2%}'.format(current / total)))
+	#await msg.edit("{} {}%".format(type_of, current * 100 / total))
+	#logger.info('args {}'.format(file_path))
+	#time.sleep(2)
+
 
 async def worker(name):
 	while True:
@@ -125,40 +180,17 @@ async def worker(name):
 		elif any(x in update.message.message for x in youtube_list):
 			try:
 				url = update.message.message
-				youtube_path = os.path.join(download_path,'youtube')
-
-				ydl_opts = { 'format': 'best', 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False',"retries": 10 }
-
-				with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-					info_dict = ydl.extract_info(url, download=False)
-					file_name = ydl.prepare_filename(info_dict)
-					total_downloads = 1
-					if '_type' in info_dict and info_dict["_type"] == 'playlist':
-						total_downloads = len(info_dict['entries'])
-						#logger.info('info_dict :::::::::::: [{}][{}]'.format(info_dict["_type"],len(info_dict['entries'])))
-						youtube_path = os.path.join(download_path,'youtube',info_dict['uploader'],info_dict['title'])
-						ydl_opts = { 'format': 'best', 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False','ignoreerrors': True, "retries": 10 }
-						ydl_opts.update(ydl_opts)
-						file_name = 'VIDEO PLAYLIST'
-					else:
-						youtube_path = os.path.join(download_path,'youtube',info_dict['uploader'])
-						ydl_opts = { 'format': 'best', 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False','ignoreerrors': True, "retries": 10 }
-						ydl_opts.update(ydl_opts)
 				
-				with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-					res_youtube = ydl.download([url])
-					if (res_youtube == False):
-						filename = os.path.basename(file_name)
-						logger.info(f'DOWNLOADED {total_downloads} VIDEO YOUTUBE [{file_name}] [{youtube_path}][{res_youtube}]')
-						message = await message.edit(f'downloaded {total_downloads} video')
-					else:
-						logger.info(f'ERROR: ONE OR MORE YOUTUBE VIDEOS NOT DOWNLOADED [{total_downloads}] [{url}] [{youtube_path}]')
-						message = await message.edit(f'ERROR: one or more videos not downloaded') 
+				logger.info(f'INIT DOWNLOADING VIDEO YOUTUBE [{url}] ')
+				await youtube_download(url,update,message)
+				logger.info(f'FINIT DOWNLOADING VIDEO YOUTUBE [{url}] ')
+				queue.task_done()
 				continue
 			except Exception as e:
-				logger.error("An exception occurred ", update.message.message)
+				logger.info('ERROR: %s DOWNLOADING YT: %s' % (e.__class__.__name__, str(e)))
 				await message.edit('Error!')
-				message = await message.edit('ERROR: %s DOWNLOADING : %s' % (e.__class__.__name__, str(e)))
+				message = await message.edit('ERROR: %s DOWNLOADING YT: %s' % (e.__class__.__name__, str(e)))
+				queue.task_done()
 				continue
 		else:
 			attributes = update.message.media.document.attributes
@@ -177,7 +209,7 @@ async def worker(name):
 		logger.info(mensaje)
 		try:
 			loop = asyncio.get_event_loop()
-			task = loop.create_task(client.download_media(update.message, file_path))
+			task = loop.create_task(client.download_media(update.message, file_path, progress_callback=lambda x,y: callback(x,y,file_path,message)))
 			download_result = await asyncio.wait_for(task, timeout = maximum_seconds_per_download)
 			end_time = time.strftime('%d/%m/%Y %H:%M:%S', time.localtime())
 			end_time_short = time.strftime('%H:%M', time.localtime())
@@ -200,9 +232,19 @@ async def worker(name):
 				if filename.endswith('.torrent'): final_path = os.path.join(download_path_torrent, filename)
 			######
 			logger.info("RENAME/MOVE [%s] [%s]" % (download_result, final_path) )
+			os.makedirs(completed_path, exist_ok = True)
 			shutil.move(download_result, final_path)
+			if TG_UNZIP_TORRENTS:
+				if zipfile.is_zipfile(final_path):
+					with zipfile.ZipFile(final_path, 'r') as zipObj:
+						for fileName in zipObj.namelist():
+							if fileName.endswith('.torrent'):
+								zipObj.extract(fileName, download_path_torrent)
+								logger.info("UNZIP TORRENTS [%s] to [%s]" % (fileName, download_path_torrent) )
+
+
 			######
-			mensaje = 'DOWNLOAD FINISHED %s [%s]' % (end_time, file_name)
+			mensaje = 'DOWNLOAD FINISHED %s [%s] => [%s]' % (end_time, file_name, final_path)
 			logger.info(mensaje)
 			await message.edit('Downloading finished:\n%s at %s' % (file_name,end_time_short))
 		except asyncio.TimeoutError:
@@ -235,6 +277,7 @@ async def handler(update):
 
 		if update.message.media is not None and ( not TG_AUTHORIZED_USER_ID or CID in usuarios):
 			if FOLDER_GROUP != update.message.date:
+				logger.info("FOLDER_GROUP => [%s][%s][%s]" % (FOLDER_GROUP,update.message.date,temp_completed_path))
 				temp_completed_path  = ''
 
 		if update.message.media is not None and ( not TG_AUTHORIZED_USER_ID or CID in usuarios):
@@ -253,7 +296,7 @@ async def handler(update):
 					elif update.message.message:
 						file_name = re.sub(r'[^A-Za-z0-9 -!\[\]\(\)]+', ' ', update.message.message)
 
-			mensaje = 'DOWNLOAD IN QUEUE %s [%s] ' % (time.strftime('%d/%m/%Y %H:%M:%S', time.localtime()),file_name)
+			mensaje = 'DOWNLOAD IN QUEUE [%s] [%s] => [%s]' % (time.strftime('%d/%m/%Y %H:%M:%S', time.localtime()),file_name,temp_completed_path)
 			logger.info(mensaje)
 			message = await update.reply('Download in queue...')
 			await queue.put([update, message,temp_completed_path])
@@ -334,8 +377,6 @@ try:
 	loop.run_until_complete(tg_send_message("Bot Torrent Download Started"))
 	logger.info("%s" % VERSION)
 	logger.info("********** START BOT_TORRENT_DOWNLOADER **********")
-
-
 
 
 
