@@ -6,7 +6,7 @@
     <Registry>https://hub.docker.com/r/jsavargas/telethon_downloader</Registry>
     <Network>host</Network>
     <Privileged>false</Privileged>
-    <Support>https://hub.docker.com/r/jsavargas/telethon_downloader</Support>
+    <Support>https://github.com/jsavargas/telethon_downloader</Support>
     <Shell>bash</Shell>
     <Branch>
         <Tag>latest</Tag>
@@ -28,5 +28,5 @@
     <Config Name="TG_BOT_TOKEN" Target="TG_BOT_TOKEN" Default="" Description="Container Variable: TG_BOT_TOKEN" Type="Variable" Display="always" Required="true" Mask="false"></Config>
     <Config Name="PUID" Target="PUID" Default="99" Description="Container Variable: PUID" Type="Variable" Display="advanced" Required="true" Mask="false"/>
     <Config Name="PGID" Target="PGID" Default="100" Description="Container Variable: PGID" Type="Variable" Display="advanced" Required="true" Mask="false"/>
-    <Config Name="Localtime" Target="/etc/localtime" Default="/etc/localtime" Mode="ro" Description="Container Path: /etc/localtime" Type="Path" Display="advanced" Required="true" Mask="false"/>
+    <Config Name="TZ" Target="TZ" Default="Europe/London" Description="Container Variable: TZ" Type="Variable" Display="advanced" Required="true" Mask="false"/>
 </Container>
