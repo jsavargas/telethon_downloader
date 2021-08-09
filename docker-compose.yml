@@ -10,12 +10,13 @@ services:
     environment:
       - 'PUID=1000'
       - 'PGID=1000'
-      - 'TG_AUTHORIZED_USER_ID=' #<telegram chat_id authorized>
+      - 'TG_AUTHORIZED_USER_ID='  #<telegram chat_id authorized>
       - 'TG_API_ID='
       - 'TG_API_HASH=' 
       - 'TG_BOT_TOKEN='
+      - 'TG_PROGRESS_DOWNLOAD: True' #OPTIONAL
+      - 'TZ=America/Santiago'
     volumes:
-      - "/etc/localtime:/etc/localtime:ro"
       - /path/to/download:/download
       - /path/to/download/torrent/watch:/watch
 

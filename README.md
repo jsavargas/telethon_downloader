@@ -28,11 +28,11 @@ Running Telethon Downloader
 >NOTE: NOTE: THIS VARIABLE MUST BE UPDATED IF MORE URL IS REQUIRED TO BE ADDED TO THE YOUTUBE DOWNLOAD SUPPORT
 
 ## Volumes:
- **/etc/localtime** : local time zone to container time zone
 
  **/download** : folder where files are downloaded
+ 
+ **/watch** : folder where torrent files are downloaded where transmission will upload them
 
- **/etc/localtime** : folder where torrent files are downloaded where transmission will upload them
 
 
 
@@ -85,8 +85,9 @@ services:
       - 'TG_API_ID=<telegram API key generated at ´Generating Telegram API keys´>'
       - 'TG_API_HASH=<telegram API hash generated at ´Generating Telegram API keys´>' 
       - 'TG_BOT_TOKEN=<telegram BOT token generated at ´Creating a Telegram Bot´>'
+      - 'TG_PROGRESS_DOWNLOAD=True' #OPTIONAL
+      - 'TZ=America/Santiago'
     volumes:
-      - "/etc/localtime:/etc/localtime:ro"       #OPTIONAL
       - /path/to/download:/download              #FOLDER DOWNLOAD FILES
       - /path/to/download/torrent/watch:/watch   #FOLDER DOWNLOAD .torrent files to transmission watch folder
 ```
