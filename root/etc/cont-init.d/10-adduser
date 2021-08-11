@@ -19,6 +19,3 @@ chown -R abc:abc /app
 chown -R abc:abc /download
 chown -R abc:abc /watch
 
-chmod -R 777 \
-	/download \
-	/watch 
