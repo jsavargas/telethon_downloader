@@ -89,6 +89,14 @@ os.makedirs(os.path.join(download_path,'pdf'), exist_ok = True)
 os.makedirs(os.path.join(download_path,'torrent'), exist_ok = True)
 os.makedirs(os.path.join(download_path,'sendFiles'), exist_ok = True)
 
+os.chmod(tmp_path, 0o777)
+os.chmod(completed_path, 0o777)
+os.chmod(os.path.join(download_path,'mp3'), 0o777)
+os.chmod(os.path.join(download_path,'pdf'), 0o777)
+os.chmod(os.path.join(download_path,'torrent'), 0o777)
+os.chmod(os.path.join(download_path,'sendFiles'), 0o777)
+
+
 FOLDER_GROUP = ''
 
 async def tg_send_message(msg):
@@ -223,6 +231,7 @@ async def worker(name):
 			if FOLDER_TO_GROUP:
 				final_path = os.path.join(FOLDER_TO_GROUP, filename)
 				os.makedirs(FOLDER_TO_GROUP, exist_ok = True)
+				os.chmod(FOLDER_TO_GROUP, 0o777)
 			else:
 				# Ficheros .mp3 y .flac,
 				if filename.endswith('.mp3') or filename.endswith('.flac'): final_path = os.path.join(download_path,"mp3", filename)
@@ -238,6 +247,7 @@ async def worker(name):
 			logger.info("RENAME/MOVE [%s] [%s]" % (download_result, final_path) )
 			os.makedirs(completed_path, exist_ok = True)
 			shutil.move(download_result, final_path)
+			os.chmod(final_path, 0o666)
 			if TG_UNZIP_TORRENTS:
 				if zipfile.is_zipfile(final_path):
 					with zipfile.ZipFile(final_path, 'r') as zipObj:
