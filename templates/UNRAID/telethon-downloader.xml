@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <!-- DO NOT CHANGE THIS FILE MANUALLY, IT IS AUTOMATICALLY GENERATED -->
 <Container version="2">
+    <Category>Downloaders:</Category>
     <Name>telethon-downloader</Name>
     <Repository>jsavargas/telethon_downloader</Repository>
     <Registry>https://hub.docker.com/r/jsavargas/telethon_downloader</Registry>
-    <Network>host</Network>
+    <Network>bridge</Network>
     <Privileged>false</Privileged>
     <Support>https://github.com/jsavargas/telethon_downloader</Support>
     <Shell>bash</Shell>
@@ -29,4 +30,5 @@
     <Config Name="PUID" Target="PUID" Default="99" Description="Container Variable: PUID" Type="Variable" Display="advanced" Required="true" Mask="false"/>
     <Config Name="PGID" Target="PGID" Default="100" Description="Container Variable: PGID" Type="Variable" Display="advanced" Required="true" Mask="false"/>
     <Config Name="TZ" Target="TZ" Default="Europe/London" Description="Container Variable: TZ" Type="Variable" Display="advanced" Required="true" Mask="false"/>
+    <Config Name="TG_PROGRESS_DOWNLOAD" Target="TG_PROGRESS_DOWNLOAD" Default="False|True" Description="Container Variable: TG_PROGRESS_DOWNLOAD" Type="Variable" Display="always" Required="true" Mask="false"/>
 </Container>
