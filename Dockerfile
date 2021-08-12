@@ -14,7 +14,8 @@ RUN apt-get update && \
 	python3-pip \
 	python3-setuptools \
 	python3-wheel \
-	build-essential && \
+	build-essential \ 
+	ffmpeg && \
  usermod -d /app abc && \
 	python3 -m pip install --upgrade pip && \
 	pip3 install -r requirements.txt  && \

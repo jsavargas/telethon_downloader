@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 2.11"
+VERSION = "VERSION 2.12"
 HELP = """
 /help		: This Screen
 /alive		: keep-alive
@@ -63,6 +63,7 @@ TG_AUTHORIZED_USER_ID = get_env('TG_AUTHORIZED_USER_ID', False)
 TG_DOWNLOAD_PATH = get_env('TG_DOWNLOAD_PATH', '/download')
 TG_DOWNLOAD_PATH_TORRENTS = get_env('TG_DOWNLOAD_PATH_TORRENTS', '/watch')
 YOUTUBE_LINKS_SOPORTED = get_env('YOUTUBE_LINKS_SOPORTED', 'youtube.com,youtu.be')
+YOUTUBE_FORMAT = get_env('YOUTUBE_FORMAT', 'best')
 TG_UNZIP_TORRENTS = get_env('TG_UNZIP_TORRENTS', False)
 TG_PROGRESS_DOWNLOAD = get_env('TG_PROGRESS_DOWNLOAD', False)
 
@@ -91,6 +92,7 @@ os.makedirs(os.path.join(download_path,'sendFiles'), exist_ok = True)
 
 os.chmod(tmp_path, 0o777)
 os.chmod(completed_path, 0o777)
+os.chmod(download_path_torrent, 0o777)
 os.chmod(os.path.join(download_path,'mp3'), 0o777)
 os.chmod(os.path.join(download_path,'pdf'), 0o777)
 os.chmod(os.path.join(download_path,'torrent'), 0o777)
@@ -116,7 +118,7 @@ async def youtube_download(url,update,message):
 		url = update.message.message
 		youtube_path = os.path.join(download_path,'youtube')
 
-		ydl_opts = { 'format': 'best', 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False',"retries": 10 }
+		ydl_opts = { 'format': YOUTUBE_FORMAT, 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False',"retries": 10 }
 
 		with youtube_dl.YoutubeDL(ydl_opts) as ydl:
 			info_dict = ydl.extract_info(url, download=False)
@@ -126,11 +128,11 @@ async def youtube_download(url,update,message):
 				total_downloads = len(info_dict['entries'])
 				#logger.info('info_dict :::::::::::: [{}][{}]'.format(info_dict["_type"],len(info_dict['entries'])))
 				youtube_path = os.path.join(download_path,'youtube',info_dict['uploader'],info_dict['title'])
-				ydl_opts = { 'format': 'best', 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False','ignoreerrors': True, "retries": 10 }
+				ydl_opts = { 'format': YOUTUBE_FORMAT, 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False','ignoreerrors': True, "retries": 10 }
 				ydl_opts.update(ydl_opts)
 			else:
 				youtube_path = os.path.join(download_path,'youtube',info_dict['uploader'])
-				ydl_opts = { 'format': 'best', 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False','ignoreerrors': True, "retries": 10 }
+				ydl_opts = { 'format': YOUTUBE_FORMAT, 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False','ignoreerrors': True, "retries": 10 }
 				ydl_opts.update(ydl_opts)
 		
 		with youtube_dl.YoutubeDL(ydl_opts) as ydl:
@@ -139,9 +141,10 @@ async def youtube_download(url,update,message):
 			res_youtube = ydl.download([url])
 
 			if (res_youtube == False):
+				os.chmod(youtube_path, 0o777)
 				filename = os.path.basename(file_name)
 				logger.info(f'DOWNLOADED {total_downloads} VIDEO YOUTUBE [{file_name}] [{youtube_path}][{filename}]')
-				await message.edit(f'downloaded {total_downloads} video')
+				await message.edit(f'Downloading finished {total_downloads} video')
 			else:
 				logger.info(f'ERROR: ONE OR MORE YOUTUBE VIDEOS NOT DOWNLOADED [{total_downloads}] [{url}] [{youtube_path}]')
 				await message.edit(f'ERROR: one or more videos not downloaded') 
