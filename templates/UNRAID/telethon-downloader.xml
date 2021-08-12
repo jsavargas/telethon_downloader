@@ -2,7 +2,7 @@
 <!-- DO NOT CHANGE THIS FILE MANUALLY, IT IS AUTOMATICALLY GENERATED -->
 <Container version="2">
     <Category>Downloaders:</Category>
-    <Name>telethon-downloader</Name>
+    <Name>Telegram-Downloader (Telethon)</Name>
     <Repository>jsavargas/telethon_downloader</Repository>
     <Registry>https://hub.docker.com/r/jsavargas/telethon_downloader</Registry>
     <Network>bridge</Network>
