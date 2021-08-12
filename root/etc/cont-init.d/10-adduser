@@ -16,5 +16,6 @@ User PGID:    $(id -g abc)
 -------------------------------------
 "
 chown -R abc:abc /app
-chown abc:abc /download
-chown abc:abc /watch
+chown -R abc:abc /download
+chown -R abc:abc /watch
+
