@@ -372,7 +372,7 @@ async def handler(update):
 				#	message = await update.reply('reply Keep-Alive: ' + update.message.message)
 				#	await queue.put([update, message])
 				#	logger.info("Eco del BOT :[%s]", update.message.message)
-		else:
+		elif update.message.message == '/me':
 			logger.info('UNAUTHORIZED USER: %s ', CID)
 			message = await update.reply('UNAUTHORIZED USER: %s \n add this ID to TG_AUTHORIZED_USER_ID' % CID)
 	except Exception as e:
