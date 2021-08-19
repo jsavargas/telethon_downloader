@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 2.12"
+VERSION = "VERSION 2.13"
 HELP = """
 /help		: This Screen
 /alive		: keep-alive
@@ -63,7 +63,7 @@ TG_AUTHORIZED_USER_ID = get_env('TG_AUTHORIZED_USER_ID', False)
 TG_DOWNLOAD_PATH = get_env('TG_DOWNLOAD_PATH', '/download')
 TG_DOWNLOAD_PATH_TORRENTS = get_env('TG_DOWNLOAD_PATH_TORRENTS', '/watch')
 YOUTUBE_LINKS_SOPORTED = get_env('YOUTUBE_LINKS_SOPORTED', 'youtube.com,youtu.be')
-YOUTUBE_FORMAT = get_env('YOUTUBE_FORMAT', 'best')
+YOUTUBE_FORMAT = get_env('YOUTUBE_FORMAT', 'bestvideo+bestaudio')  #best
 TG_UNZIP_TORRENTS = get_env('TG_UNZIP_TORRENTS', False)
 TG_PROGRESS_DOWNLOAD = get_env('TG_PROGRESS_DOWNLOAD', False)
 
@@ -144,7 +144,8 @@ async def youtube_download(url,update,message):
 				os.chmod(youtube_path, 0o777)
 				filename = os.path.basename(file_name)
 				logger.info(f'DOWNLOADED {total_downloads} VIDEO YOUTUBE [{file_name}] [{youtube_path}][{filename}]')
-				await message.edit(f'Downloading finished {total_downloads} video')
+				end_time_short = time.strftime('%H:%M', time.localtime())
+				await message.edit(f'Downloading finished {total_downloads} video at {end_time_short}')
 			else:
 				logger.info(f'ERROR: ONE OR MORE YOUTUBE VIDEOS NOT DOWNLOADED [{total_downloads}] [{url}] [{youtube_path}]')
 				await message.edit(f'ERROR: one or more videos not downloaded') 
