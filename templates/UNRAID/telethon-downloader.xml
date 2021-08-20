@@ -1,21 +1,14 @@
 <?xml version="1.0"?>
 <!-- DO NOT CHANGE THIS FILE MANUALLY, IT IS AUTOMATICALLY GENERATED -->
 <Container version="2">
+    <Category>Downloaders:</Category>
     <Name>telethon-downloader</Name>
     <Repository>jsavargas/telethon_downloader</Repository>
     <Registry>https://hub.docker.com/r/jsavargas/telethon_downloader</Registry>
-    <Network>host</Network>
+    <Network>bridge</Network>
     <Privileged>false</Privileged>
-    <Support>https://hub.docker.com/r/jsavargas/telethon_downloader</Support>
+    <Support>https://github.com/jsavargas/telethon_downloader</Support>
     <Shell>bash</Shell>
-    <Branch>
-        <Tag>latest</Tag>
-        <TagDescription>Stable releases</TagDescription>
-    </Branch>
-    <Branch>
-        <Tag>develop</Tag>
-        <TagDescription>Latest commit from the github master branch</TagDescription>
-    </Branch>
     <Project>https://docs.telethon.dev/</Project>
     <Overview>This is a simple container that downloads files sent to a telegram bot up to 2000mb using the Telethon library.</Overview>
     <TemplateURL>https://github.com/jsavargas/telethon_downloader/blob/master/templates/UNRAID/telethon-downloader.xml</TemplateURL>
@@ -26,7 +19,9 @@
     <Config Name="TG_API_ID" Target="TG_API_ID" Default="" Description="Container Variable: TG_API_ID" Type="Variable" Display="always" Required="true" Mask="false"> </Config>
     <Config Name="TG_API_HASH" Target="TG_API_HASH" Default="" Description="Container Variable: TG_API_HASH" Type="Variable" Display="always" Required="true" Mask="false"> </Config>
     <Config Name="TG_BOT_TOKEN" Target="TG_BOT_TOKEN" Default="" Description="Container Variable: TG_BOT_TOKEN" Type="Variable" Display="always" Required="true" Mask="false"></Config>
+    <Config Name="Path: /config" Target="/mnt/user/appdata/telethon_downloader" Default="/mnt" Mode="rw" Description="Container Path: /config" Type="Path" Display="advanced" Required="true" Mask="false"/>
     <Config Name="PUID" Target="PUID" Default="99" Description="Container Variable: PUID" Type="Variable" Display="advanced" Required="true" Mask="false"/>
     <Config Name="PGID" Target="PGID" Default="100" Description="Container Variable: PGID" Type="Variable" Display="advanced" Required="true" Mask="false"/>
-    <Config Name="Localtime" Target="/etc/localtime" Default="/etc/localtime" Mode="ro" Description="Container Path: /etc/localtime" Type="Path" Display="advanced" Required="true" Mask="false"/>
+    <Config Name="TZ" Target="TZ" Default="Europe/London" Description="Container Variable: TZ" Type="Variable" Display="advanced" Required="true" Mask="false"/>
+    <Config Name="TG_PROGRESS_DOWNLOAD" Target="TG_PROGRESS_DOWNLOAD" Default="False|True" Description="Container Variable: TG_PROGRESS_DOWNLOAD" Type="Variable" Display="always" Required="false" Mask="false"/>
 </Container>
