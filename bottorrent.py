@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 2.12"
+VERSION = "VERSION 2.12.5"
 HELP = """
 /help		: This Screen
 /alive		: keep-alive
@@ -125,8 +125,7 @@ def getDownloadPath(filename,CID=0):
 
 	final_path = completed_path
 
-	if TG_FOLDER_BY_AUTHORIZED and (CID in config['FOLDER_BY_AUTHORIZED']):
-
+	if eval(TG_FOLDER_BY_AUTHORIZED) and (CID in config['FOLDER_BY_AUTHORIZED']):
 		FOLDER_BY_AUTHORIZED = config['FOLDER_BY_AUTHORIZED']
 		for AUTHORIZED in FOLDER_BY_AUTHORIZED:
 			if AUTHORIZED == CID:
@@ -147,6 +146,7 @@ def getDownloadPath(filename,CID=0):
 	os.chmod(final_path, 0o777)
 
 	return path
+
 async def tg_send_message(msg):
     if TG_AUTHORIZED_USER_ID: await client.send_message(usuarios[0], msg)
     return True
@@ -264,7 +264,7 @@ async def worker(name):
 		logger.info(mensaje)
 		try:
 			loop = asyncio.get_event_loop()
-			if TG_PROGRESS_DOWNLOAD:
+			if eval(TG_PROGRESS_DOWNLOAD):
 				task = loop.create_task(client.download_media(update.message, file_path, progress_callback=lambda x,y: callback(x,y,file_path,message)))
 			else:
 				task = loop.create_task(client.download_media(update.message, file_path))
