@@ -122,19 +122,15 @@ def getDownloadPath(filename,CID=0):
 	config.read(config_path)
 
 	CID = str(CID)
-	logger.info(f' Return:: [{filename}] [{CID}]')
 
 	final_path = completed_path
 
-	extension = os.path.splitext(filename)[1]
+	if TG_FOLDER_BY_AUTHORIZED and (CID in config['FOLDER_BY_AUTHORIZED']):
 
-	TG_FOLDER_BY_AUTHORIZED=True
-
-	if TG_FOLDER_BY_AUTHORIZED and CID in config['FOLDER_BY_AUTHORIZED']:
 		FOLDER_BY_AUTHORIZED = config['FOLDER_BY_AUTHORIZED']
 		for AUTHORIZED in FOLDER_BY_AUTHORIZED:
 			if AUTHORIZED == CID:
-				final_path = FOLDER_BY_AUTHORIZED[f"{AUTHORIZED}"]
+				final_path = FOLDER_BY_AUTHORIZED[AUTHORIZED]
 				break
 	else:
 		DEFAULT_PATH = config['DEFAULT_PATH']
@@ -151,7 +147,6 @@ def getDownloadPath(filename,CID=0):
 	os.chmod(final_path, 0o777)
 
 	return path
-
 async def tg_send_message(msg):
     if TG_AUTHORIZED_USER_ID: await client.send_message(usuarios[0], msg)
     return True
