@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 2.14"
+VERSION = "VERSION 2.12"
 HELP = """
 /help		: This Screen
 /alive		: keep-alive
@@ -32,6 +32,7 @@ import threading
 import zipfile
 
 import logging
+import configparser
 
 
 logger = logging.getLogger(__name__)
@@ -86,21 +87,70 @@ temp_completed_path = ''
 
 os.makedirs(tmp_path, exist_ok = True)
 os.makedirs(completed_path, exist_ok = True)
-os.makedirs(os.path.join(download_path,'mp3'), exist_ok = True)
-os.makedirs(os.path.join(download_path,'pdf'), exist_ok = True)
-os.makedirs(os.path.join(download_path,'torrent'), exist_ok = True)
-os.makedirs(os.path.join(download_path,'sendFiles'), exist_ok = True)
 
 os.chmod(tmp_path, 0o777)
 os.chmod(completed_path, 0o777)
 os.chmod(download_path_torrent, 0o777)
-os.chmod(os.path.join(download_path,'mp3'), 0o777)
-os.chmod(os.path.join(download_path,'pdf'), 0o777)
-os.chmod(os.path.join(download_path,'torrent'), 0o777)
-os.chmod(os.path.join(download_path,'sendFiles'), 0o777)
-
 
 FOLDER_GROUP = ''
+config = configparser.ConfigParser()
+config_path = '/config/config.ini'
+
+def config_file():
+	if not os.path.exists(config_path):
+		logger.info(f'CREATE DEFAULT CONFIG FILE : {config_path}')
+	
+		config.read(config_path)
+			
+		config['DEFAULT_PATH'] = {}
+		config['DEFAULT_PATH']['pdf'] = '/download/pdf'
+		config['DEFAULT_PATH']['cbr'] = '/download/pdf'
+		config['DEFAULT_PATH']['mp3'] = '/download/mp3'
+		config['DEFAULT_PATH']['flac'] = '/download/mp3'
+		config['DEFAULT_PATH']['jpg'] = '/download/jpg'
+		config['DEFAULT_PATH']['mp4'] = '/download/mp4'
+
+		config['FOLDER_BY_AUTHORIZED'] = {}
+		for usuario in usuarios:
+			config['FOLDER_BY_AUTHORIZED'][f"{usuario}"] = '/download/{}'.format(f"{usuario}")
+
+		with open(config_path, 'w') as configfile:    # save
+			config.write(configfile)
+	else: logger.info(f'READ CONFIG FILE : {config_path}')
+
+def getDownloadPath(filename,CID=0):
+	config.read(config_path)
+
+	CID = str(CID)
+	logger.info(f' Return:: [{filename}] [{CID}]')
+
+	final_path = completed_path
+
+	extension = os.path.splitext(filename)[1]
+
+	TG_FOLDER_BY_AUTHORIZED=True
+
+	if TG_FOLDER_BY_AUTHORIZED and CID in config['FOLDER_BY_AUTHORIZED']:
+		FOLDER_BY_AUTHORIZED = config['FOLDER_BY_AUTHORIZED']
+		for AUTHORIZED in FOLDER_BY_AUTHORIZED:
+			if AUTHORIZED == CID:
+				final_path = FOLDER_BY_AUTHORIZED[f"{AUTHORIZED}"]
+				break
+	else:
+		DEFAULT_PATH = config['DEFAULT_PATH']
+		for ext in DEFAULT_PATH:
+			if filename.endswith(ext):
+				final_path = os.path.join(final_path,ext)
+				final_path = DEFAULT_PATH[ext] #os.path.join(final_path,ext)
+				break
+
+	if filename.endswith('.torrent'): final_path = download_path_torrent
+
+	path = os.path.join(final_path,filename)
+	os.makedirs(final_path, exist_ok = True)
+	os.chmod(final_path, 0o777)
+
+	return path
 
 async def tg_send_message(msg):
     if TG_AUTHORIZED_USER_ID: await client.send_message(usuarios[0], msg)
@@ -164,10 +214,6 @@ async def callback(current, total, file_path, message):
 			await message.edit('Downloading... {}%'.format(format_float))
 	finally:
 		current
- 	#logger.info('Downloaded {} out of {} {}'.format(current,total,'bytes: {:.2%}'.format(current / total)))
-	#await msg.edit("{} {}%".format(type_of, current * 100 / total))
-	#logger.info('args {}'.format(file_path))
-	#time.sleep(2)
 
 
 async def worker(name):
@@ -231,27 +277,13 @@ async def worker(name):
 			end_time = time.strftime('%d/%m/%Y %H:%M:%S', time.localtime())
 			end_time_short = time.strftime('%H:%M', time.localtime())
 			filename = os.path.split(download_result)[1]
-			if TG_FOLDER_BY_AUTHORIZED:
-				os.makedirs(os.path.join(completed_path,str(CID)), exist_ok = True)
-				final_path = os.path.join(completed_path,str(CID), filename)
-			else:
-				final_path = os.path.join(completed_path, filename)
 			
 			if FOLDER_TO_GROUP:
 				final_path = os.path.join(FOLDER_TO_GROUP, filename)
 				os.makedirs(FOLDER_TO_GROUP, exist_ok = True)
 				os.chmod(FOLDER_TO_GROUP, 0o777)
 			else:
-				# Ficheros .mp3 y .flac,
-				if filename.endswith('.mp3') or filename.endswith('.flac'): final_path = os.path.join(download_path,"mp3", filename)
-				# Ficheros .pdf y .cbr
-				if filename.endswith('.pdf') or filename.endswith('.cbr'): final_path = os.path.join(download_path,"pdf", filename)
-				# Ficheros .jpg
-				if filename.endswith('.jpg'): 
-					os.makedirs(os.path.join(download_path,'jpg'), exist_ok = True)
-					final_path = os.path.join(download_path,"jpg", filename)
-				# Ficheros .torrent
-				if filename.endswith('.torrent'): final_path = os.path.join(download_path_torrent, filename)
+				final_path = getDownloadPath(filename,CID)
 			######
 			logger.info("RENAME/MOVE [%s] [%s]" % (download_result, final_path) )
 			os.makedirs(completed_path, exist_ok = True)
@@ -399,6 +431,7 @@ try:
 	# Pulsa Ctrl+C para detener
 	loop.run_until_complete(tg_send_message("Bot Torrent Download Started"))
 	logger.info("%s" % VERSION)
+	config_file()
 	logger.info("********** START BOT_TORRENT_DOWNLOADER **********")
 
 

@@ -7,7 +7,7 @@ COPY requirements.txt requirements.txt
 
 # install packages
 RUN apt-get update && \
- apt-get install -y --no-install-recommends \
+	apt-get install -y --no-install-recommends \
 	ncdu \
 	python3 \
 	python3-dev \
@@ -16,13 +16,13 @@ RUN apt-get update && \
 	python3-wheel \
 	build-essential \ 
 	ffmpeg && \
- usermod -d /app abc && \
+	usermod -d /app abc && \
 	python3 -m pip install --upgrade pip && \
 	pip3 install -r requirements.txt  && \
 	apt-get remove --purge -y build-essential && \
 	# cleanup
- apt-get autoclean -y && apt-get autoremove -y && \
- rm -rf \
+	apt-get autoclean -y && apt-get autoremove -y && \
+	rm -rf \
 	/config/ \
 	/default/ \
 	/etc/default/ \
@@ -41,8 +41,8 @@ COPY root/ /
 
 RUN chmod 777 /app/bottorrent.py 
 RUN chmod 777 -R /etc/services.d/
- 
 
 
-VOLUME /download /watch
+
+VOLUME /download /watch /config
 

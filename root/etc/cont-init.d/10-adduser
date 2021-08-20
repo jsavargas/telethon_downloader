@@ -15,7 +15,9 @@ User PUID:    $(id -u abc)
 User PGID:    $(id -g abc)
 -------------------------------------
 "
+
 chown -R abc:abc /app
+chown -R abc:abc /config
 chown -R abc:abc /download
 chown -R abc:abc /watch
 
