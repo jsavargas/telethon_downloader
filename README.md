@@ -18,6 +18,9 @@ Running Telethon Downloader
 
  **TG_BOT_TOKEN** : <telegram BOT token generated at ´Creating a Telegram Bot´>
  
+ **TZ** : America/Santiago
+
+
  **TG_MAX_PARALLEL** [OPTIONAL]: <maximum number of parallel downloads allowed (default: 4)>
  
  **TG_DL_TIMEOUT** [OPTIONAL]: <maximum time (in seconds) to wait for a download to complete. after this time the download is cancelled and an error is triggered (default: 3600)>
@@ -85,9 +88,9 @@ services:
       - 'TG_API_ID=<telegram API key generated at ´Generating Telegram API keys´>'
       - 'TG_API_HASH=<telegram API hash generated at ´Generating Telegram API keys´>' 
       - 'TG_BOT_TOKEN=<telegram BOT token generated at ´Creating a Telegram Bot´>'
-      - 'TG_PROGRESS_DOWNLOAD=True' #OPTIONAL
       - 'TZ=America/Santiago'
     volumes:
-      - /path/to/download:/download              #FOLDER DOWNLOAD FILES
-      - /path/to/download/torrent/watch:/watch   #FOLDER DOWNLOAD .torrent files to transmission watch folder
+      - /path/to/config:/config
+      - /path/to/download/torrent/watch:/watch
+      - /path/to/download:/download
 ```
