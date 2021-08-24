@@ -20,4 +20,4 @@ chown -R abc:abc /config
 chown -R abc:abc /download
 chown -R abc:abc /watch
 
-chmod 777 /app/bottorrent.py
+chmod 777 /app/bottorrent.py 

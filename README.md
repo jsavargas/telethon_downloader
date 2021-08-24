@@ -5,6 +5,9 @@ Telegram Bot on a [Telethon client](https://github.com/LonamiWebs/Telethon) that
 
 Running Telethon Downloader
 =================
+
+## Environment:
+
  Pull or build the docker image and launch it with the following environment variables:
 
  **TG_AUTHORIZED_USER_ID** : <telegram ´chat_id´ authorized> 
@@ -26,6 +29,14 @@ Running Telethon Downloader
 
  **YOUTUBE_LINKS_SOPORTED** [OPTIONAL]: <YouTube links supported for downloading videos (default: youtube.com,youtu.be)>
 >NOTE: NOTE: THIS VARIABLE MUST BE UPDATED IF MORE URL IS REQUIRED TO BE ADDED TO THE YOUTUBE DOWNLOAD SUPPORT
+
+## Volumes:
+
+ **/download** : folder where files are downloaded
+ 
+ **/watch** : folder where torrent files are downloaded where transmission will upload them
+
+
 
 
 Generating Telegram API keys
@@ -80,6 +91,6 @@ services:
       - 'TZ=America/Santiago'
     volumes:
       - /path/to/config:/config
-      - /path/to/download:/download
       - /path/to/download/torrent/watch:/watch
+      - /path/to/download:/download
 ```
