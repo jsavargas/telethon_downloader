@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 2.12.5"
+VERSION = "VERSION 2.12.8"
 HELP = """
 /help		: This Screen
 /alive		: keep-alive
@@ -118,14 +118,16 @@ def config_file():
 			config.write(configfile)
 	else: logger.info(f'READ CONFIG FILE : {config_path}')
 
-def getDownloadPath(filename,CID=0):
+def getDownloadPath(filename,CID):
+	logger.info("getDownloadPath [%s] [%s]" % (filename, CID) )
+
 	config.read(config_path)
 
-	CID = str(CID)
+	#CID = str(CID)
 
 	final_path = completed_path
 
-	if eval(TG_FOLDER_BY_AUTHORIZED) and (CID in config['FOLDER_BY_AUTHORIZED']):
+	if (TG_FOLDER_BY_AUTHORIZED==True or TG_FOLDER_BY_AUTHORIZED == 'True' ) and (CID in config['FOLDER_BY_AUTHORIZED']):
 		FOLDER_BY_AUTHORIZED = config['FOLDER_BY_AUTHORIZED']
 		for AUTHORIZED in FOLDER_BY_AUTHORIZED:
 			if AUTHORIZED == CID:
@@ -260,11 +262,11 @@ async def worker(name):
 		file_path = os.path.join(file_path, file_name)
 		await message.edit('Downloading...')
 		logger.info('Downloading... ')
-		mensaje = 'STARTING DOWNLOADING %s [%s] BY %s' % (time.strftime('%d/%m/%Y %H:%M:%S', time.localtime()), file_path , (CID))
+		mensaje = 'STARTING DOWNLOADING %s [%s] BY [%s]' % (time.strftime('%d/%m/%Y %H:%M:%S', time.localtime()), file_path , (CID))
 		logger.info(mensaje)
 		try:
 			loop = asyncio.get_event_loop()
-			if eval(TG_PROGRESS_DOWNLOAD):
+			if (TG_PROGRESS_DOWNLOAD == True or TG_PROGRESS_DOWNLOAD == 'True' ):
 				task = loop.create_task(client.download_media(update.message, file_path, progress_callback=lambda x,y: callback(x,y,file_path,message)))
 			else:
 				task = loop.create_task(client.download_media(update.message, file_path))
@@ -298,13 +300,13 @@ async def worker(name):
 			logger.info(mensaje)
 			await message.edit('Downloading finished:\n%s at %s' % (file_name,end_time_short))
 		except asyncio.TimeoutError:
-			print('[%s] Time exceeded %s' % (file_name, time.strftime('%d/%m/%Y %H:%M:%S', time.localtime())))
+			logger.info('[%s] Time exceeded %s' % (file_name, time.strftime('%d/%m/%Y %H:%M:%S', time.localtime())))
 			await message.edit('Error!')
 			message = await update.reply('ERROR: Time exceeded downloading this file')
 		except Exception as e:
 			logger.critical(e)
-			print('[EXCEPCION]: %s' % (str(e)))
-			print('[%s] Excepcion %s' % (file_name, time.strftime('%d/%m/%Y %H:%M:%S', time.localtime())))
+			logger.info('[EXCEPCION]: %s' % (str(e)))
+			logger.info('[%s] Excepcion %s' % (file_name, time.strftime('%d/%m/%Y %H:%M:%S', time.localtime())))
 			await message.edit('Error!')
 			message = await update.reply('ERROR: %s downloading : %s' % (e.__class__.__name__, str(e)))
 
