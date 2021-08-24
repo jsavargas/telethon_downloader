@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 2.12.8"
+VERSION = "VERSION 2.12.9"
 HELP = """
 /help		: This Screen
 /alive		: keep-alive
@@ -426,10 +426,10 @@ try:
 	client.add_event_handler(handler)
 
 	# Pulsa Ctrl+C para detener
-	loop.run_until_complete(tg_send_message("Bot Torrent Download Started"))
+	loop.run_until_complete(tg_send_message("Telethon Downloader Started: {}".format(VERSION)))
 	logger.info("%s" % VERSION)
 	config_file()
-	logger.info("********** START BOT_TORRENT_DOWNLOADER **********")
+	logger.info("********** START TELETHON DOWNLOADER **********")
 
 
 
