@@ -19,7 +19,7 @@
     <Config Name="TG_API_ID" Target="TG_API_ID" Default="" Description="Container Variable: TG_API_ID" Type="Variable" Display="always" Required="true" Mask="false"> </Config>
     <Config Name="TG_API_HASH" Target="TG_API_HASH" Default="" Description="Container Variable: TG_API_HASH" Type="Variable" Display="always" Required="true" Mask="false"> </Config>
     <Config Name="TG_BOT_TOKEN" Target="TG_BOT_TOKEN" Default="" Description="Container Variable: TG_BOT_TOKEN" Type="Variable" Display="always" Required="true" Mask="false"></Config>
-    <Config Name="Path: /config" Target="/mnt/user/appdata/telethon_downloader" Default="/mnt" Mode="rw" Description="Container Path: /config" Type="Path" Display="advanced" Required="true" Mask="false"/>
+    <Config Name="Path: /config" Target="/config" Default="/mnt/user/appdata/telethon_downloader" Mode="rw" Description="Container Path: /config" Type="Path" Display="advanced" Required="true" Mask="false"/>
     <Config Name="PUID" Target="PUID" Default="99" Description="Container Variable: PUID" Type="Variable" Display="advanced" Required="true" Mask="false"/>
     <Config Name="PGID" Target="PGID" Default="100" Description="Container Variable: PGID" Type="Variable" Display="advanced" Required="true" Mask="false"/>
     <Config Name="TZ" Target="TZ" Default="Europe/London" Description="Container Variable: TZ" Type="Variable" Display="advanced" Required="true" Mask="false"/>
