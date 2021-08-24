@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+
+  telethon_downloader:
+    image: jsavargas/telethon_downloader
+    container_name: telethon_downloader
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - 'PUID=1000'
+      - 'PGID=1000'
+      - 'TG_AUTHORIZED_USER_ID='  #<telegram chat_id authorized>
+      - 'TG_API_ID='
+      - 'TG_API_HASH=' 
+      - 'TG_BOT_TOKEN='
+      - 'TG_PROGRESS_DOWNLOAD: True' #OPTIONAL
+      - 'TZ=America/Santiago'
+    volumes:
+      - /path/to/download:/download
+      - /path/to/download/torrent/watch:/watch
+

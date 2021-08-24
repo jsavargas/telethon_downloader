@@ -5,6 +5,9 @@ Telegram Bot on a [Telethon client](https://github.com/LonamiWebs/Telethon) that
 
 Running Telethon Downloader
 =================
+
+## Environment:
+
  Pull or build the docker image and launch it with the following environment variables:
 
  **TG_AUTHORIZED_USER_ID** : <telegram ´chat_id´ authorized> 
@@ -15,17 +18,25 @@ Running Telethon Downloader
 
  **TG_BOT_TOKEN** : <telegram BOT token generated at ´Creating a Telegram Bot´>
  
+ **TZ** : America/Santiago
+
+
  **TG_MAX_PARALLEL** [OPTIONAL]: <maximum number of parallel downloads allowed (default: 4)>
  
  **TG_DL_TIMEOUT** [OPTIONAL]: <maximum time (in seconds) to wait for a download to complete. after this time the download is cancelled and an error is triggered (default: 3600)>
 
  >NOTE: DOWNLOADED FILES ARE SAVED AT A TMP DIRECTORY UNTIL THE DOWNLOAD IS COMPLETED TO PROTECT FROM MOVING UNFINISHED FILES
 
- **TG_DOWNLOAD_PATH** : <download folder inside the docker container where the files will be downloaded (full path)>
->NOTE: THIS FOLDER SHOULD BE MOUNTED AS A VOLUME TO HAVE ACCESS TO THE DOWNLOADED FILES FROM THE HOST OS
-
  **YOUTUBE_LINKS_SOPORTED** [OPTIONAL]: <YouTube links supported for downloading videos (default: youtube.com,youtu.be)>
 >NOTE: NOTE: THIS VARIABLE MUST BE UPDATED IF MORE URL IS REQUIRED TO BE ADDED TO THE YOUTUBE DOWNLOAD SUPPORT
+
+## Volumes:
+
+ **/download** : folder where files are downloaded
+ 
+ **/watch** : folder where torrent files are downloaded where transmission will upload them
+
+
 
 
 Generating Telegram API keys
@@ -77,8 +88,9 @@ services:
       - 'TG_API_ID=<telegram API key generated at ´Generating Telegram API keys´>'
       - 'TG_API_HASH=<telegram API hash generated at ´Generating Telegram API keys´>' 
       - 'TG_BOT_TOKEN=<telegram BOT token generated at ´Creating a Telegram Bot´>'
+      - 'TZ=America/Santiago'
     volumes:
-      - "/etc/localtime:/etc/localtime:ro"
-      - /path/to/download:/download
+      - /path/to/config:/config
       - /path/to/download/torrent/watch:/watch
+      - /path/to/download:/download
 ```
