@@ -14,9 +14,10 @@ services:
       - 'TG_API_ID='
       - 'TG_API_HASH=' 
       - 'TG_BOT_TOKEN='
-      - 'TG_PROGRESS_DOWNLOAD: True' #OPTIONAL
+      - 'TG_PROGRESS_DOWNLOAD=True' #OPTIONAL
       - 'TZ=America/Santiago'
     volumes:
+      - /path/to/config:/config
       - /path/to/download:/download
       - /path/to/download/torrent/watch:/watch
 
