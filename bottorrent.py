@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 2.12.9"
+VERSION = "VERSION 2.12.10"
 HELP = """
 /help		: This Screen
-/alive		: keep-alive
 /version	: Version  
 /sendfiles	: send files found in the /download/sendFiles folder
 /me			: YOUR ID TELEGRAM   
