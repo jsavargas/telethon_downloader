@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 2.12.10"
+VERSION = "VERSION 2.12.11"
 HELP = """
 /help		: This Screen
 /version	: Version  
@@ -71,8 +71,10 @@ TG_FOLDER_BY_AUTHORIZED = get_env('TG_FOLDER_BY_AUTHORIZED', False)
 download_path = TG_DOWNLOAD_PATH
 download_path_torrent = TG_DOWNLOAD_PATH_TORRENTS # Directorio bajo vigilancia de DSDownload u otro.
 
-usuarios = list(map(int, TG_AUTHORIZED_USER_ID.replace(" ", "").split(','))) if TG_AUTHORIZED_USER_ID else False 
+_usuarios = list(map(int, TG_AUTHORIZED_USER_ID.replace(" ", "").split(','))) if TG_AUTHORIZED_USER_ID else False 
 youtube_list = list(map(str, YOUTUBE_LINKS_SOPORTED.replace(" ", "").split(','))) 
+
+usuarios = [_usuario.replace('-100', '1') for _usuario in _usuarios]
 
 
 queue = asyncio.Queue()
@@ -361,7 +363,7 @@ async def handler(update):
 			elif update.message.message == '/alive': 
 				message = await update.reply('Keep-Alive')
 				await queue.put([update, message,temp_completed_path])
-			elif update.message.message == '/me': 
+			elif update.message.message == '/me' or update.message.message == '/id': 
 				message = await update.reply('me: {}'.format(CID) )
 				await queue.put([update, message,temp_completed_path])
 				logger.info('me :[%s]' % (CID))
@@ -405,7 +407,7 @@ async def handler(update):
 				#	message = await update.reply('reply Keep-Alive: ' + update.message.message)
 				#	await queue.put([update, message])
 				#	logger.info("Eco del BOT :[%s]", update.message.message)
-		elif update.message.message == '/me':
+		elif update.message.message == '/me' or update.message.message == '/id':
 			logger.info('UNAUTHORIZED USER: %s ', CID)
 			message = await update.reply('UNAUTHORIZED USER: %s \n add this ID to TG_AUTHORIZED_USER_ID' % CID)
 	except Exception as e:
