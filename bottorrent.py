@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 2.12.10"
+VERSION = "VERSION 2.12.13"
 HELP = """
 /help		: This Screen
 /version	: Version  
 /sendfiles	: send files found in the /download/sendFiles folder
-/me			: YOUR ID TELEGRAM   
+/id			: YOUR ID TELEGRAM
 """
-UPDATE = """BASADO EN EL BOT DE @De 2021:
+UPDATE = """
 - DE HASTA 2000MB
 - DESCARGA DE IMAGENES COMPRESS/UNCOMPRESS
 - DESCARGA DE ARCHIVOS TORRENT EN CARPETA TG_DOWNLOAD_PATH_TORRENTS
@@ -71,7 +71,7 @@ TG_FOLDER_BY_AUTHORIZED = get_env('TG_FOLDER_BY_AUTHORIZED', False)
 download_path = TG_DOWNLOAD_PATH
 download_path_torrent = TG_DOWNLOAD_PATH_TORRENTS # Directorio bajo vigilancia de DSDownload u otro.
 
-usuarios = list(map(int, TG_AUTHORIZED_USER_ID.replace(" ", "").split(','))) if TG_AUTHORIZED_USER_ID else False 
+usuarios = list(map(int, TG_AUTHORIZED_USER_ID.replace(" ", "").replace('-100', '').split(','))) if TG_AUTHORIZED_USER_ID else False 
 youtube_list = list(map(str, YOUTUBE_LINKS_SOPORTED.replace(" ", "").split(','))) 
 
 
@@ -223,6 +223,8 @@ async def worker(name):
 
 		real_id = get_peer_id(update.message.peer_id)
 		CID , peer_type = resolve_id(real_id)
+		sender = await update.get_sender()
+		username = sender.username
 
 		# Comprobación de usuario
 		if TG_AUTHORIZED_USER_ID and CID not in usuarios:
@@ -361,8 +363,8 @@ async def handler(update):
 			elif update.message.message == '/alive': 
 				message = await update.reply('Keep-Alive')
 				await queue.put([update, message,temp_completed_path])
-			elif update.message.message == '/me': 
-				message = await update.reply('me: {}'.format(CID) )
+			elif update.message.message == '/me' or update.message.message == '/id': 
+				message = await update.reply('id: {}'.format(CID) )
 				await queue.put([update, message,temp_completed_path])
 				logger.info('me :[%s]' % (CID))
 			else: 
@@ -405,7 +407,7 @@ async def handler(update):
 				#	message = await update.reply('reply Keep-Alive: ' + update.message.message)
 				#	await queue.put([update, message])
 				#	logger.info("Eco del BOT :[%s]", update.message.message)
-		elif update.message.message == '/me':
+		elif update.message.message == '/me' or update.message.message == '/id':
 			logger.info('UNAUTHORIZED USER: %s ', CID)
 			message = await update.reply('UNAUTHORIZED USER: %s \n add this ID to TG_AUTHORIZED_USER_ID' % CID)
 	except Exception as e:
