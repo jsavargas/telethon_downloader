@@ -223,7 +223,10 @@ async def worker(name):
 
 		real_id = get_peer_id(update.message.peer_id)
 		CID , peer_type = resolve_id(real_id)
-
+		logger.info('update.message.peer_id: %s', update.message.peer_id)
+		logger.info('real_id: %s', real_id)
+		logger.info('resolve_id(real_id): %s', resolve_id(real_id))
+		
 		# Comprobación de usuario
 		if TG_AUTHORIZED_USER_ID and CID not in usuarios:
 			logger.info('USUARIO: %s NO AUTORIZADO', CID)
