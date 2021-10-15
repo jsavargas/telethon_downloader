@@ -75,6 +75,7 @@ usuarios = list(map(int, TG_AUTHORIZED_USER_ID.replace(" ", "").replace('-100', 
 youtube_list = list(map(str, YOUTUBE_LINKS_SOPORTED.replace(" ", "").split(','))) 
 
 
+
 queue = asyncio.Queue()
 number_of_parallel_downloads = int(os.environ.get('TG_MAX_PARALLEL',4))
 maximum_seconds_per_download = int(os.environ.get('TG_DL_TIMEOUT',3600))
