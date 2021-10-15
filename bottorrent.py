@@ -224,8 +224,7 @@ async def worker(name):
 		real_id = get_peer_id(update.message.peer_id)
 		CID , peer_type = resolve_id(real_id)
 		sender = await update.get_sender()
-  		username = sender.username
-
+		username = sender.username
 
 		# Comprobación de usuario
 		if TG_AUTHORIZED_USER_ID and CID not in usuarios:
