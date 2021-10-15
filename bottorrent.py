@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 2.12.11"
+VERSION = "VERSION 2.12.12"
 HELP = """
 /help		: This Screen
 /version	: Version  
 /sendfiles	: send files found in the /download/sendFiles folder
 /id			: YOUR ID TELEGRAM
 """
-UPDATE = """BASADO EN EL BOT DE @De 2021:
+UPDATE = """
 - DE HASTA 2000MB
 - DESCARGA DE IMAGENES COMPRESS/UNCOMPRESS
 - DESCARGA DE ARCHIVOS TORRENT EN CARPETA TG_DOWNLOAD_PATH_TORRENTS
@@ -362,7 +362,7 @@ async def handler(update):
 				message = await update.reply('Keep-Alive')
 				await queue.put([update, message,temp_completed_path])
 			elif update.message.message == '/me' or update.message.message == '/id': 
-				message = await update.reply('me: {}'.format(CID) )
+				message = await update.reply('id: {}'.format(CID) )
 				await queue.put([update, message,temp_completed_path])
 				logger.info('me :[%s]' % (CID))
 			else: 
