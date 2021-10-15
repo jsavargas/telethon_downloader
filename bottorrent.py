@@ -126,19 +126,41 @@ def getDownloadPath(filename,CID):
 	#CID = str(CID)
 
 	final_path = completed_path
+	folderFlag=False
 
 	if (TG_FOLDER_BY_AUTHORIZED==True or TG_FOLDER_BY_AUTHORIZED == 'True' ) and (CID in config['FOLDER_BY_AUTHORIZED']):
 		FOLDER_BY_AUTHORIZED = config['FOLDER_BY_AUTHORIZED']
 		for AUTHORIZED in FOLDER_BY_AUTHORIZED:
 			if AUTHORIZED == CID:
 				final_path = FOLDER_BY_AUTHORIZED[AUTHORIZED]
+				folderFlag=True
 				break
-	else:
+
+	if not folderFlag:
+		REGEX_PATH = config['REGEX_PATH']
+		for regex in REGEX_PATH:
+			if m := re.search('(.*)(.*)', regex):
+				if m.group(2) == 'i':
+					if result := re.match(m.group(1), filename,re.I):
+	   					logger.info("getDownloadPath IGNORECASE regex[%s] filename[%s]" % (regex, filename) )
+				else:	
+					if result := re.match(m.group(1), filename):
+						logger.info("getDownloadPath regex[%s] filename[%s]" % (regex, filename) )
+			
+			exit()
+			if filename.endswith(ext):
+				final_path = os.path.join(final_path,ext)
+				final_path = REGEX_PATH[ext] #os.path.join(final_path,ext)
+				folderFlag=True
+				break
+
+	if not folderFlag:
 		DEFAULT_PATH = config['DEFAULT_PATH']
 		for ext in DEFAULT_PATH:
 			if filename.endswith(ext):
 				final_path = os.path.join(final_path,ext)
 				final_path = DEFAULT_PATH[ext] #os.path.join(final_path,ext)
+				folderFlag=True
 				break
 
 	if filename.endswith('.torrent'): final_path = download_path_torrent
