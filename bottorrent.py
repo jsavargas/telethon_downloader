@@ -5,7 +5,7 @@ HELP = """
 /help		: This Screen
 /version	: Version  
 /sendfiles	: send files found in the /download/sendFiles folder
-/me			: YOUR ID TELEGRAM   
+/id			: YOUR ID TELEGRAM
 """
 UPDATE = """BASADO EN EL BOT DE @De 2021:
 - DE HASTA 2000MB
@@ -71,10 +71,8 @@ TG_FOLDER_BY_AUTHORIZED = get_env('TG_FOLDER_BY_AUTHORIZED', False)
 download_path = TG_DOWNLOAD_PATH
 download_path_torrent = TG_DOWNLOAD_PATH_TORRENTS # Directorio bajo vigilancia de DSDownload u otro.
 
-_usuarios = list(map(int, TG_AUTHORIZED_USER_ID.replace(" ", "").split(','))) if TG_AUTHORIZED_USER_ID else False 
+usuarios = list(map(int, TG_AUTHORIZED_USER_ID.replace(" ", "").replace('-100', '').split(','))) if TG_AUTHORIZED_USER_ID else False 
 youtube_list = list(map(str, YOUTUBE_LINKS_SOPORTED.replace(" ", "").split(','))) 
-
-usuarios = [_usuario.replace('-100', '1') for _usuario in _usuarios]
 
 
 queue = asyncio.Queue()
