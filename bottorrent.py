@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 2.12.13"
+VERSION = "VERSION 2.13.1"
 HELP = """
 /help		: This Screen
 /version	: Version  
@@ -110,20 +110,27 @@ def config_file():
 		config['DEFAULT_PATH']['jpg'] = '/download/jpg'
 		config['DEFAULT_PATH']['mp4'] = '/download/mp4'
 
+		config['REGEX_PATH'] = {}
+		config['REGEX_PATH']['/example/i'] = '/download/example'
+
 		config['FOLDER_BY_AUTHORIZED'] = {}
 		for usuario in usuarios:
 			config['FOLDER_BY_AUTHORIZED'][f"{usuario}"] = '/download/{}'.format(f"{usuario}")
 
 		with open(config_path, 'w') as configfile:    # save
 			config.write(configfile)
-	else: logger.info(f'READ CONFIG FILE : {config_path}')
+	else:
+		if not 'REGEX_PATH' in config:
+			config.read(config_path)
+			config['REGEX_PATH'] = {}
+			config['REGEX_PATH']['/example/i'] = '/download/example'
+			with open(config_path, 'w') as configfile:    # save
+				config.write(configfile)
+
+		logger.info(f'READ CONFIG FILE : {config_path}')
 
 def getDownloadPath(filename,CID):
-	logger.info("getDownloadPath [%s] [%s]" % (filename, CID) )
-
 	config.read(config_path)
-
-	#CID = str(CID)
 
 	final_path = completed_path
 	folderFlag=False
@@ -139,21 +146,21 @@ def getDownloadPath(filename,CID):
 	if not folderFlag:
 		REGEX_PATH = config['REGEX_PATH']
 		for regex in REGEX_PATH:
-			if m := re.search('(.*)(.*)', regex):
+			m = re.search('/(.*)/(.*)', regex)
+			if m :
 				if m.group(2) == 'i':
-					if result := re.match(m.group(1), filename,re.I):
-	   					logger.info("getDownloadPath IGNORECASE regex[%s] filename[%s]" % (regex, filename) )
+					result = re.match(m.group(1), filename,re.I)
+					if result :
+						final_path = os.path.join(REGEX_PATH[regex])
+						folderFlag=True
+						break
 				else:	
-					if result := re.match(m.group(1), filename):
-						logger.info("getDownloadPath regex[%s] filename[%s]" % (regex, filename) )
-			
-			exit()
-			if filename.endswith(ext):
-				final_path = os.path.join(final_path,ext)
-				final_path = REGEX_PATH[ext] #os.path.join(final_path,ext)
-				folderFlag=True
-				break
-
+					result = re.match(m.group(1), filename)
+					if result:
+						final_path = os.path.join(REGEX_PATH[regex])
+						folderFlag=True
+						break
+						
 	if not folderFlag:
 		DEFAULT_PATH = config['DEFAULT_PATH']
 		for ext in DEFAULT_PATH:
@@ -165,11 +172,11 @@ def getDownloadPath(filename,CID):
 
 	if filename.endswith('.torrent'): final_path = download_path_torrent
 
-	path = os.path.join(final_path,filename)
+	complete_path = os.path.join(final_path,filename)
 	os.makedirs(final_path, exist_ok = True)
 	os.chmod(final_path, 0o777)
 
-	return path
+	return final_path, complete_path
 
 async def tg_send_message(msg):
     if TG_AUTHORIZED_USER_ID: await client.send_message(usuarios[0], msg)
@@ -304,7 +311,7 @@ async def worker(name):
 				os.makedirs(FOLDER_TO_GROUP, exist_ok = True)
 				os.chmod(FOLDER_TO_GROUP, 0o777)
 			else:
-				final_path = getDownloadPath(filename,CID)
+				_path,final_path = getDownloadPath(filename,CID)
 			######
 			logger.info("RENAME/MOVE [%s] [%s]" % (download_result, final_path) )
 			os.makedirs(completed_path, exist_ok = True)
@@ -322,7 +329,7 @@ async def worker(name):
 			######
 			mensaje = 'DOWNLOAD FINISHED %s [%s] => [%s]' % (end_time, file_name, final_path)
 			logger.info(mensaje)
-			await message.edit('Downloading finished:\n%s at %s' % (file_name,end_time_short))
+			await message.edit('Downloading finished:\n%s \nIN: %s\nat %s' % (file_name,_path,end_time_short))
 		except asyncio.TimeoutError:
 			logger.info('[%s] Time exceeded %s' % (file_name, time.strftime('%d/%m/%Y %H:%M:%S', time.localtime())))
 			await message.edit('Error!')
@@ -426,10 +433,7 @@ async def handler(update):
 					FOLDER_GROUP = update.message.date
 					temp_completed_path  = os.path.join(TG_DOWNLOAD_PATH,'completed',folder.replace('#','')) # SI VIENE EL TEXTO '/folder NAME_FOLDER' ESTE CREARÁ UNA CARPETA Y METERÁ ADENTRO TODOS LOS ARCHIVOS A CONTINUACION 
 					logger.info("DOWNLOAD FILE IN :[%s]",temp_completed_path)
-				#else:
-				#	message = await update.reply('reply Keep-Alive: ' + update.message.message)
-				#	await queue.put([update, message])
-				#	logger.info("Eco del BOT :[%s]", update.message.message)
+
 		elif update.message.message == '/me' or update.message.message == '/id':
 			logger.info('UNAUTHORIZED USER: %s ', CID)
 			message = await update.reply('UNAUTHORIZED USER: %s \n add this ID to TG_AUTHORIZED_USER_ID' % CID)
