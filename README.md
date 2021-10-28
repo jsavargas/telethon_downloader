@@ -97,7 +97,7 @@ services:
 
 
 ## **Changelog:**
-**v2.13.1 (20 Oct 2021):**
+**v3.0.1 (28 Oct 2021):**
 - Added config.ini file in /config
 - Added regex support
 

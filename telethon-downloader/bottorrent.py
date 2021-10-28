@@ -117,8 +117,8 @@ async def worker(name):
 			logger.info('USUARIO: %s NO AUTORIZADO', CID)
 			continue
 		###
-		file_path = tmp_path;
-		file_name = 'FILENAME';
+		file_path = tmp_path
+		file_name = 'FILENAME'
 		if isinstance(update.message.media, types.MessageMediaPhoto):
 			file_name = '{}{}'.format(update.message.media.photo.id, get_extension(update.message.media))
 		elif any(x in update.message.message for x in youtube_list):
@@ -220,7 +220,7 @@ async def handler(update):
 				temp_completed_path  = ''
 
 		if update.message.media is not None and ( not AUTHORIZED_USER or CID in usuarios):
-			file_name = 'NONAME';
+			file_name = 'NONAME'
 
 			if isinstance(update.message.media, types.MessageMediaPhoto):
 				file_name = '{}{}'.format(update.message.media.photo.id, get_extension(update.message.media))
