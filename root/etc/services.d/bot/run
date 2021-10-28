@@ -8,16 +8,7 @@ if [ -n "${UMASK_SET}" ] && [ -z "${UMASK}" ]; then
 fi
 
 
-echo "
--------------------------------------
--------------------------------------
-
-START /app/bottorrent.py
-
-------------------------------------- 
-------------------------------------- 
-"
-sleep 10
+sleep 5
 
 
 exec s6-setuidgid abc /app/bottorrent.py
