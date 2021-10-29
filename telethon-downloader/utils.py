@@ -39,20 +39,24 @@ def splash() -> None:
 
 
 def create_directory(download_path: str) -> None:
-    os.makedirs(download_path, exist_ok=True)
+	try:
+		os.makedirs(download_path, exist_ok=True)
+	except Exception as e:
+		logger.info(f'create_directory Exception : {download_path} [{e}]')
+
 
 
 def getDownloadPath(filename,CID):
 	config = read_config_file()
 
-	final_path = PATH_COMPLETED
+	download_path = PATH_COMPLETED
 	folderFlag=False
 
 	if (TG_FOLDER_BY_AUTHORIZED==True or TG_FOLDER_BY_AUTHORIZED == 'True' ) and (CID in config['FOLDER_BY_AUTHORIZED']):
 		FOLDER_BY_AUTHORIZED = config['FOLDER_BY_AUTHORIZED']
 		for AUTHORIZED in FOLDER_BY_AUTHORIZED:
 			if AUTHORIZED == CID:
-				final_path = FOLDER_BY_AUTHORIZED[AUTHORIZED]
+				download_path = FOLDER_BY_AUTHORIZED[AUTHORIZED]
 				folderFlag=True
 				break
 
@@ -62,34 +66,39 @@ def getDownloadPath(filename,CID):
 			m = re.search('/(.*)/(.*)', regex)
 			if m :
 				if m.group(2) == 'i':
-					result = re.match(m.group(1), filename,re.I)
+					result = re.search(m.group(1), filename,re.I)
 					if result :
-						final_path = os.path.join(REGEX_PATH[regex])
-						folderFlag=True
-						break
+						if result.group(0):
+							logger.info(f'REGEX_PATH :::: {regex} 1:[{result.group(0)}] ')
+							download_path = os.path.join(REGEX_PATH[regex])
+							folderFlag=True
+							break
 				else:	
-					result = re.match(m.group(1), filename)
+					result = re.search(m.group(1), filename)
 					if result:
-						final_path = os.path.join(REGEX_PATH[regex])
-						folderFlag=True
-						break
-						
+						if result.group(0):
+							download_path = os.path.join(REGEX_PATH[regex])
+							folderFlag=True
+							break
+	logger.info(f'getDownloadPath : {download_path}')
+
 	if not folderFlag:
 		DEFAULT_PATH = config['DEFAULT_PATH']
 		for ext in DEFAULT_PATH:
 			if filename.endswith(ext):
-				final_path = os.path.join(final_path,ext)
-				final_path = DEFAULT_PATH[ext] #os.path.join(final_path,ext)
+				download_path = os.path.join(download_path,ext)
+				download_path = DEFAULT_PATH[ext] #os.path.join(download_path,ext)
 				folderFlag=True
 				break
 
-	if filename.endswith('.torrent'): final_path = TG_DOWNLOAD_PATH_TORRENTS
+	if filename.endswith('.torrent'): download_path = TG_DOWNLOAD_PATH_TORRENTS
 
-	complete_path = os.path.join(final_path,filename)
-	create_directory(final_path)
-	os.chmod(final_path, 0o777)
+	complete_path = os.path.join(download_path,filename)
+	#create_directory(download_path)
+	#os.chmod(download_path, 0o777)
+	logger.info(f'getDownloadPath getDownloadPath  : {download_path}')
 
-	return final_path, complete_path
+	return download_path, complete_path
 
 
 def getUsers() -> List[str]:

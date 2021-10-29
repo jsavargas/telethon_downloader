@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 3.0.1"
+VERSION = "VERSION 3.0.2"
 HELP = """
 /help		: This Screen
 /version	: Version  
@@ -59,6 +59,7 @@ youtube_list = split_input(YOUTUBE_LINKS_SOPORTED)
 
 
 
+
 queue = asyncio.Queue()
 number_of_parallel_downloads = TG_MAX_PARALLEL
 maximum_seconds_per_download = TG_DL_TIMEOUT
@@ -87,13 +88,13 @@ async def tg_send_file(CID,file,name=''):
 	#await client.send_message(6537360, file)
 
 # Printing download progress
-async def callback(current, total, file_path, message):
+async def callback(current, total, file_path, file_name, message):
 	value = (current / total) * 100
 	format_float = "{:.2f}".format(value)
 	int_value = int(float(format_float) // 1)
 	try:
 		if ((int_value != 100 ) and (int_value % 20 == 0)):
-			await message.edit('Downloading... {}%'.format(format_float))
+			await message.edit(f'Downloading {file_name} ... {format_float}')
 	finally:
 		current
 
@@ -147,14 +148,17 @@ async def worker(name):
 					file_name = time.strftime('%Y%m%d %H%M%S', time.localtime())
 					file_name = '{}{}'.format(update.message.media.document.id, get_extension(update.message.media))
 		file_path = os.path.join(file_path, file_name)
-		await message.edit('Downloading...')
+		_download_path, _complete_path = getDownloadPath(file_name,CID)
+		logger.info(f"getDownloadPath FILE [{file_name}] to [{_download_path}]")
+		await message.edit(f'Downloading {file_name} in:\n{_download_path}')
+		time.sleep(3)
 		logger.info('Downloading... ')
 		mensaje = 'STARTING DOWNLOADING %s [%s] BY [%s]' % (time.strftime('%d/%m/%Y %H:%M:%S', time.localtime()), file_path , (CID))
 		logger.info(mensaje)
 		try:
 			loop = asyncio.get_event_loop()
 			if (TG_PROGRESS_DOWNLOAD == True or TG_PROGRESS_DOWNLOAD == 'True' ):
-				task = loop.create_task(client.download_media(update.message, file_path, progress_callback=lambda x,y: callback(x,y,file_path,message)))
+				task = loop.create_task(client.download_media(update.message, file_path, progress_callback=lambda x,y: callback(x,y,file_path,file_name,message)))
 			else:
 				task = loop.create_task(client.download_media(update.message, file_path))
 			download_result = await asyncio.wait_for(task, timeout = maximum_seconds_per_download)
@@ -168,9 +172,10 @@ async def worker(name):
 				os.chmod(FOLDER_TO_GROUP, 0o777)
 			else:
 				_path, final_path = getDownloadPath(filename,CID)
+				create_directory(_path)
 			######
 			logger.info("RENAME/MOVE [%s] [%s]" % (download_result, final_path) )
-			create_directory(completed_path)
+			#create_directory(completed_path)
 			shutil.move(download_result, final_path)
 			os.chmod(final_path, 0o666)
 			if TG_UNZIP_TORRENTS:
