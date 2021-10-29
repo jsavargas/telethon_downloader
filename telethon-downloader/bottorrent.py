@@ -151,7 +151,7 @@ async def worker(name):
 		_download_path, _complete_path = getDownloadPath(file_name,CID)
 		logger.info(f"getDownloadPath FILE [{file_name}] to [{_download_path}]")
 		await message.edit(f'Downloading {file_name} in:\n{_download_path}')
-		time.sleep(3)
+		time.sleep(1)
 		logger.info('Downloading... ')
 		mensaje = 'STARTING DOWNLOADING %s [%s] BY [%s]' % (time.strftime('%d/%m/%Y %H:%M:%S', time.localtime()), file_path , (CID))
 		logger.info(mensaje)
