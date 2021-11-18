@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 3.0.2"
+VERSION = "VERSION 3.0.5"
 HELP = """
 /help		: This Screen
 /version	: Version  
@@ -46,8 +46,6 @@ from youtube import youtube_download
 
 session = SESSION
 
-splash()
-
 
 download_path = TG_DOWNLOAD_PATH
 download_path_torrent = TG_DOWNLOAD_PATH_TORRENTS # Directorio bajo vigilancia de DSDownload u otro.
@@ -56,7 +54,6 @@ download_path_torrent = TG_DOWNLOAD_PATH_TORRENTS # Directorio bajo vigilancia d
 
 AUTHORIZED_USER, usuarios = getUsers()
 youtube_list = split_input(YOUTUBE_LINKS_SOPORTED) 
-
 
 
 
@@ -88,13 +85,13 @@ async def tg_send_file(CID,file,name=''):
 	#await client.send_message(6537360, file)
 
 # Printing download progress
-async def callback(current, total, file_path, file_name, message):
+async def callback(current, total, file_path, file_name, message,_download_path=''):
 	value = (current / total) * 100
 	format_float = "{:.2f}".format(value)
 	int_value = int(float(format_float) // 1)
 	try:
 		if ((int_value != 100 ) and (int_value % 20 == 0)):
-			await message.edit(f'Downloading {file_name} ... {format_float}')
+			await message.edit(f'Downloading {file_name} ... {format_float} \ndownload in:\n{_download_path}')
 	finally:
 		current
 
@@ -150,15 +147,15 @@ async def worker(name):
 		file_path = os.path.join(file_path, file_name)
 		_download_path, _complete_path = getDownloadPath(file_name,CID)
 		logger.info(f"getDownloadPath FILE [{file_name}] to [{_download_path}]")
-		await message.edit(f'Downloading {file_name} in:\n{_download_path}')
-		time.sleep(1)
+		await message.edit(f'Downloading {file_name} \ndownload in:\n{_download_path}')
+		#time.sleep(1)
 		logger.info('Downloading... ')
 		mensaje = 'STARTING DOWNLOADING %s [%s] BY [%s]' % (time.strftime('%d/%m/%Y %H:%M:%S', time.localtime()), file_path , (CID))
 		logger.info(mensaje)
 		try:
 			loop = asyncio.get_event_loop()
 			if (TG_PROGRESS_DOWNLOAD == True or TG_PROGRESS_DOWNLOAD == 'True' ):
-				task = loop.create_task(client.download_media(update.message, file_path, progress_callback=lambda x,y: callback(x,y,file_path,file_name,message)))
+				task = loop.create_task(client.download_media(update.message, file_path, progress_callback=lambda x,y: callback(x,y,file_path,file_name,message,_download_path)))
 			else:
 				task = loop.create_task(client.download_media(update.message, file_path))
 			download_result = await asyncio.wait_for(task, timeout = maximum_seconds_per_download)
