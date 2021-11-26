@@ -94,3 +94,10 @@ services:
       - /path/to/download/torrent/watch:/watch
       - /path/to/download:/download
 ```
+
+
+## **Changelog:**
+**v3.0.1 (28 Oct 2021):**
+- Added config.ini file in /config
+- Added regex support
+

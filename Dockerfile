@@ -26,10 +26,10 @@ RUN apt-get update && \
 
 
 
-COPY bottorrent.py /app/bottorrent.py
+COPY telethon-downloader /app
 COPY root/ /
 
-RUN chmod 777 /app/bottorrent.py 
+RUN chmod 777 /app/bottorrent.py
 RUN chmod 777 -R /etc/services.d/
 
 
