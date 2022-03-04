@@ -1,4 +1,4 @@
 cryptg 
 telethon 
-telethon[cryptg]
+telethon
 youtube-dl
