@@ -91,7 +91,7 @@ async def callback(current, total, file_path, file_name, message,_download_path=
 	int_value = int(float(format_float) // 1)
 	try:
 		if ((int_value != 100 ) and (int_value % 20 == 0)):
-			await message.edit(f'Downloading {file_name} ... {format_float} \ndownload in:\n{_download_path}')
+			await message.edit(f'Downloading {file_name} ... {format_float}% \ndownload in:\n{_download_path}')
 	finally:
 		current
 
