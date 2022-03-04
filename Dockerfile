@@ -11,11 +11,10 @@ RUN apt-get update && \
 	ffmpeg && \
 	usermod -d /app abc && \
 	python3 -m pip install --upgrade pip && \
-	pip3 install -r requirements.txt  && \
+	pip3 install --upgrade --force-reinstall -r requirements.txt  && \
 	apt-get remove --purge -y build-essential && \
 	apt-get autoclean -y && apt-get autoremove -y && \
 	rm -rf \
-	/config/ \
 	/default/ \
 	/etc/default/ \
 	/tmp/* \
