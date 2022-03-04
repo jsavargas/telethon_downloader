@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 3.0.5"
+VERSION = "VERSION 3.1.5"
 HELP = """
 /help		: This Screen
 /version	: Version  
@@ -30,7 +30,7 @@ import logging
 import configparser
 
 # Imports Telethon
-from telethon import TelegramClient, events
+from telethon.sync import TelegramClient, events
 from telethon.tl import types
 from telethon.utils import get_extension, get_peer_id, resolve_id
 
@@ -202,7 +202,7 @@ async def worker(name):
 		# Unidad de trabajo terminada.
 		queue.task_done()
 
-client = TelegramClient(session, api_id, api_hash, proxy = None, request_retries = 10, flood_sleep_threshold = 120)
+client = TelegramClient(session, api_id, api_hash)
 
 @events.register(events.NewMessage)
 async def handler(update):
