@@ -52,7 +52,6 @@ async def youtube_download(url,update,message):
 		#ydl_opts = { 'format': YOUTUBE_FORMAT, 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False',"retries": 10 }
 
 		youtubedl_binary = 'yt-dlp'
-		logger.info(f'youtubedl_binary: {youtubedl_binary} \'{url}\' --no-playlist-reverse --playlist-end \'-1\' --config-location \'/config/args.conf\' {youtubedl_args_format}')
 		execute(f'{youtubedl_binary} \'{url}\' --no-playlist-reverse --playlist-end \'-1\' --config-location \'/config/args.conf\' {youtubedl_args_format}')
 
 
