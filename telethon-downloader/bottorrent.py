@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 3.1.5"
+VERSION = "VERSION 3.2.1"
 HELP = """
 /help		: This Screen
 /version	: Version  
@@ -22,7 +22,6 @@ import sys
 import time
 import asyncio
 import cryptg
-import youtube_dl
 import threading
 import zipfile
 
@@ -124,7 +123,9 @@ async def worker(name):
 				url = update.message.message
 				
 				logger.info(f'INIT DOWNLOADING VIDEO YOUTUBE [{url}] ')
-				await youtube_download(url,update,message)
+				if not await youtube_download(url,update,message):
+					message = await message.edit('ERROR: DOWNLOADING YOUTUBE ')
+
 				logger.info(f'FINIT DOWNLOADING VIDEO YOUTUBE [{url}] ')
 				queue.task_done()
 				continue
@@ -306,6 +307,8 @@ async def handler(update):
 if __name__ == '__main__':
 
 	try:
+		if not os.path.exists('/config/args.conf'):
+			shutil.copyfile('/config.default/args.conf', '/config/args.conf')
 
 		# Crear cola de procesos concurrentes.
 		tasks = []

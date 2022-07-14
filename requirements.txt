@@ -1,3 +1,4 @@
 cryptg 
 telethon 
-youtube-dl
+yt-dlp
+aiofiles

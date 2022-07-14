@@ -1,4 +1,4 @@
-FROM jsavargas/telethon_downloader
+FROM ghcr.io/linuxserver/baseimage-ubuntu:focal
 
 
 
@@ -8,7 +8,7 @@ COPY requirements.txt requirements.txt
 # install packages
 RUN apt-get update && \
 	apt-get install -y --no-install-recommends \
-	ffmpeg && \
+	ffmpeg python3 python3-pip && \
 	usermod -d /app abc && \
 	python3 -m pip install --upgrade pip && \
 	pip3 install --upgrade --force-reinstall -r requirements.txt  && \

@@ -3,3 +3,5 @@ docker-compose.yml
 
 
 __pycache__
+docker-compose.dev.yml
+dev/
