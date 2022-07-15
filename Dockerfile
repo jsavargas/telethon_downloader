@@ -1,4 +1,4 @@
-FROM jsavargas/telethon_downloader:41f0c15e4b
+FROM ghcr.io/linuxserver/baseimage-ubuntu:focal
 
 
 
