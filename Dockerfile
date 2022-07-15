@@ -1,4 +1,4 @@
-FROM jsavargas/telethon_downloader
+FROM jsavargas/telethon_downloader:41f0c15e4b
 
 
 
