@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 3.1.5"
+VERSION = "VERSION 3.1.6"
 HELP = """
 /help		: This Screen
 /version	: Version  
