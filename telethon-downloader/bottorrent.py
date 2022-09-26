@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 3.1.6"
+VERSION = "VERSION 3.1.7"
 HELP = """
 /help		: This Screen
 /version	: Version  
@@ -21,8 +21,6 @@ import shutil
 import sys
 import time
 import asyncio
-import cryptg
-import youtube_dl
 import threading
 import zipfile
 
