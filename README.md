@@ -97,7 +97,13 @@ services:
 
 
 ## **Changelog:**
-**v3.0.1 (28 Oct 2021):**
+
+**v3.1.7 (2022.09.30):**
+- change youtube-dlp to yt-dlp
+- Fixed bugs
+- Added more bugs to fix later (?) xD
+
+**v3.0.1 (2021.10.28):**
 - Added config.ini file in /config
 - Added regex support
 
