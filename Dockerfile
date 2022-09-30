@@ -1,12 +1,24 @@
-FROM jsavargas/telethon_downloader:41f0c15e4b
+FROM ghcr.io/linuxserver/baseimage-ubuntu:bionic
 
 
 
 WORKDIR /app
+
+RUN apt-get update && apt-get upgrade -y 
+
 COPY requirements.txt requirements.txt
 
-
-
+RUN	apt-get install -y \
+	ffmpeg \
+	python3 \
+	python3-setuptools \
+	python3-pip && \
+	usermod -d /app abc && \
+	python3 -m pip install --upgrade pip && \
+	pip3 install -r requirements.txt  && \
+	apt-get remove --purge -y build-essential && \
+	apt-get autoclean -y && apt-get autoremove -y && \
+	rm -rf /config /default /etc/default /tmp/* /etc/cont-init.d/* /var/lib/apt/lists/* /var/tmp/* 
 
 
 COPY telethon-downloader /app
