@@ -1,6 +1,4 @@
-FROM ghcr.io/linuxserver/baseimage-ubuntu:focal
-
-
+FROM ghcr.io/linuxserver/baseimage-ubuntu:focal AS basetelethon
 
 WORKDIR /app
 COPY requirements.txt requirements.txt
@@ -22,16 +20,16 @@ RUN apt-get update && \
 	/var/lib/apt/lists/* \
 	/var/tmp/* 
 
+ARG UID=99
+ARG GID=100
 
-
+FROM basetelethon
 
 COPY telethon-downloader /app
 COPY root/ /
 
 RUN chmod 777 /app/bottorrent.py
 RUN chmod 777 -R /etc/services.d/
-
-
 
 VOLUME /download /watch /config
 
