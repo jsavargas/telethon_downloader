@@ -1,4 +1,4 @@
-FROM ghcr.io/linuxserver/baseimage-ubuntu:bionic
+FROM ghcr.io/linuxserver/baseimage-ubuntu:bionic AS basetelethon
 
 
 
@@ -21,12 +21,14 @@ RUN	apt-get install -y \
 	rm -rf /config /default /etc/default /tmp/* /etc/cont-init.d/* /var/lib/apt/lists/* /var/tmp/* 
 
 
+
+FROM basetelethon
+
 COPY telethon-downloader /app
 COPY root/ /
 
 RUN chmod 777 /app/bottorrent.py
 RUN chmod 777 -R /etc/services.d/
-
 
 
 VOLUME /download /watch /config
