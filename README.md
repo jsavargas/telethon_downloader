@@ -1,5 +1,33 @@
+
+<h1>Telethon Downloader </h1>
+
+[![](https://badgen.net/badge/icon/github?icon=github&label)](https://github.com/jsavargas/telethon_downloader)
+[![](https://badgen.net/badge/icon/docker?icon=docker&label)](https://hub.docker.com/r/jsavargas/telethon_downloader)
+[![Docker Pulls](https://badgen.net/docker/pulls/jsavargas/telethon_downloader?icon=docker&label=pulls)](https://hub.docker.com/r/jsavargas/telethon_downloader/)
+[![Docker Stars](https://badgen.net/docker/stars/jsavargas/telethon_downloader?icon=docker&label=stars)](https://hub.docker.com/r/jsavargas/telethon_downloader/)
+[![Docker Image Size](https://badgen.net/docker/size/jsavargas/telethon_downloader?icon=docker&label=image%20size)](https://hub.docker.com/r/jsavargas/telethon_downloader/)
+![Github stars](https://badgen.net/github/stars/jsavargas/telethon_downloader?icon=github&label=stars)
+![Github forks](https://badgen.net/github/forks/jsavargas/telethon_downloader?icon=github&label=forks)
+![Github last-commit](https://img.shields.io/github/last-commit/jsavargas/telethon_downloader)
+![Github last-commit](https://badgen.net/github/license/jsavargas/telethon_downloader)
+
+
+
+## Find us at:
+
+* [GitHub](https://github.com/jsavargas) - view the source for all of our repositories.
+* [DockerHub](https://hub.docker.com/u/jsavargas) - view the source for all of our repositories.
+
+
+<p align="center">
+    <img src="https://github.com/jsavargas/telethon_downloader/blob/master/templates/UNRAID/telegram_logo.png?raw=true" alt="alt text" width="30%">
+</p>
+
+
+
+
+
 Telegram Bot on a [Telethon client](https://github.com/LonamiWebs/Telethon) that auto downloads incoming media files.
-(cryptg included to speed up downloads)
 
 ![](https://raw.githubusercontent.com/rodriguezst/telethon_downloader/dev/AB921D1A-4ABF-4E21-8BC1-F934270ED61E.gif)
 
