@@ -33,17 +33,6 @@ Telegram Bot on a [Telethon client](https://github.com/LonamiWebs/Telethon) that
 
 ![](https://raw.githubusercontent.com/rodriguezst/telethon_downloader/dev/AB921D1A-4ABF-4E21-8BC1-F934270ED61E.gif)
 
-## Supported Architectures
-
-Simply pulling `https://hub.docker.com/r/jsavargas/telethon_downloader:latest` should retrieve the correct image for your arch, but you can also pull specific arch images via tags.
-
-The architectures supported by this image are:
-
-| Architecture | Available | Tag |
-| :----: | :----: | ---- |
-| x86-64 | ✅ | amd64-\<version tag\> |
-| arm64 | ✅ | arm64v8-\<version tag\> |
-| armhf| ✅ | arm32v7-\<version tag\> |
 
 
 # Running Telethon Downloader
