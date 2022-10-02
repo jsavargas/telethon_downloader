@@ -33,7 +33,7 @@ Telegram Bot on a [Telethon client](https://github.com/LonamiWebs/Telethon) that
 
 ![](https://raw.githubusercontent.com/rodriguezst/telethon_downloader/dev/AB921D1A-4ABF-4E21-8BC1-F934270ED61E.gif)
 
-
+![](images/download-youtube.png)
 
 # Running Telethon Downloader
 
