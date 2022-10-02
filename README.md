@@ -1,5 +1,5 @@
 
-<h1>Telethon Downloader </h1>
+# Telethon Downloader
 
 [![](https://badgen.net/badge/icon/github?icon=github&label)](https://github.com/jsavargas/telethon_downloader)
 [![](https://badgen.net/badge/icon/docker?icon=docker&label)](https://hub.docker.com/r/jsavargas/telethon_downloader)
