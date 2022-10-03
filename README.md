@@ -103,9 +103,7 @@ Before working with Telegram's API, you need to get your own API ID and hash:
 
 ```dockerfile
 version: '3'
-
 services:
-
   telethon_downloader:
     image: jsavargas/telethon_downloader
     container_name: telethon_downloader
