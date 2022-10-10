@@ -51,6 +51,12 @@ jobs:
           echo "outputs version : ${{ steps.tag.outputs.version }}"
           echo "outputs SOURCE_TAG : ${{ steps.tag.outputs.SOURCE_TAG }}"
           echo "outputs RELEASE_VERSION : $RELEASE_VERSION"
+
+      -
+        name: Get version bottorrent.py
+        id: version
+        run: |
+          echo ::set-output name=version::$(cat telethon-downloader/bottorrent.py| grep "VERSION =" | egrep -o "[0-9.]{1,}")
           
       -
         name: Login to DockerHub
@@ -70,6 +76,7 @@ jobs:
           tags: |
             jsavargas/telethon_downloader:latest
             jsavargas/telethon_downloader:${{ steps.vars.outputs.tag }}
+            jsavargas/telethon_downloader:${{ steps.version.outputs.version }}
       -
         name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

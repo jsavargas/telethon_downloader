@@ -126,6 +126,9 @@ services:
 
 ## **Changelog:**
 
+**v3.1.8 (2022.10.10):**
+- change docker building
+
 **v3.1.7 (2022.09.30):**
 - change youtube-dlp to yt-dlp
 - Fixed bugs
