@@ -55,7 +55,7 @@ jobs:
           ls
           cat telethon-downloader/bottorrent.py| grep "VERSION =" | egrep -o "[0-9.]{1,}"
       -
-        name: Inspect builder
+        name: Get version bottorrent.py
         id: version
         run: |
           echo ::set-output name=version::$(cat telethon-downloader/bottorrent.py| grep "VERSION =" | egrep -o "[0-9.]{1,}")
@@ -63,3 +63,25 @@ jobs:
       - 
         name: Test output
         run: echo ${{ steps.version.outputs.version }}
+
+      -
+        name: Login to DockerHub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm/v7,linux/arm64
+          push: true
+          tags: |
+            jsavargas/telethon_downloader:develop
+            jsavargas/telethon_downloader:develop-${{ steps.version.outputs.version }}
+      -
+        name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
