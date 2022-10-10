@@ -53,4 +53,5 @@ jobs:
           echo "outputs SOURCE_TAG : ${{ steps.tag.outputs.SOURCE_TAG }}"
           echo "outputs RELEASE_VERSION : $RELEASE_VERSION"
           ls
-          cat telethon-downloader/bottorrent.py| grep "VERSION =" | egrep -o "[0-9.]{1,}"
+          VERSION_BOT=(cat telethon-downloader/bottorrent.py| grep "VERSION =" | egrep -o "[0-9.]{1,}")
+          echo "${{ VERSION_BOT }}"
