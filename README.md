@@ -1,10 +1,41 @@
+
+# Telethon Downloader
+
+[![](https://badgen.net/badge/icon/github?icon=github&label)](https://github.com/jsavargas/telethon_downloader)
+[![](https://badgen.net/badge/icon/docker?icon=docker&label)](https://hub.docker.com/r/jsavargas/telethon_downloader)
+[![Docker Pulls](https://badgen.net/docker/pulls/jsavargas/telethon_downloader?icon=docker&label=pulls)](https://hub.docker.com/r/jsavargas/telethon_downloader/)
+[![Docker Stars](https://badgen.net/docker/stars/jsavargas/telethon_downloader?icon=docker&label=stars)](https://hub.docker.com/r/jsavargas/telethon_downloader/)
+[![Docker Image Size](https://badgen.net/docker/size/jsavargas/telethon_downloader?icon=docker&label=image%20size)](https://hub.docker.com/r/jsavargas/telethon_downloader/)
+![Github stars](https://badgen.net/github/stars/jsavargas/telethon_downloader?icon=github&label=stars)
+![Github forks](https://badgen.net/github/forks/jsavargas/telethon_downloader?icon=github&label=forks)
+![Github last-commit](https://img.shields.io/github/last-commit/jsavargas/telethon_downloader)
+![Github last-commit](https://badgen.net/github/license/jsavargas/telethon_downloader)
+
+
+
+## Find us at:
+
+* [GitHub](https://github.com/jsavargas/telethon_downloader) - GitHub of this repository.
+* [DockerHub](https://hub.docker.com/r/jsavargas/telethon_downloader) - DockerHub of this repository.
+
+
+<p align="center">
+    <img src="https://github.com/jsavargas/telethon_downloader/blob/master/templates/UNRAID/telegram_logo.png?raw=true" alt="alt text" width="30%">
+</p>
+
+
+
+# [jsavargas/telethon_downloader](https://github.com/jsavargas/telethon_downloader)
+
+
+
 Telegram Bot on a [Telethon client](https://github.com/LonamiWebs/Telethon) that auto downloads incoming media files.
-(cryptg included to speed up downloads)
 
 ![](https://raw.githubusercontent.com/rodriguezst/telethon_downloader/dev/AB921D1A-4ABF-4E21-8BC1-F934270ED61E.gif)
 
-Running Telethon Downloader
-=================
+![](images/download-youtube.png)
+
+# Running Telethon Downloader
 
 ## Environment:
 
@@ -27,7 +58,7 @@ Running Telethon Downloader
 
  >NOTE: DOWNLOADED FILES ARE SAVED AT A TMP DIRECTORY UNTIL THE DOWNLOAD IS COMPLETED TO PROTECT FROM MOVING UNFINISHED FILES
 
- **YOUTUBE_LINKS_SOPORTED** [OPTIONAL]: <YouTube links supported for downloading videos (default: youtube.com,youtu.be)>
+ **YOUTUBE_LINKS_SUPPORTED** [OPTIONAL]: <YouTube links supported for downloading videos (default: youtube.com,youtu.be)>
 >NOTE: NOTE: THIS VARIABLE MUST BE UPDATED IF MORE URL IS REQUIRED TO BE ADDED TO THE YOUTUBE DOWNLOAD SUPPORT
 
 ## Volumes:
@@ -39,8 +70,8 @@ Running Telethon Downloader
 
 
 
-Generating Telegram API keys
-=================
+# Generating Telegram API keys
+
 Before working with Telegram's API, you need to get your own API ID and hash:
 
 1. Go to https://my.telegram.org/ and login with your
@@ -56,8 +87,8 @@ Before working with Telegram's API, you need to get your own API ID and hash:
    **API hash is secret** and Telegram won't let you revoke it.
    Don't post it anywhere!
 
-Creating a Telegram Bot
-=================
+# Creating a Telegram Bot
+
 1. Open a conversation with [@BotFather](https://telegram.me/botfather) in Telegram
 
 2. Use the /newbot command to create a new bot. The BotFather will ask you for a name and username, then generate an authorization token for your new bot.
@@ -68,14 +99,11 @@ Creating a Telegram Bot
 
    The token is a string along the lines of 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw that is required to authorize the bot and send requests to the Bot API. Keep your token secure and store it safely, it can be used by anyone to control your bot.
 
-docker-compose
-=================
+# docker-compose
 
 ```dockerfile
 version: '3'
-
 services:
-
   telethon_downloader:
     image: jsavargas/telethon_downloader
     container_name: telethon_downloader

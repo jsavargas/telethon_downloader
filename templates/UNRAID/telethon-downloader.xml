@@ -9,7 +9,7 @@
     <Privileged>false</Privileged>
     <Support>https://github.com/jsavargas/telethon_downloader</Support>
     <Shell>bash</Shell>
-    <Project>https://docs.telethon.dev/</Project>
+    <Project>https://github.com/jsavargas/telethon_downloader</Project>
     <Overview>This is a simple container that downloads files sent to a telegram bot up to 2000mb using the Telethon library.</Overview>
     <TemplateURL>https://github.com/jsavargas/telethon_downloader/blob/master/templates/UNRAID/telethon-downloader.xml</TemplateURL>
     <Icon>https://raw.githubusercontent.com/jsavargas/telethon_downloader/master/templates/UNRAID/telegram_logo.png</Icon>
