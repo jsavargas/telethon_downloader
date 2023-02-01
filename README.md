@@ -58,7 +58,7 @@ Telegram Bot on a [Telethon client](https://github.com/LonamiWebs/Telethon) that
 
  >NOTE: DOWNLOADED FILES ARE SAVED AT A TMP DIRECTORY UNTIL THE DOWNLOAD IS COMPLETED TO PROTECT FROM MOVING UNFINISHED FILES
 
- **YOUTUBE_LINKS_SOPORTED** [OPTIONAL]: <YouTube links supported for downloading videos (default: youtube.com,youtu.be)>
+ **YOUTUBE_LINKS_SUPPORTED** [OPTIONAL]: <YouTube links supported for downloading videos (default: youtube.com,youtu.be)>
 >NOTE: NOTE: THIS VARIABLE MUST BE UPDATED IF MORE URL IS REQUIRED TO BE ADDED TO THE YOUTUBE DOWNLOAD SUPPORT
 
 ## Volumes:
@@ -125,6 +125,9 @@ services:
 
 
 ## **Changelog:**
+
+**v3.1.9 (2023.02.01):**
+- upgrade telethon to version 1.26.1
 
 **v3.1.8 (2022.10.10):**
 - change docker building
