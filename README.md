@@ -126,6 +126,9 @@ services:
 
 ## **Changelog:**
 
+**v3.1.9 (2023.02.01):**
+- upgrade telethon to version 1.26.1
+
 **v3.1.8 (2022.10.10):**
 - change docker building
 
