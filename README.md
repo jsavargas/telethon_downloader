@@ -13,14 +13,16 @@
 
 
 
+
 ## Find us at:
 
-* [GitHub](https://github.com/jsavargas/telethon_downloader) - GitHub of this repository.
-* [DockerHub](https://hub.docker.com/r/jsavargas/telethon_downloader) - DockerHub of this repository.
+[![github](https://img.shields.io/badge/github-jsavargas-5865F2?style=for-the-badge&logo=github&logoColor=white&labelColor=101010)](https://github.com/jsavargas/telethon_downloader)
+[![docker](https://img.shields.io/badge/docker-jsavargas-5865F2?style=for-the-badge&logo=docker&logoColor=white&labelColor=101010)](https://hub.docker.com/r/jsavargas/telethon_downloader)
+[![discord](https://img.shields.io/badge/discord-jsavargas-5865F2?style=for-the-badge&logo=discord&logoColor=white&labelColor=101010)](https://discord.gg/FdJMau8sf6)
 
 
 <p align="center">
-    <img src="https://github.com/jsavargas/telethon_downloader/blob/master/templates/UNRAID/telegram_logo.png?raw=true" alt="alt text" width="30%">
+    <img src="https://github.com/jsavargas/telethon_downloader/blob/master/templates/UNRAID/telegram_logo.png?raw=true" alt="alt text" width="25%">
 </p>
 
 
@@ -125,6 +127,10 @@ services:
 
 
 ## **Changelog:**
+
+**v3.1.9 (2023.02.28):**
+- telethon-downloader 3.1.10
+- upgrade python to version 3.11
 
 **v3.1.9 (2023.02.01):**
 - upgrade telethon to version 1.26.1
