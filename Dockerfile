@@ -1,4 +1,4 @@
-FROM jsavargas/telethon_downloader:baseimage AS basetelethon
+FROM python:3 AS basetelethon
 
 
 WORKDIR /app
@@ -11,7 +11,7 @@ RUN apt-get update && apt-get upgrade -y  && \
 	python3 \
 	python3-setuptools \
 	python3-pip && \
-	usermod -d /app abc  && \
+	#usermod -d /app abc  && \
 	python3 -m pip install --upgrade pip  && \
 	pip3 install -r requirements.txt --upgrade && \
 	apt-get remove --purge -y build-essential  && \
@@ -31,3 +31,4 @@ RUN chmod 777 -R /etc/services.d/
 
 VOLUME /download /watch /config
 
+CMD ["python3", "/app/bottorrent.py"]
