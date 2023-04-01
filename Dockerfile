@@ -8,8 +8,8 @@ COPY requirements.txt requirements.txt
 RUN apt-get update && apt-get upgrade -y  && \ 
 	apt-get install -y \
 	ffmpeg \
-	python3 \
-	python3-setuptools \
+	#python3 \
+	#python3-setuptools \
 	python3-pip && \
 	#usermod -d /app abc  && \
 	python3 -m pip install --upgrade pip  && \

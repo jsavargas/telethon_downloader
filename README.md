@@ -128,8 +128,10 @@ services:
 
 ## **Changelog:**
 
-**v3.1.9 (2023.02.28):**
-- telethon-downloader 3.1.10
+**v3.1.11 (2023.03.31):**
+- upgrade python to version 3.11
+
+**v3.1.10 (2023.02.28):**
 - upgrade python to version 3.11
 
 **v3.1.9 (2023.02.01):**

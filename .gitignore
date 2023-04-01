@@ -1,6 +1,9 @@
+__pycache__
 docker-compose.yml
 .vscode/settings.json
+*.bk
 
 
-__pycache__
 docker-compose.dev.yml
+telethon-downloader/bottorrent.session
+telethon-downloader/bottorrent.session-journal
