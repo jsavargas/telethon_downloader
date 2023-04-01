@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 3.1.10"
+VERSION = "VERSION 3.1.11"
 HELP = """
 /help		: This Screen
 /version	: Version  
@@ -32,11 +32,8 @@ from telethon import TelegramClient, events
 from telethon.tl import types
 from telethon.utils import get_extension, get_peer_id, resolve_id
 
-from env import api_id, api_hash, bot_token, TG_DOWNLOAD_PATH, TG_DOWNLOAD_PATH_TORRENTS, TG_UNZIP_TORRENTS, \
-	YOUTUBE_LINKS_SOPORTED, TG_DOWNLOAD_PATH, SESSION, \
-	TG_MAX_PARALLEL, TG_DL_TIMEOUT, PATH_TMP, PATH_COMPLETED, TG_PROGRESS_DOWNLOAD, \
-	YOUTUBE_FORMAT, TG_DOWNLOAD_PATH, PATH_YOUTUBE
 
+from env import *
 from logger import logger
 from utils import splash, create_directory, getDownloadPath, getUsers, split_input, config_file
 from youtube import youtube_download
@@ -122,8 +119,11 @@ async def worker(name):
 				url = update.message.message
 				
 				logger.info(f'INIT DOWNLOADING VIDEO YOUTUBE [{url}] ')
-				await youtube_download(url,update,message)
-				logger.info(f'FINIT DOWNLOADING VIDEO YOUTUBE [{url}] ')
+				loop = asyncio.get_event_loop()
+				task = loop.create_task(youtube_download(url,update,message))
+				download_result = await asyncio.wait_for(task, timeout = YT_DL_TIMEOUT)
+				#await youtube_download(url,update,message)
+				logger.info(f'FINIT DOWNLOADING VIDEO YOUTUBE [{url}] [{download_result}] ')
 				queue.task_done()
 				continue
 			except Exception as e:
