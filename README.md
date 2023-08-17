@@ -128,6 +128,9 @@ services:
 
 ## **Changelog:**
 
+**v3.1.12 (2023.08.17):**
+- upgrade yt-dlp to version 2023.07.06
+
 **v3.1.11 (2023.03.31):**
 - upgrade python to version 3.11
 
