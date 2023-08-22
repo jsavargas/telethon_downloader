@@ -10,10 +10,11 @@ import shutil
 import asyncio
 from pathlib import Path
 
-import constants
 import logger
+import constants
 import config_manager
 from youtube import YouTubeDownloader
+from command_handler import CommandHandler
 
 
 class TelegramBot:
@@ -51,6 +52,7 @@ class TelegramBot:
         self.client.add_event_handler(self.handle_buttons, events.CallbackQuery)
         
         self.ytdownloader = YouTubeDownloader()
+        self.command_handler = CommandHandler(self)
 
 
         
@@ -59,7 +61,7 @@ class TelegramBot:
 
     async def start(self):
         await self.client.start(bot_token=str(self.BOT_TOKEN))
-        await self.client.send_message(6537360, "Telethon Downloader Started: {}".format(self.VERSION))
+        await self.client.send_message(int(self.TG_AUTHORIZED_USER_ID[0]) , "Telethon Downloader Started: Version: {}".format(self.VERSION))
         logger.logger.info("********** START TELETHON DOWNLOADER **********")
         await self.client.run_until_disconnected()
 
@@ -327,13 +329,12 @@ class TelegramBot:
         try:
             logger.logger.info(f'commands => message: {message}')
 
+            if message.message == '/help':
+                await self.command_handler.show_help(message)
             if message.message == '/version':
-                message = await message.reply(f'version: {self.VERSION}')
-
+                await self.command_handler.show_version(message)
             if message.message == '/id':
-                real_id = get_peer_id(message.peer_id)
-                logger.logger.info(f'commands => real_id: {real_id}')
-                message = await message.reply(f'id: {str(real_id)}')
+                await self.command_handler.show_id(message)
 
         except Exception as e:
             logger.logger.error(f'commands => Exception: {e}')
