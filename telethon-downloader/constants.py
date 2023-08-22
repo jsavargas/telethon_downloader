@@ -12,6 +12,7 @@ SESSION = os.environ.get('TG_SESSION', 'bottorrent')
 TG_AUTHORIZED_USER_ID = os.environ.get('TG_AUTHORIZED_USER_ID', False)
 TG_MAX_PARALLEL = int(os.environ.get('TG_MAX_PARALLEL',4))
 TG_PROGRESS_DOWNLOAD =  os.environ.get('TG_PROGRESS_DOWNLOAD', True)
+PROGRESS_STATUS_SHOW =  os.environ.get('PROGRESS_STATUS_SHOW', 50)
 
 TG_DOWNLOAD_PATH = os.environ.get('TG_DOWNLOAD_PATH', '/download')
 TG_DOWNLOAD_PATH_TORRENTS = os.environ.get('TG_DOWNLOAD_PATH_TORRENTS', '/watch')
