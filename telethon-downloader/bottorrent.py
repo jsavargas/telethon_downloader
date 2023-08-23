@@ -46,6 +46,7 @@ class TelegramBot:
         self.DEFAULT_PATH_EXTENSIONS = self.CONFIG_MANAGER.get_section_keys('DEFAULT_PATH')
 
         self.YOUTUBE_LINKS_SOPORTED = constants.YOUTUBE_LINKS_SOPORTED.replace(" ", "").split(",")
+        self.youtubeLinks = {}  
 
         self.client = TelegramClient(self.SESSION, self.API_ID, self.API_HASH)
         self.client.add_event_handler(self.handle_new_message, events.NewMessage)
@@ -98,22 +99,26 @@ class TelegramBot:
         logger.logger.info(f'handle_buttons => event: {event}')
         logger.logger.info(f'handle_buttons => data: {event.data}')
         
-        await event.edit('Thank you for clicking video')
+        #await event.edit('Thank you for clicking video')
 
-        data = event.data
-        decoded_data = data.decode('utf-8')
-        parsed_data = ast.literal_eval(decoded_data)
+        bytes_data = event.data
+        data_string = bytes_data.decode('utf-8')
+        data_list = data_string.split(',')
 
-        url = parsed_data['url']
-        option = parsed_data['option']
+        logger.logger.info(f'handle_buttons => self.youtubeLinks: {self.youtubeLinks}')
+        url = self.youtubeLinks[int(data_list[0])]
+        logger.logger.info(f'handle_buttons => url: {url}')
 
-        logger.logger.info(f'handle_buttons => data: [{option}] => [{url}]')
+        logger.logger.info(f'handle_buttons => data: [{url}] => [{data_list[1]}]')
 
         self.create_directory(self.PATH_YOUTUBE)
         async with self.semaphore:
-            #msg = await message.reply("Descargando...")
-            await self.ytdownloader.download(url)
-            #msg = await msg.edit("Descarga completada.")
+            if data_list[1] == 'V':
+                await event.edit('Downloading video')
+                await self.ytdownloader.downloadVideo(url, event)
+            if data_list[1] == 'A':
+                await event.edit('Downloading Audio')
+                await self.ytdownloader.downloadAudio(url, event)
 
     async def download_media_with_retries(self, media, message, retry_count=0):
         try:
@@ -135,12 +140,13 @@ class TelegramBot:
         #group_name = await self.get_group_name(int(message.fwd_from.from_id.channel_id))
         #logger.logger.info(f'download_media => group_name: {group_name}')
         
+        text = message.message
         message = await message.reply(f'Download in queue...')
 
         async with self.semaphore:
             if isinstance(media, MessageMediaWebPage):
                 logger.logger.info(f'download_media => MessageMediaWebPage')
-                await self.downloadMessageMediaWebPage(media, message)
+                await self.downloadMessageMediaWebPage(media, message, text)
         
             if isinstance(media, MessageMediaPhoto):
                 await self.downloadMessageMediaPhoto(media, message)
@@ -173,11 +179,13 @@ class TelegramBot:
             
         return callback
 
-    async def downloadMessageMediaWebPage(self, media, message):
+    async def downloadMessageMediaWebPage(self, media, message, text):
         logger.logger.info(f'downloadMessageMediaWebPage => media: {media}')
-        logger.logger.info(f'downloadMessageMediaWebPage => message: {message.message}')
-        if any(yt in message.message for yt in self.YOUTUBE_LINKS_SOPORTED):
-            await self.youTubeDownloader(media, message)
+        logger.logger.info(f'downloadMessageMediaWebPage => message: {message}')
+        logger.logger.info(f'downloadMessageMediaWebPage => message.message: {text}')
+
+        if any(yt in text for yt in self.YOUTUBE_LINKS_SOPORTED):
+            await self.youTubeDownloader(message, text)
 
     async def downloadMessageMediaPhoto(self, media, message):
         try:
@@ -286,7 +294,7 @@ class TelegramBot:
             os.makedirs(path, exist_ok=True)
             os.chmod(path, 0o777)
         except Exception as e:
-            logger.logger.error(f'create_directory Exception : {file_path} [{e}]')
+            logger.logger.error(f'create_directory Exception : {path} [{e}]')
 
     def postProcess(self, path):
         try:
@@ -297,23 +305,39 @@ class TelegramBot:
     async def processMessage(self, media, message):
         logger.logger.info(f'processMessage => media: {media}')
         logger.logger.info(f'processMessage => message: {message.message}')
-
+        text = message.message
         if (message.message).startswith('/'):
             await self.commands(message)
         if any(yt in message.message for yt in self.YOUTUBE_LINKS_SOPORTED):
-            await self.youTubeDownloader(media, message)
+            message = await message.reply(f'Download in queue...')
+            await self.youTubeDownloader(message, text)
 
-    async def youTubeDownloader(self, media, message):
-        logger.logger.info(f'youTubeDownloader => media: {media}')
-        logger.logger.info(f'youTubeDownloader => message: {message.message}')
+    async def youTubeDownloader(self, message, text):
+        try:
+            logger.logger.info(f'youTubeDownloader => media: {message}')
+            logger.logger.info(f'youTubeDownloader => text: "{text}"')
+            logger.logger.info(f'youTubeDownloader => message.id: "{message.id}"')
+            
+            self.youtubeLinks[message.id] = text
 
-        response = await message.reply('Downloading:', buttons=[
-            [
-                Button.inline('audio', data={"url":message.message, "option": "audio"}), 
-                Button.inline('video', data={"url":message.message, "option": "video"})
-            ]
-        ])
+            #Button.inline('audio', data={"url":message.message, "option": "audio"}), 
 
+            button1 = Button.inline("Audio", data=f"{message.id},A")
+            button2 = Button.inline("Video", data=f"{message.id},V")
+
+
+            response = await message.edit('Downloading:', buttons=[button1, button2])
+            
+            #response = await message.edit('Downloading:', buttons=[
+            #    [
+            #    Button.inline('audio', data=f"{text}"), 
+            #    Button.inline('video', data=f"{text}")
+            #    ]
+            #])
+        except Exception as e:
+            logger.logger.error(f'youTubeDownloader => Exception: {e}')
+            await message.reply(f'Error: {e}')
+            pass
 
         #self.create_directory(self.PATH_YOUTUBE)
         #async with self.semaphore:

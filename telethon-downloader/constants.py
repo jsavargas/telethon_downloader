@@ -17,6 +17,7 @@ PROGRESS_STATUS_SHOW =  os.environ.get('PROGRESS_STATUS_SHOW', 50)
 TG_DOWNLOAD_PATH = os.environ.get('TG_DOWNLOAD_PATH', '/download')
 TG_DOWNLOAD_PATH_TORRENTS = os.environ.get('TG_DOWNLOAD_PATH_TORRENTS', '/watch')
 PATH_YOUTUBE = os.path.join(TG_DOWNLOAD_PATH,'youtube')
+YOUTUBE_AUDIOS_FOLDER = os.path.join(TG_DOWNLOAD_PATH,'youtube_audios')
 PATH_TMP = os.path.join(TG_DOWNLOAD_PATH,'tmp')
 PATH_COMPLETED = os.path.join(TG_DOWNLOAD_PATH,'completed')
 
