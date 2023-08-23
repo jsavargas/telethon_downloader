@@ -163,12 +163,13 @@ class TelegramBot:
             try:
                 megabytes_current = current / 1024 / 1024
                 megabytes_total = total / 1024 / 1024
-                message_text = f'Descargando: {megabytes_current:.2f} MB / {megabytes_total:.2f} MB'
+                message_text = f'Downloading in: {self.PATH_TMP}\n'
+                message_text += f'progress: {megabytes_current:.2f} MB / {megabytes_total:.2f} MB'
                 if current == total or current % (self.PROGRESS_STATUS_SHOW * 1024 * 1024) == 0:
                     await self.client.edit_message(message.chat_id, message.id, message_text)
             finally:
                 #logger.logger.error(f'callback Exception: {e}')
-                pass
+                return
             
         return callback
 
@@ -208,8 +209,8 @@ class TelegramBot:
 
 
     async def download(self, media, message, total_size):
-        logger.logger.info(f'\n\ndownload media: {media}')
-        logger.logger.info(f'\n\ndownload message: {message}')
+        logger.logger.info(f'download media: {media}')
+        logger.logger.info(f'download message: {message}')
         try:
             megabytes_total = total_size / 1024 / 1024
             download_start_time = time.time()
@@ -229,12 +230,9 @@ class TelegramBot:
             final_message += f'Velocidad promedio de descarga: {total_speed:.2f} MB/s\n'
             final_message += f'at: {end_time_short}'
             message = await message.edit(f'{final_message}')
-
         except Exception as e:
-            logger.logger.error(f'download Exception')
-
-
-
+            logger.logger.error(f'download Exception: {e}')
+            message = await message.edit(f'Exception download: {e}')
 
     def moveFile(self, file_path):
         try:
@@ -295,7 +293,6 @@ class TelegramBot:
             logger.logger.info(f'postProcess path: {path}')
         except Exception as e:
             logger.logger.error(f'postProcess Exception : {path} [{e}]')
-
 
     async def processMessage(self, media, message):
         logger.logger.info(f'processMessage => media: {media}')
