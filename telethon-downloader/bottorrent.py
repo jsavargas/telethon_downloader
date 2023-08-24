@@ -47,8 +47,9 @@ class TelegramBot:
         self.DEFAULT_PATH_EXTENSIONS = self.CONFIG_MANAGER.get_section_keys('DEFAULT_PATH')
 
         self.YOUTUBE_LINKS_SOPORTED = constants.YOUTUBE_LINKS_SOPORTED.replace(" ", "").split(",")
-        self.YOUTUBE_TIMEOUT_OPTION = int(constants.YOUTUBE_TIMEOUT_OPTION) if (str(constants.YOUTUBE_TIMEOUT_OPTION)).isdigit() else 5 
         self.YOUTUBE_DEFAULT_DOWNLOAD = constants.YOUTUBE_DEFAULT_DOWNLOAD
+        self.YOUTUBE_TIMEOUT_OPTION = int(constants.YOUTUBE_TIMEOUT_OPTION) if (str(constants.YOUTUBE_TIMEOUT_OPTION)).isdigit() else 5 
+        self.YOUTUBE_SHOW_OPTION = (constants.YOUTUBE_SHOW_OPTION == "True" or constants.YOUTUBE_SHOW_OPTION == True)
         
         self.youtubeLinks = {}  
 
@@ -75,10 +76,11 @@ class TelegramBot:
     def printEnvironment(self):
         self.printAttribute("API_ID")
         self.printAttribute("API_HASH")
-        self.printAttribute("YOUTUBE_TIMEOUT_OPTION")
-        self.printAttribute("YOUTUBE_DEFAULT_DOWNLOAD")
         self.printAttribute("YOUTUBE_FORMAT_AUDIO")
         self.printAttribute("YOUTUBE_FORMAT_VIDEO")
+        self.printAttribute("YOUTUBE_DEFAULT_DOWNLOAD")
+        self.printAttribute("YOUTUBE_TIMEOUT_OPTION")
+        self.printAttribute("YOUTUBE_SHOW_OPTION")
 
     def printAttribute(self, attribute_name):
         if hasattr(self, attribute_name):
@@ -340,13 +342,13 @@ class TelegramBot:
             
             self.youtubeLinks[message.id] = text
 
+            if self.YOUTUBE_SHOW_OPTION:
+                button1 = Button.inline("Audio", data=f"{message.id},A")
+                button2 = Button.inline("Video", data=f"{message.id},V")
 
-            button1 = Button.inline("Audio", data=f"{message.id},A")
-            button2 = Button.inline("Video", data=f"{message.id},V")
+                response = await message.edit('Downloading:', buttons=[button1, button2])
 
-            response = await message.edit('Downloading:', buttons=[button1, button2])
-
-            await asyncio.sleep(self.YOUTUBE_TIMEOUT_OPTION)
+                await asyncio.sleep(self.YOUTUBE_TIMEOUT_OPTION)
 
             logger.logger.info(f'youTubeDownloader => self.youtubeLinks: {self.youtubeLinks} => {message.id}')
 

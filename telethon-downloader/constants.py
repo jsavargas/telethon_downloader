@@ -22,12 +22,12 @@ PATH_TMP = os.path.join(TG_DOWNLOAD_PATH,'tmp')
 PATH_COMPLETED = os.path.join(TG_DOWNLOAD_PATH,'completed')
 
 
-YOUTUBE_ASK = os.environ.get('YOUTUBE_ASK', True)
 YOUTUBE_LINKS_SOPORTED = os.environ.get('YOUTUBE_LINKS_SOPORTED', 'youtube.com,youtu.be')
 YOUTUBE_DEFAULT_DOWNLOAD = os.environ.get('YOUTUBE_DEFAULT_DOWNLOAD', 'VIDEO')
 YOUTUBE_FORMAT_AUDIO = os.environ.get('YOUTUBE_FORMAT_AUDIO', 'bestaudio/best')  #best
 YOUTUBE_FORMAT_VIDEO = os.environ.get('YOUTUBE_FORMAT_VIDEO', 'bestvideo+bestaudio/best')  #best
 YOUTUBE_TIMEOUT_OPTION = int(os.environ.get('YOUTUBE_TIMEOUT_OPTION',5))
+YOUTUBE_SHOW_OPTION = os.environ.get('YOUTUBE_SHOW_OPTION', True)
 
 TG_DL_TIMEOUT = int(os.environ.get('TG_DL_TIMEOUT',3600))
 
