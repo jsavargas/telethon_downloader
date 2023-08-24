@@ -3,7 +3,10 @@ docker-compose.yml
 .vscode/settings.json
 *.bk
 
+telethon-downloader/test/
 
-docker-compose.dev.yml
+docker-compose.dev*.yml
 telethon-downloader/bottorrent.session
 telethon-downloader/bottorrent.session-journal
+restart.sh
+telethon-downloader/example_lenguage.py

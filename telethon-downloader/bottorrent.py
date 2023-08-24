@@ -21,12 +21,15 @@ from language_templates import LanguageTemplates
 class TelegramBot:
     def __init__(self):
         
-        self.VERSION = "3.2.2"
+        self.VERSION = "3.2.3"
         self.SESSION = constants.SESSION
         self.API_ID = constants.API_ID
         self.API_HASH = constants.API_HASH
         self.BOT_TOKEN = constants.BOT_TOKEN
         
+        self.PUID = int(constants.PUID) if (str(constants.PUID)).isdigit() else None
+        self.PGID = int(constants.PGID) if (str(constants.PGID)).isdigit() else None
+
         self.TG_AUTHORIZED_USER_ID = constants.TG_AUTHORIZED_USER_ID.replace(" ", "").split(",")
         self.TG_PROGRESS_DOWNLOAD = (constants.TG_PROGRESS_DOWNLOAD == "True" or constants.TG_PROGRESS_DOWNLOAD == True)
         self.TG_MAX_PARALLEL = constants.TG_MAX_PARALLEL
@@ -76,11 +79,16 @@ class TelegramBot:
     def printEnvironment(self):
         self.printAttribute("API_ID")
         self.printAttribute("API_HASH")
+        self.printAttribute("BOT_TOKEN")
+        self.printAttribute("PUID")
+        self.printAttribute("PGID")
         self.printAttribute("YOUTUBE_FORMAT_AUDIO")
         self.printAttribute("YOUTUBE_FORMAT_VIDEO")
         self.printAttribute("YOUTUBE_DEFAULT_DOWNLOAD")
         self.printAttribute("YOUTUBE_TIMEOUT_OPTION")
         self.printAttribute("YOUTUBE_SHOW_OPTION")
+
+        self.printAttribute("VERSION")
 
     def printAttribute(self, attribute_name):
         if hasattr(self, attribute_name):
@@ -92,6 +100,7 @@ class TelegramBot:
 
 
     def create_directorys(self):
+        self.create_directory(self.TG_DOWNLOAD_PATH)
         self.create_directory(self.PATH_TMP)
         self.create_directory(self.PATH_COMPLETED)
         self.create_directory(self.PATH_YOUTUBE)
@@ -212,12 +221,16 @@ class TelegramBot:
     async def downloadMessageMediaPhoto(self, media, message):
         try:
             logger.logger.info(f'downloadMessageMediaPhoto')
-            #message = await message.edit(f'Comenzando descarga en: {self.PATH_TMP}')
-            #archivo_descarga = await self.client.download_media(media.photo, file=self.PATH_TMP)
-            #archivo_descarga = self.moveFile(archivo_descarga)
-            #logger.logger.info(f'Foto descargada en: {archivo_descarga}')
-            #message = await message.edit(f'Archivo descargado con éxito en: {archivo_descarga}')
-            await self.download(media.photo, message, media.photo.size)
+
+            desired_size_type = 'y'  
+            #for size in media.photo.sizes:
+            #    if size.type == desired_size_type:
+            #        logger.logger.info(f"Desired Size Type: {desired_size_type}, Width: {size.w}, Height: {size.h}, size: {size.sizes}")
+            #        size = size.sizes[-1]
+            #        break
+            last_size = next((size.sizes[-1] for size in media.photo.sizes if size.type == desired_size_type), None)
+            logger.logger.info(f'downloadMessageMediaPhoto last_size: {last_size}')
+            await self.download(media.photo, message, last_size)
         except Exception as e:
             message = await message.edit(f'Exception download: {e}')
 
@@ -302,6 +315,7 @@ class TelegramBot:
 
             self.create_directory(directorio_base)
             final_path = shutil.move(file_path, final_path)
+            self.change_permissions(final_path)
             logger.logger.info(f"final_path: {final_path}")
 
             self.postProcess(final_path)
@@ -313,10 +327,21 @@ class TelegramBot:
     def create_directory(self, path):
         try:
             logger.logger.info(f'create_directory path: {path}')
+            if hasattr(self, 'PUID') and hasattr(self, 'PGID') and self.PUID is not None and self.PGID is not None:
+                os.chown(path, self.PUID, self.PGID)
             os.makedirs(path, exist_ok=True)
             os.chmod(path, 0o777)
         except Exception as e:
             logger.logger.error(f'create_directory Exception : {path} [{e}]')
+
+    def change_permissions(self, path):
+            try:
+                if hasattr(self, 'PUID') and hasattr(self, 'PGID') and self.PUID is not None and self.PGID is not None:
+                    os.chown(path, self.PUID, self.PGID)
+                os.chmod(path, 0o755)  # Cambiar permisos a 755 (rwxr-xr-x)
+                print(f"Changed permissions for {path} using PUID={self.PUID} and PGID={self.PGID}")
+            except FileNotFoundError:
+                logger.logger.error(f"File or directory not found: {path}")
 
     def postProcess(self, path):
         try:

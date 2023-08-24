@@ -9,6 +9,9 @@ API_HASH = os.environ.get('TG_API_HASH')
 BOT_TOKEN = os.environ.get('TG_BOT_TOKEN')
 SESSION = os.environ.get('TG_SESSION', 'bottorrent')
 
+PUID = os.environ.get('PUID')
+PGID = os.environ.get('PGID')
+
 TG_AUTHORIZED_USER_ID = os.environ.get('TG_AUTHORIZED_USER_ID', False)
 TG_MAX_PARALLEL = int(os.environ.get('TG_MAX_PARALLEL',4))
 TG_PROGRESS_DOWNLOAD =  os.environ.get('TG_PROGRESS_DOWNLOAD', True)
