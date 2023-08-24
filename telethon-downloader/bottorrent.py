@@ -21,7 +21,7 @@ from language_templates import LanguageTemplates
 class TelegramBot:
     def __init__(self):
         
-        self.VERSION = "3.2.1"
+        self.VERSION = "3.2.2"
         self.SESSION = constants.SESSION
         self.API_ID = constants.API_ID
         self.API_HASH = constants.API_HASH
