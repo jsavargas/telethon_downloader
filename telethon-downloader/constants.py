@@ -24,14 +24,18 @@ PATH_COMPLETED = os.path.join(TG_DOWNLOAD_PATH,'completed')
 
 YOUTUBE_ASK = os.environ.get('YOUTUBE_ASK', True)
 YOUTUBE_LINKS_SOPORTED = os.environ.get('YOUTUBE_LINKS_SOPORTED', 'youtube.com,youtu.be')
-YOUTUBE_FORMAT = os.environ.get('YOUTUBE_FORMAT', 'bestvideo+bestaudio/best')  #best
+YOUTUBE_DEFAULT_DOWNLOAD = os.environ.get('YOUTUBE_DEFAULT_DOWNLOAD', 'VIDEO')
+YOUTUBE_FORMAT_AUDIO = os.environ.get('YOUTUBE_FORMAT_AUDIO', 'bestaudio/best')  #best
+YOUTUBE_FORMAT_VIDEO = os.environ.get('YOUTUBE_FORMAT_VIDEO', 'bestvideo+bestaudio/best')  #best
+YOUTUBE_TIMEOUT_OPTION = int(os.environ.get('YOUTUBE_TIMEOUT_OPTION',5))
+
 TG_DL_TIMEOUT = int(os.environ.get('TG_DL_TIMEOUT',3600))
 
 TG_UNZIP_TORRENTS = os.environ.get('TG_UNZIP_TORRENTS', False)
 TG_FOLDER_BY_AUTHORIZED = os.environ.get('TG_FOLDER_BY_AUTHORIZED', False)
 
 
-
+LANGUAGE = os.environ.get('APP_LANGUAGE', 'en_EN')
 
 PATH_CONFIG = '/config/config.ini'
 

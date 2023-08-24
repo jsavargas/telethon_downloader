@@ -17,7 +17,7 @@ services:
       - TZ=America/Santiago
       - TG_PROGRESS_DOWNLOAD=True #OPTIONAL
       - APP_LANGUAGE=en_EN        #OPTIONAL
-      - YOUTUBE_DL_TIMEOUT=3      #OPTIONAL
+      - YOUTUBE_TIMEOUT_OPTION=3      #OPTIONAL
       - YOUTUBE_FORMAT_VIDEO=bestvideo+bestaudio/best     #OPTIONAL
       - YOUTUBE_FORMAT_AUDIO=bestaudio/best               #OPTIONAL
     volumes:

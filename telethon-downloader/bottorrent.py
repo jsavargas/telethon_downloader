@@ -47,7 +47,7 @@ class TelegramBot:
         self.DEFAULT_PATH_EXTENSIONS = self.CONFIG_MANAGER.get_section_keys('DEFAULT_PATH')
 
         self.YOUTUBE_LINKS_SOPORTED = constants.YOUTUBE_LINKS_SOPORTED.replace(" ", "").split(",")
-        self.YOUTUBE_DL_TIMEOUT = int(constants.YOUTUBE_DL_TIMEOUT) if (str(constants.YOUTUBE_DL_TIMEOUT)).isdigit() else 5 
+        self.YOUTUBE_TIMEOUT_OPTION = int(constants.YOUTUBE_TIMEOUT_OPTION) if (str(constants.YOUTUBE_TIMEOUT_OPTION)).isdigit() else 5 
         self.YOUTUBE_DEFAULT_DOWNLOAD = constants.YOUTUBE_DEFAULT_DOWNLOAD
         
         self.youtubeLinks = {}  
@@ -75,7 +75,7 @@ class TelegramBot:
     def printEnvironment(self):
         self.printAttribute("API_ID")
         self.printAttribute("API_HASH")
-        self.printAttribute("YOUTUBE_DL_TIMEOUT")
+        self.printAttribute("YOUTUBE_TIMEOUT_OPTION")
         self.printAttribute("YOUTUBE_DEFAULT_DOWNLOAD")
         self.printAttribute("YOUTUBE_FORMAT_AUDIO")
         self.printAttribute("YOUTUBE_FORMAT_VIDEO")
@@ -346,7 +346,7 @@ class TelegramBot:
 
             response = await message.edit('Downloading:', buttons=[button1, button2])
 
-            await asyncio.sleep(self.YOUTUBE_DL_TIMEOUT)
+            await asyncio.sleep(self.YOUTUBE_TIMEOUT_OPTION)
 
             logger.logger.info(f'youTubeDownloader => self.youtubeLinks: {self.youtubeLinks} => {message.id}')
 
