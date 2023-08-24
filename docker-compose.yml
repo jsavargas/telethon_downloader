@@ -19,8 +19,9 @@ services:
       - APP_LANGUAGE=en_EN        #OPTIONAL
       - YOUTUBE_FORMAT_AUDIO=bestaudio/best               #OPTIONAL
       - YOUTUBE_FORMAT_VIDEO=bestvideo+bestaudio/best     #OPTIONAL
-      - YOUTUBE_TIMEOUT_OPTION=3      #OPTIONAL
-      - YOUTUBE_SHOW_OPTION=True      #OPTIONAL
+      - YOUTUBE_DEFAULT_DOWNLOAD=VIDEO  #OPTIONAL (AUDIO/VIDEO) 
+      - YOUTUBE_SHOW_OPTION=True        #OPTIONAL (True/False)
+      - YOUTUBE_TIMEOUT_OPTION=3        #OPTIONAL
     volumes:
       - /path/to/config:/config
       - /path/to/download:/download
