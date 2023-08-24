@@ -15,6 +15,7 @@ import constants
 import config_manager
 from youtube import YouTubeDownloader
 from command_handler import CommandHandler
+from language_templates import LanguageTemplates
 
 
 class TelegramBot:
@@ -46,6 +47,9 @@ class TelegramBot:
         self.DEFAULT_PATH_EXTENSIONS = self.CONFIG_MANAGER.get_section_keys('DEFAULT_PATH')
 
         self.YOUTUBE_LINKS_SOPORTED = constants.YOUTUBE_LINKS_SOPORTED.replace(" ", "").split(",")
+        self.YOUTUBE_DL_TIMEOUT = int(constants.YOUTUBE_DL_TIMEOUT) if (str(constants.YOUTUBE_DL_TIMEOUT)).isdigit() else 5 
+        self.YOUTUBE_DEFAULT_DOWNLOAD = constants.YOUTUBE_DEFAULT_DOWNLOAD
+        
         self.youtubeLinks = {}  
 
         self.client = TelegramClient(self.SESSION, self.API_ID, self.API_HASH)
@@ -55,25 +59,40 @@ class TelegramBot:
         self.ytdownloader = YouTubeDownloader()
         self.command_handler = CommandHandler(self)
 
+        self.templatesLanguage = LanguageTemplates(language=constants.LANGUAGE)
 
         
-        self.environment()
+        self.printEnvironment()
         self.create_directorys()
 
     async def start(self):
         await self.client.start(bot_token=str(self.BOT_TOKEN))
-        await self.client.send_message(int(self.TG_AUTHORIZED_USER_ID[0]) , "Telethon Downloader Started: Version: {}".format(self.VERSION))
+        msg_txt = self.templatesLanguage.template("WELCOME").format(msg1=self.VERSION)
+        await self.client.send_message(int(self.TG_AUTHORIZED_USER_ID[0]) , msg_txt)
         logger.logger.info("********** START TELETHON DOWNLOADER **********")
         await self.client.run_until_disconnected()
+
+    def printEnvironment(self):
+        self.printAttribute("API_ID")
+        self.printAttribute("API_HASH")
+        self.printAttribute("YOUTUBE_DL_TIMEOUT")
+        self.printAttribute("YOUTUBE_DEFAULT_DOWNLOAD")
+        self.printAttribute("YOUTUBE_FORMAT_AUDIO")
+        self.printAttribute("YOUTUBE_FORMAT_VIDEO")
+
+    def printAttribute(self, attribute_name):
+        if hasattr(self, attribute_name):
+            attribute_value = getattr(self, attribute_name)
+            logger.logger.info(f"{attribute_name}: {attribute_value}")
+        else:
+            attribute_value = getattr(constants, attribute_name)
+            logger.logger.info(f"{attribute_name}: {attribute_value}")
+
 
     def create_directorys(self):
         self.create_directory(self.PATH_TMP)
         self.create_directory(self.PATH_COMPLETED)
         self.create_directory(self.PATH_YOUTUBE)
-
-    def environment(self):
-        logger.logger.info(f"API_ID {self.API_ID}")
-        logger.logger.info(f"API_HASH {self.API_HASH}")
 
     def AUTHORIZED_USER(self, message):
         real_id = get_peer_id(message.peer_id)
@@ -107,8 +126,9 @@ class TelegramBot:
 
         logger.logger.info(f'handle_buttons => self.youtubeLinks: {self.youtubeLinks}')
         url = self.youtubeLinks[int(data_list[0])]
-        logger.logger.info(f'handle_buttons => url: {url}')
+        removed_value = self.youtubeLinks.pop(int(data_list[0]))
 
+        logger.logger.info(f'handle_buttons => url: {url} => {removed_value}')
         logger.logger.info(f'handle_buttons => data: [{url}] => [{data_list[1]}]')
 
         self.create_directory(self.PATH_YOUTUBE)
@@ -320,31 +340,28 @@ class TelegramBot:
             
             self.youtubeLinks[message.id] = text
 
-            #Button.inline('audio', data={"url":message.message, "option": "audio"}), 
 
             button1 = Button.inline("Audio", data=f"{message.id},A")
             button2 = Button.inline("Video", data=f"{message.id},V")
 
-
             response = await message.edit('Downloading:', buttons=[button1, button2])
-            
-            #response = await message.edit('Downloading:', buttons=[
-            #    [
-            #    Button.inline('audio', data=f"{text}"), 
-            #    Button.inline('video', data=f"{text}")
-            #    ]
-            #])
+
+            await asyncio.sleep(self.YOUTUBE_DL_TIMEOUT)
+
+            logger.logger.info(f'youTubeDownloader => self.youtubeLinks: {self.youtubeLinks} => {message.id}')
+
+            if message.id in self.youtubeLinks:            
+                removed_value = self.youtubeLinks.pop(int(message.id))
+                if self.YOUTUBE_DEFAULT_DOWNLOAD.upper() == 'VIDEO':
+                    await message.edit('Downloading video')
+                    await self.ytdownloader.downloadVideo(text, message)
+                if self.YOUTUBE_DEFAULT_DOWNLOAD.upper() == 'AUDIO':
+                    await message.edit('Downloading Audio')
+                    await self.ytdownloader.downloadAudio(text, message)
         except Exception as e:
             logger.logger.error(f'youTubeDownloader => Exception: {e}')
             await message.reply(f'Error: {e}')
             pass
-
-        #self.create_directory(self.PATH_YOUTUBE)
-        #async with self.semaphore:
-        #    video_url = message.message
-        #    #msg = await message.reply("Descargando...")
-        #    await self.ytdownloader.download(video_url)
-        #    #msg = await msg.edit("Descarga completada.")
 
     async def commands(self, message):
         try:

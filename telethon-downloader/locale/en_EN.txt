@@ -1,0 +1,5 @@
+WELCOME=Telethon Downloader Started: Version: {msg1}
+MESSAGE_1=Telethon Downloader Started: Version: {msg1}
+MESSAGE_2=Download progress: {percent}%
+MESSAGE_3=An error occurred while processing the request.
+MESSAGE_5=Download progress 2 variables: {percent}%  -- {filename}%

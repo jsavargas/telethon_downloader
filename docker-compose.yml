@@ -8,14 +8,18 @@ services:
     restart: unless-stopped
     network_mode: host
     environment:
-      - 'PUID=1000'
-      - 'PGID=1000'
-      - 'TG_AUTHORIZED_USER_ID='  #<telegram chat_id authorized>
-      - 'TG_API_ID='
-      - 'TG_API_HASH=' 
-      - 'TG_BOT_TOKEN='
-      - 'TG_PROGRESS_DOWNLOAD=True' #OPTIONAL
-      - 'TZ=America/Santiago'
+      - PUID=1000
+      - PGID=1000
+      - TG_AUTHORIZED_USER_ID=  #<telegram chat_id authorized>
+      - TG_API_ID=
+      - TG_API_HASH= 
+      - TG_BOT_TOKEN=
+      - TZ=America/Santiago
+      - TG_PROGRESS_DOWNLOAD=True #OPTIONAL
+      - APP_LANGUAGE=en_EN        #OPTIONAL
+      - YOUTUBE_DL_TIMEOUT=3      #OPTIONAL
+      - YOUTUBE_FORMAT_VIDEO=bestvideo+bestaudio/best     #OPTIONAL
+      - YOUTUBE_FORMAT_AUDIO=bestaudio/best               #OPTIONAL
     volumes:
       - /path/to/config:/config
       - /path/to/download:/download

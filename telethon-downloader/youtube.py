@@ -11,11 +11,12 @@ class YouTubeDownloader:
     def __init__(self):
         self.ydl_opts = {
             'progress_hooks': [self.progress_hook],
-            'format': constants.YOUTUBE_FORMAT, 
+            'format': constants.YOUTUBE_FORMAT_VIDEO, 
             'outtmpl': f'{constants.PATH_YOUTUBE}/%(title)s.%(ext)s',
             'cachedir':'False', 
             "retries": 10, 
-            'merge_output_format':'mkv' 
+            'merge_output_format':'mkv',
+            'progress_hooks': [self.progress_hook]
         }
 
     def progress_hook(self, data):
@@ -35,7 +36,14 @@ class YouTubeDownloader:
             else:
                 youtube_path = os.path.join(constants.PATH_YOUTUBE,info_dict['uploader'])
 
-            ydl_opts = { 'format': constants.YOUTUBE_FORMAT, 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s','cachedir':'False','ignoreerrors': True, "retries": 10, 'merge_output_format':'mkv' }
+            ydl_opts = { 
+                'format': constants.YOUTUBE_FORMAT_VIDEO,  
+                'outtmpl': f'{youtube_path}/%(title)s.%(ext)s',
+                'cachedir':'False',
+                'ignoreerrors': True, 
+                'retries': 10, 
+                'merge_output_format':'mkv'
+            }
             ydl_opts.update(ydl_opts)
 
         with YoutubeDL(ydl_opts) as ydl:
@@ -60,11 +68,11 @@ class YouTubeDownloader:
         youtube_path = os.path.join(constants.YOUTUBE_AUDIOS_FOLDER)
 
         ydl_opts = {
-            'format': 'bestaudio/best',  # Descargar la mejor calidad de audio disponible
+            'format': constants.YOUTUBE_FORMAT_AUDIO,  
             'postprocessors': [{
-                'key': 'FFmpegExtractAudio',  # Extraer el audio
-                'preferredcodec': 'mp3',       # Formato de salida del audio (por ejemplo, mp3)
-                'preferredquality': '320',     # Calidad del audio (bitrate en kbps)
+                'key': 'FFmpegExtractAudio', 
+                'preferredcodec': 'mp3',     
+                'preferredquality': '320',   
             }],
             'outtmpl': os.path.join(youtube_path, '%(title)s.%(ext)s')
         }
