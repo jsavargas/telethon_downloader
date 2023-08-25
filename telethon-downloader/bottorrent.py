@@ -21,7 +21,7 @@ from language_templates import LanguageTemplates
 class TelegramBot:
     def __init__(self):
         
-        self.VERSION = "3.2.3"
+        self.VERSION = "3.2.4"
         self.SESSION = constants.SESSION
         self.API_ID = constants.API_ID
         self.API_HASH = constants.API_HASH
@@ -119,6 +119,7 @@ class TelegramBot:
             logger.logger.info(f'handle_new_message => message: {event.message.message}')
             if self.AUTHORIZED_USER(event.message):
                 if event.media:
+                    if not await self.evaluateMessageMediaWebPage(event.message, event.media): return
                     await self.download_media_with_retries(event.media, event.message)
                 elif event.message.message:
                     await self.processMessage(event.media, event.message)
@@ -160,6 +161,15 @@ class TelegramBot:
                 await self.download_media_with_retries(media, message, retry_count + 1)
             else:
                 logger.logger.error(f"Descarga fallida después de {self.max_retries} intentos")
+
+    async def evaluateMessageMediaWebPage(self, message, media):
+        logger.logger.info(f'evaluateMessageMediaWebPage => media: {media}')
+        if isinstance(media, MessageMediaWebPage):
+            if any(yt in message.message for yt in self.YOUTUBE_LINKS_SOPORTED):
+                return True
+            else:
+                return False
+        return True
 
     async def download_media(self, media, message):
         logger.logger.info(f'download_media => media: {media}')
