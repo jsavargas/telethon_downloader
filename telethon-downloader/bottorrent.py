@@ -119,7 +119,6 @@ class TelegramBot:
             logger.logger.info(f'handle_new_message => message: {event.message.message}')
             if self.AUTHORIZED_USER(event.message):
                 if event.media:
-                    if not await self.evaluateMessageMediaWebPage(event.message, event.media): return
                     await self.download_media_with_retries(event.media, event.message)
                 elif event.message.message:
                     await self.processMessage(event.media, event.message)
@@ -164,12 +163,16 @@ class TelegramBot:
 
     async def evaluateMessageMediaWebPage(self, message, media):
         logger.logger.info(f'evaluateMessageMediaWebPage => media: {media}')
+        if media and hasattr(media, 'document'):
+            return True
+        if isinstance(media, MessageMediaPhoto):
+            return True
         if isinstance(media, MessageMediaWebPage):
             if any(yt in message.message for yt in self.YOUTUBE_LINKS_SOPORTED):
                 return True
             else:
                 return False
-        return True
+        return False
 
     async def download_media(self, media, message):
         logger.logger.info(f'download_media => media: {media}')
@@ -181,6 +184,8 @@ class TelegramBot:
         #group_name = await self.get_group_name(int(message.fwd_from.from_id.channel_id))
         #logger.logger.info(f'download_media => group_name: {group_name}')
         
+        if not await self.evaluateMessageMediaWebPage(message, media): return
+
         text = message.message
         message = await message.reply(f'Download in queue...')
 
@@ -189,7 +194,7 @@ class TelegramBot:
                 logger.logger.info(f'download_media => MessageMediaWebPage')
                 await self.downloadMessageMediaWebPage(media, message, text)
         
-            if isinstance(media, MessageMediaPhoto):
+            elif isinstance(media, MessageMediaPhoto):
                 await self.downloadMessageMediaPhoto(media, message)
 
             elif media and hasattr(media, 'document'):
