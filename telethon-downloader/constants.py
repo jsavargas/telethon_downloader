@@ -20,11 +20,12 @@ class EnvironmentReader:
         self.PROGRESS_STATUS_SHOW =  os.environ.get('PROGRESS_STATUS_SHOW', 50)
 
         self.TG_DOWNLOAD_PATH = os.environ.get('TG_DOWNLOAD_PATH', '/download')
-        self.TG_DOWNLOAD_PATH_TORRENTS = os.environ.get('TG_DOWNLOAD_PATH_TORRENTS', '/watch')
+        self.PATH_COMPLETED = os.path.join(self.TG_DOWNLOAD_PATH,'completed')
         self.PATH_YOUTUBE = os.path.join(self.TG_DOWNLOAD_PATH,'youtube')
         self.YOUTUBE_AUDIOS_FOLDER = os.path.join(self.TG_DOWNLOAD_PATH,'youtube_audios')
+        self.TG_DOWNLOAD_PATH_TORRENTS = os.environ.get('TG_DOWNLOAD_PATH_TORRENTS', '/watch')
+        self.PATH_LINKS = os.path.join(self.TG_DOWNLOAD_PATH,'links')
         self.PATH_TMP = os.path.join(self.TG_DOWNLOAD_PATH,'tmp')
-        self.PATH_COMPLETED = os.path.join(self.TG_DOWNLOAD_PATH,'completed')
 
 
         self.YOUTUBE_LINKS_SOPORTED = os.environ.get('YOUTUBE_LINKS_SOPORTED', 'youtube.com,youtu.be')
@@ -48,10 +49,10 @@ class EnvironmentReader:
 
 
     def print_variables(self):
-        print(f"API_ID: {self.API_ID}")
-        print(f"API_HASH: {self.API_HASH}")
-        print(f"BOT_TOKEN: {self.BOT_TOKEN}")
-        print(f"SESSION: {self.SESSION}")
+        logger.logger.info(f"API_ID: {self.API_ID}")
+        logger.logger.info(f"API_HASH: {self.API_HASH}")
+        logger.logger.info(f"BOT_TOKEN: {self.BOT_TOKEN}")
+        logger.logger.info(f"SESSION: {self.SESSION}")
 
     def printAttribute(self, attribute_name):
         if hasattr(self, attribute_name):

@@ -8,7 +8,9 @@ import ast
 import time
 import shutil
 import asyncio
+import requests
 from pathlib import Path
+from urllib.parse import urlparse
 
 import logger
 import config_manager
@@ -41,10 +43,11 @@ class TelegramBot:
         self.semaphore = asyncio.Semaphore(self.TG_MAX_PARALLEL) 
 
         self.TG_DOWNLOAD_PATH = self.constants.get_variable("TG_DOWNLOAD_PATH")
-        self.TG_DOWNLOAD_PATH_TORRENTS = self.constants.get_variable("TG_DOWNLOAD_PATH_TORRENTS")
-        self.PATH_TMP = self.constants.get_variable("PATH_TMP")
         self.PATH_COMPLETED = self.constants.get_variable("PATH_COMPLETED")
         self.PATH_YOUTUBE = self.constants.get_variable("PATH_YOUTUBE")
+        self.PATH_LINKS = self.constants.get_variable("PATH_LINKS")
+        self.PATH_TMP = self.constants.get_variable("PATH_TMP")
+        self.TG_DOWNLOAD_PATH_TORRENTS = self.constants.get_variable("TG_DOWNLOAD_PATH_TORRENTS")
 
         self.PATH_CONFIG = self.constants.get_variable("PATH_CONFIG")
         self.CONFIG_MANAGER = config_manager.ConfigurationManager(self.PATH_CONFIG)
@@ -102,7 +105,6 @@ class TelegramBot:
         else:
             attribute_value = getattr(self.constants, attribute_name)
             logger.logger.info(f"{attribute_name}: {attribute_value}")
-
 
     def create_directorys(self):
         self.create_directory(self.TG_DOWNLOAD_PATH)
@@ -373,19 +375,19 @@ class TelegramBot:
     def create_directory(self, path):
         try:
             logger.logger.info(f'create_directory path: {path}')
+            if os.path.exists(path): os.makedirs(path, exist_ok=True)
             if hasattr(self, 'PUID') and hasattr(self, 'PGID') and self.PUID is not None and self.PGID is not None:
-                os.chown(path, self.PUID, self.PGID)
-            os.makedirs(path, exist_ok=True)
-            os.chmod(path, 0o777)
+                if os.path.exists(path): os.chown(path, self.PUID, self.PGID)
+            if os.path.exists(path): os.chmod(path, 0o777)
         except Exception as e:
             logger.logger.error(f'create_directory Exception : {path} [{e}]')
 
     def change_permissions(self, path):
             try:
                 if hasattr(self, 'PUID') and hasattr(self, 'PGID') and self.PUID is not None and self.PGID is not None:
-                    os.chown(path, self.PUID, self.PGID)
-                os.chmod(path, 0o755)  # Cambiar permisos a 755 (rwxr-xr-x)
-                print(f"Changed permissions for {path} using PUID={self.PUID} and PGID={self.PGID}")
+                    if os.path.exists(path): os.chown(path, self.PUID, self.PGID)
+                if os.path.exists(path): os.chmod(path, 0o755)  # Cambiar permisos a 755 (rwxr-xr-x)
+                logger.logger.info(f"Changed permissions for {path} using PUID={self.PUID} and PGID={self.PGID}")
             except FileNotFoundError:
                 logger.logger.error(f"File or directory not found: {path}")
 
@@ -404,6 +406,11 @@ class TelegramBot:
         if any(yt in message.message for yt in self.YOUTUBE_LINKS_SOPORTED):
             message = await message.reply(f'Download in queue...')
             await self.youTubeDownloader(message, text)
+        
+        elif all([urlparse(message.message).scheme, urlparse(message.message).netloc]):
+            message = await message.reply(f'Download in queue...')
+            await self.download_url_file(message, text)
+        
 
     async def youTubeDownloader(self, message, text):
         try:
@@ -435,6 +442,45 @@ class TelegramBot:
             logger.logger.error(f'youTubeDownloader => Exception: {e}')
             await message.reply(f'Error: {e}')
             pass
+
+    async def download_url_file(self, message, url):
+        try:
+            parsed_url = urlparse(url)
+            file_name = os.path.basename(parsed_url.path)
+            
+            download_start_time = time.time()
+            
+            response = requests.get(url)
+            if response.status_code == 200:
+                file_path = os.path.join(self.PATH_LINKS, file_name)
+                
+                self.create_directory(self.PATH_LINKS)
+                
+                with open(file_path, 'wb') as file:
+                    file.write(response.content)
+                
+                    self.change_permissions(file_path)
+                    file_size = len(response.content) / 1024 / 1024 
+                    download_end_time = time.time()
+                    elapsed_time_total = download_end_time - download_start_time
+                    total_speed = file_size / elapsed_time_total if elapsed_time_total > 0 else 0
+                    end_time_short = time.strftime('%H:%M', time.localtime())
+
+                    message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=file_path) + os.linesep  # Add a line separator at the end
+                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE_SIZE").format(file_size=file_size) + os.linesep  # Add a line separator at the end
+                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=elapsed_time_total) + os.linesep  # Add a line separator at the end
+                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_SPEED").format(speed=total_speed) + os.linesep  # Add a line separator at the end
+                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
+
+                    message = await message.edit(f'{message_text}')
+                    
+                    logger.logger.info(f"download_url_file {url}. Status code: {response.status_code} => {file_path}")
+                return file_path
+            else:
+                logger.logger.info(f"download_url_file {url}. Status code: {response.status_code}")
+                return None
+        except Exception as e:
+            logger.logger.error(f"download_url_file {url}. {e}")
 
     async def commands(self, message):
         try:
