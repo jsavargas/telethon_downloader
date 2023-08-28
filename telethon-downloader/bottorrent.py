@@ -25,7 +25,7 @@ class TelegramBot:
 
         self.constants = EnvironmentReader()
         
-        self.VERSION = "3.2.5"
+        self.VERSION = "3.2.6"
         self.SESSION = self.constants.get_variable("SESSION")
         self.API_ID = self.constants.get_variable("API_ID")
         self.API_HASH = self.constants.get_variable("API_HASH")
