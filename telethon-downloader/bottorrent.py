@@ -300,23 +300,23 @@ class TelegramBot:
             
             message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD").format(path=self.PATH_TMP)
             message = await message.edit(message_text)
-            archivo_descarga = await self.client.download_media(media, file=self.PATH_TMP, progress_callback=self.progress_callback(message))
-            archivo_descarga = self.moveFile(archivo_descarga)
+            downloaded_file = await self.client.download_media(media, file=self.PATH_TMP, progress_callback=self.progress_callback(message))
+            downloaded_file = self.moveFile(downloaded_file)
             end_time_short = time.strftime('%H:%M', time.localtime())
-            logger.logger.info(f'File downloaded in: {archivo_descarga}')
+            logger.logger.info(f'File downloaded in: {downloaded_file}')
             download_end_time = time.time()
             elapsed_time_total = download_end_time - download_start_time
             total_speed = megabytes_total / elapsed_time_total if elapsed_time_total > 0 else 0
 
-            message_text = f'File downloaded in: {archivo_descarga}\n'
+            message_text = f'File downloaded in: {downloaded_file}\n'
             message_text += f'Descarga completada en: {elapsed_time_total:.2f} segundos\n'
             message_text += f'Velocidad promedio de descarga: {total_speed:.2f} MB/s\n'
             message_text += f'at: {end_time_short}'
 
-            _message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(archivo_descarga=archivo_descarga) + os.linesep  # Add a line separator at the end
-            _message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=elapsed_time_total) + os.linesep  # Add a line separator at the end
-            _message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_SPEED").format(speed=total_speed) + os.linesep  # Add a line separator at the end
-            _message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
+            message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=downloaded_file) + os.linesep  # Add a line separator at the end
+            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=elapsed_time_total) + os.linesep  # Add a line separator at the end
+            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_SPEED").format(speed=total_speed) + os.linesep  # Add a line separator at the end
+            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
 
             message = await message.edit(f'{message_text}')
         except Exception as e:

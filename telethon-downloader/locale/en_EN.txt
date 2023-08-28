@@ -5,9 +5,12 @@ PROGRESS_CALLBACK_PROGRESS=progress: {current:.2f} MB / {total:.2f} MB
 
 MESSAGE_DOWNLOAD=Downloading at: {path}
 
-MESSAGE_DOWNLOAD_COMPLETED=Descarga completada en: {elapsed_time:.2f} segundos
-MESSAGE_DOWNLOAD_SPEED=Velocidad promedio de descarga: {speed:.2f} MB/s
+
+MESSAGE_DOWNLOAD_FILE=File downloaded in: {downloaded_file}
+MESSAGE_DOWNLOAD_COMPLETED=Download completed in: {elapsed_time:.2f} seconds
+MESSAGE_DOWNLOAD_SPEED=Average download speed: {speed:.2f} MB/s
 MESSAGE_DOWNLOAD_AT=at: {end_time}
+
 
 MESSAGE_2=Download progress: {percent}%
 MESSAGE_3=An error occurred while processing the request.
