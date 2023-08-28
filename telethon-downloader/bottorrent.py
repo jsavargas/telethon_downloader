@@ -235,12 +235,11 @@ class TelegramBot:
         return callback
 
     async def downloadMessageMediaWebPage(self, media, message, text):
-        logger.logger.info(f'downloadMessageMediaWebPage => media: {media}')
         logger.logger.info(f'downloadMessageMediaWebPage => message: {message}')
+        logger.logger.info(f'downloadMessageMediaWebPage => media: {media}')
         logger.logger.info(f'downloadMessageMediaWebPage => message.message: {text}')
 
-        if any(yt in text for yt in self.YOUTUBE_LINKS_SOPORTED):
-            await self.youTubeDownloader(message, text)
+        await self.downloadLinks(message, media, text)
 
     async def downloadMessageMediaPhoto(self, media, message):
         try:
@@ -403,14 +402,21 @@ class TelegramBot:
         text = message.message
         if (message.message).startswith('/'):
             await self.commands(message)
-        if any(yt in message.message for yt in self.YOUTUBE_LINKS_SOPORTED):
+
+        await self.downloadLinks(message, media, text)
+        
+    async def downloadLinks(self, message, media, text):
+        logger.logger.info(f'downloadLinks => media: {media}')
+        logger.logger.info(f'downloadLinks => message: {message.message}')
+        logger.logger.info(f'downloadLinks => text: {text}')
+
+        if any(yt in text for yt in self.YOUTUBE_LINKS_SOPORTED):
             message = await message.reply(f'Download in queue...')
             await self.youTubeDownloader(message, text)
         
-        elif all([urlparse(message.message).scheme, urlparse(message.message).netloc]):
+        elif all([urlparse(text).scheme, urlparse(text).netloc]):
             message = await message.reply(f'Download in queue...')
             await self.download_url_file(message, text)
-        
 
     async def youTubeDownloader(self, message, text):
         try:
