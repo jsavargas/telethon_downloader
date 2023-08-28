@@ -35,6 +35,8 @@ class TelegramBot:
         
         self.PUID = int(self.constants.get_variable("PUID")) if (str(self.constants.get_variable("PUID"))).isdigit() else None
         self.PGID = int(self.constants.get_variable("PGID")) if (str(self.constants.get_variable("PGID"))).isdigit() else None
+        
+        self.TG_DL_TIMEOUT = int(self.constants.get_variable("TG_DL_TIMEOUT")) if (str(self.constants.get_variable("TG_DL_TIMEOUT"))).isdigit() else 3600
 
         self.TG_AUTHORIZED_USER_ID = self.constants.get_variable("TG_AUTHORIZED_USER_ID").replace(" ", "").split(",")
         self.TG_PROGRESS_DOWNLOAD = (self.constants.get_variable("TG_PROGRESS_DOWNLOAD") == "True" or self.constants.get_variable("TG_PROGRESS_DOWNLOAD") == True)
@@ -86,9 +88,10 @@ class TelegramBot:
         self.printAttributeHidden("API_ID")
         self.printAttributeHidden("API_HASH")
         self.printAttributeHidden("BOT_TOKEN")
+        self.printAttribute("TG_AUTHORIZED_USER_ID")
         self.printAttribute("PUID")
         self.printAttribute("PGID")
-        self.printAttribute("TG_AUTHORIZED_USER_ID")
+        self.printAttribute("TG_DL_TIMEOUT")
         self.printAttribute("YOUTUBE_FORMAT_AUDIO")
         self.printAttribute("YOUTUBE_FORMAT_VIDEO")
         self.printAttribute("YOUTUBE_DEFAULT_DOWNLOAD")
@@ -308,7 +311,12 @@ class TelegramBot:
             
             message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD").format(path=self.PATH_TMP)
             message = await message.edit(message_text)
-            downloaded_file = await self.client.download_media(media, file=self.PATH_TMP, progress_callback=self.progress_callback(message))
+
+            downloaded_file = await asyncio.wait_for(
+                self.client.download_media(media, file=self.PATH_TMP, progress_callback=self.progress_callback(message)),
+                timeout=self.TG_DL_TIMEOUT
+            )
+
             downloaded_file = self.moveFile(downloaded_file)
             end_time_short = time.strftime('%H:%M', time.localtime())
             logger.logger.info(f'File downloaded in: {downloaded_file}')
@@ -330,6 +338,10 @@ class TelegramBot:
             message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
 
             message = await message.edit(f'{message_text}')
+
+        except asyncio.TimeoutError:
+            logger.logger.error("Download timeout exceeded.")
+            message = await message.edit(self.templatesLanguage.template("MESSAGE_TIMEOUT_EXCEEDED"))
         except Exception as e:
             logger.logger.error(f'download Exception: {e}')
             message = await message.edit(f'Exception download: {e}')

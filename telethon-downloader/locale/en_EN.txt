@@ -12,6 +12,7 @@ MESSAGE_DOWNLOAD_COMPLETED=Download completed in: {elapsed_time}
 MESSAGE_DOWNLOAD_SPEED=Average download speed: {speed:.2f} MB/s
 MESSAGE_DOWNLOAD_AT=at: {end_time}
 
+MESSAGE_TIMEOUT_EXCEEDED=Download timeout exceeded..
 MESSAGE_NO_LINKS_DOWNLOAD=No links to download.
 
 
