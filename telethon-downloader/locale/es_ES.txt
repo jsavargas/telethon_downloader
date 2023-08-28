@@ -1,12 +1,34 @@
-WELCOME=Iniciando Telethon Downloader: Version: {msg1}
+WELCOME=Telethon Downloader Started: Version: {msg1}
 
-MESSAGE_1=Telethon Downloader Started: Version: {msg1}
-MESSAGE_2=Progreso de descarga: {percent}%
-MESSAGE_3=Se encontró un error al procesar la solicitud.
+PROGRESS_CALLBACK_PATH=Download in {path}
+PROGRESS_CALLBACK_PROGRESS=progress: {current:.2f} MB / {total:.2f} MB
 
-
-MESSAGE_5=Progreso de descarga 2 variables: {percent}%  -- {filename}%
+MESSAGE_DOWNLOAD=Downloading in: {path}
 
 
+MESSAGE_DOWNLOAD_FILE=File downloaded in: {downloaded_file}
+MESSAGE_DOWNLOAD_FILE_SIZE=File size: {file_size:.2f} MB
+MESSAGE_DOWNLOAD_COMPLETED=Download completed in: {elapsed_time}
+MESSAGE_DOWNLOAD_SPEED=Average download speed: {speed:.2f} MB/s
+MESSAGE_DOWNLOAD_AT=at: {end_time}
 
-YOUTUBE_2=Progreso de descarga youtube: {percent}%  
+MESSAGE_NO_LINKS_DOWNLOAD=No links to download.
+
+
+HOUR=hour
+MINUTE=minute
+SECOND=second
+
+
+
+
+
+
+
+MESSAGE_DOWNLOAD_URL=File downloaded in: {downloaded_file}
+
+MESSAGE_2=Download progress: {percent}%
+MESSAGE_3=An error occurred while processing the request.
+MESSAGE_5=Download progress 2 variables: {percent}%  -- {filename}%
+
+

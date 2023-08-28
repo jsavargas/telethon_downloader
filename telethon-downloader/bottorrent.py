@@ -83,9 +83,9 @@ class TelegramBot:
         await self.client.run_until_disconnected()
 
     def printEnvironment(self):
-        self.printAttribute("API_ID")
-        self.printAttribute("API_HASH")
-        self.printAttribute("BOT_TOKEN")
+        self.printAttributeHidden("API_ID")
+        self.printAttributeHidden("API_HASH")
+        self.printAttributeHidden("BOT_TOKEN")
         self.printAttribute("PUID")
         self.printAttribute("PGID")
         self.printAttribute("TG_AUTHORIZED_USER_ID")
@@ -105,6 +105,21 @@ class TelegramBot:
             logger.logger.info(f"{attribute_name}: {attribute_value}")
         else:
             attribute_value = getattr(self.constants, attribute_name)
+            logger.logger.info(f"{attribute_name}: {attribute_value}")
+
+    def printAttributeHidden(self, attribute_name):
+        if hasattr(self, attribute_name):
+            attribute_value = getattr(self, attribute_name)
+            
+            half_len = len(attribute_value) // 3
+            attribute_value = attribute_value[:half_len] + '*' * (len(attribute_value) - half_len)
+
+
+            logger.logger.info(f"{attribute_name}: {attribute_value}")
+        else:
+            attribute_value = getattr(self.constants, attribute_name)
+            half_len = len(attribute_value) // 2
+            attribute_value = attribute_value[:half_len] + '*' * (len(attribute_value) - half_len)
             logger.logger.info(f"{attribute_name}: {attribute_value}")
 
     def create_directorys(self):
@@ -491,9 +506,11 @@ class TelegramBot:
                 return file_path
             else:
                 logger.logger.info(f"download_url_file {url}. Status code: {response.status_code}")
+                message = await message.edit(self.templatesLanguage.template("MESSAGE_NO_LINKS_DOWNLOAD"))
                 return None
         except Exception as e:
             logger.logger.error(f"download_url_file {url}. {e}")
+            message = await message.edit(self.templatesLanguage.template("MESSAGE_NO_LINKS_DOWNLOAD"))
 
     async def commands(self, message):
         try:
