@@ -19,6 +19,7 @@ class CommandHandler:
     async def show_help(self, message):
         help_message = "¡Bienvenido al bot!\n\n"
         help_message += "Comandos disponibles:\n"
+        help_message += "/id - Show id user/group\n"
         help_message += "/help - Muestra la ayuda\n"
         help_message += "/version - Muestra la versión del programa"
         await message.respond(help_message)

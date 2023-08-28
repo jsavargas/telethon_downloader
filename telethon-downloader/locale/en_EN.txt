@@ -3,14 +3,26 @@ WELCOME=Telethon Downloader Started: Version: {msg1}
 PROGRESS_CALLBACK_PATH=Download in {path}
 PROGRESS_CALLBACK_PROGRESS=progress: {current:.2f} MB / {total:.2f} MB
 
-MESSAGE_DOWNLOAD=Downloading at: {path}
+MESSAGE_DOWNLOAD=Downloading in: {path}
 
 
 MESSAGE_DOWNLOAD_FILE=File downloaded in: {downloaded_file}
 MESSAGE_DOWNLOAD_FILE_SIZE=File size: {file_size:.2f} MB
-MESSAGE_DOWNLOAD_COMPLETED=Download completed in: {elapsed_time:.2f} seconds
+MESSAGE_DOWNLOAD_COMPLETED=Download completed in: {elapsed_time}
 MESSAGE_DOWNLOAD_SPEED=Average download speed: {speed:.2f} MB/s
 MESSAGE_DOWNLOAD_AT=at: {end_time}
+
+MESSAGE_NO_LINKS_DOWNLOAD=No links to download.
+
+
+HOUR=hour
+MINUTE=minute
+SECOND=second
+
+
+
+
+
 
 
 MESSAGE_DOWNLOAD_URL=File downloaded in: {downloaded_file}

@@ -4,6 +4,7 @@ from telethon.tl.types import MessageMediaPhoto, DocumentAttributeFilename, Mess
 from telethon.utils import get_peer_id, resolve_id
 
 import os
+import re
 import ast
 import time
 import shutil
@@ -24,7 +25,8 @@ class TelegramBot:
     def __init__(self):
 
         self.constants = EnvironmentReader()
-        
+        self.templatesLanguage = LanguageTemplates(language=self.constants.get_variable("LANGUAGE"))
+
         self.VERSION = "3.2.6"
         self.SESSION = self.constants.get_variable("SESSION")
         self.API_ID = self.constants.get_variable("API_ID")
@@ -68,7 +70,6 @@ class TelegramBot:
         self.ytdownloader = YouTubeDownloader()
         self.command_handler = CommandHandler(self)
 
-        self.templatesLanguage = LanguageTemplates(language=self.constants.get_variable("LANGUAGE"))
 
         
         self.printEnvironment()
@@ -124,12 +125,17 @@ class TelegramBot:
         try:
             logger.logger.info(f'handle_new_message => event: {event}')
             logger.logger.info(f'handle_new_message => message: {event.message.message}')
-            if self.AUTHORIZED_USER(event.message):
-                if event.media:
-                    await self.download_media_with_retries(event.media, event.message)
-                elif event.message.message:
-                    await self.processMessage(event.media, event.message)
+            if (event.message.message).startswith('/'):
+                await self.commands(event.message)
+
+            elif self.AUTHORIZED_USER(event.message):
+                #await self.downloadLinks(message, media, text)
+                #if event.media:
+                await self.download_media_with_retries(event.media, event.message)
+                #elif event.message.message:
+                #    await self.processMessage(event.media, event.message)
         except Exception as e:
+            logger.logger.error(f"handle_new_message: {e}")
             message = await event.reply(f'Exception in hanld enew message: {e}')
 
     async def handle_buttons(self, event):
@@ -168,35 +174,17 @@ class TelegramBot:
             else:
                 logger.logger.error(f"Download failed after {self.max_retries} attempts")
 
-    async def evaluateMessageMedia(self, message, media):
-        logger.logger.info(f'evaluateMessageMedia => media: {media}')
-        if media and hasattr(media, 'document'):
-            return True
-        if isinstance(media, MessageMediaPhoto):
-            return True
-        if isinstance(media, MessageMediaWebPage):
-            if any(yt in message.message for yt in self.YOUTUBE_LINKS_SOPORTED):
-                return True
-            else:
-                return False
-        return False
-
     async def download_media(self, media, message):
         logger.logger.info(f'download_media => media: {media}')
         logger.logger.info(f'download_media => message: {message}')
         logger.logger.info(f'download_media => fwd_from: {message.fwd_from}')
-
-        #logger.logger.info(f'download_media => from_id: {message.fwd_from.from_id}')
-        #logger.logger.info(f'download_media => from_id channel_id: {message.fwd_from.from_id.channel_id}')
-        #group_name = await self.get_group_name(int(message.fwd_from.from_id.channel_id))
-        #logger.logger.info(f'download_media => group_name: {group_name}')
         
-        if not await self.evaluateMessageMedia(message, media): return
-
         text = message.message
         message = await message.reply(f'Download in queue...')
 
         async with self.semaphore:
+            message = await message.edit(f'Download in progress')
+
             if isinstance(media, MessageMediaWebPage):
                 logger.logger.info(f'download_media => MessageMediaWebPage')
                 await self.downloadMessageMediaWebPage(media, message, text)
@@ -206,6 +194,10 @@ class TelegramBot:
 
             elif media and hasattr(media, 'document'):
                 await self.downloadDocumentAttributeFilename(media, message)
+
+            else:
+                logger.logger.info(f'download_media NO MEDIA')
+                await self.downloadLinks(message, media, text)
 
     async def get_group_name(self, chat_id):
         try:
@@ -240,7 +232,7 @@ class TelegramBot:
         logger.logger.info(f'downloadMessageMediaWebPage => message.message: {text}')
 
         await self.downloadLinks(message, media, text)
-
+    
     async def downloadMessageMediaPhoto(self, media, message):
         try:
             logger.logger.info(f'downloadMessageMediaPhoto')
@@ -309,13 +301,16 @@ class TelegramBot:
             elapsed_time_total = download_end_time - download_start_time
             total_speed = megabytes_total / elapsed_time_total if elapsed_time_total > 0 else 0
 
+            logger.logger.info(f'download download_start_time: {download_start_time} download_end_time: {download_end_time} elapsed_time_total: {elapsed_time_total} total_speed: {total_speed} ')
+
+
             message_text = f'File downloaded in: {downloaded_file}\n'
             message_text += f'Descarga completada en: {elapsed_time_total:.2f} segundos\n'
             message_text += f'Velocidad promedio de descarga: {total_speed:.2f} MB/s\n'
             message_text += f'at: {end_time_short}'
 
             message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=downloaded_file) + os.linesep  # Add a line separator at the end
-            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=elapsed_time_total) + os.linesep  # Add a line separator at the end
+            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=self.format_time(elapsed_time_total)) + os.linesep  # Add a line separator at the end
             message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_SPEED").format(speed=total_speed) + os.linesep  # Add a line separator at the end
             message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
 
@@ -395,28 +390,30 @@ class TelegramBot:
             logger.logger.info(f'postProcess path: {path}')
         except Exception as e:
             logger.logger.error(f'postProcess Exception : {path} [{e}]')
-
-    async def processMessage(self, media, message):
-        logger.logger.info(f'processMessage => media: {media}')
-        logger.logger.info(f'processMessage => message: {message.message}')
-        text = message.message
-        if (message.message).startswith('/'):
-            await self.commands(message)
-
-        await self.downloadLinks(message, media, text)
         
     async def downloadLinks(self, message, media, text):
         logger.logger.info(f'downloadLinks => media: {media}')
         logger.logger.info(f'downloadLinks => message: {message.message}')
         logger.logger.info(f'downloadLinks => text: {text}')
 
-        if any(yt in text for yt in self.YOUTUBE_LINKS_SOPORTED):
-            message = await message.reply(f'Download in queue...')
-            await self.youTubeDownloader(message, text)
-        
-        elif all([urlparse(text).scheme, urlparse(text).netloc]):
-            message = await message.reply(f'Download in queue...')
-            await self.download_url_file(message, text)
+        url_pattern = r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+        urls = re.findall(url_pattern, text)
+
+        tasks = []
+
+        for url in urls:
+            if any(yt in url for yt in self.YOUTUBE_LINKS_SOPORTED):
+                task = self.youTubeDownloader(message, url)
+                tasks.append(task)
+            elif all([urlparse(url).scheme, urlparse(url).netloc]):
+                task = self.download_url_file(message, url)
+                tasks.append(task)
+
+        if tasks:
+            await asyncio.gather(*tasks)
+        else:
+            logger.logger.info(f'downloadLinks => NO ULRS: {urls}')
+            await message.edit(self.templatesLanguage.template("MESSAGE_NO_LINKS_DOWNLOAD"))
 
     async def youTubeDownloader(self, message, text):
         try:
@@ -455,26 +452,36 @@ class TelegramBot:
             file_name = os.path.basename(parsed_url.path)
             
             download_start_time = time.time()
-            
-            response = requests.get(url)
+
+            response = requests.head(url, allow_redirects=True)
+            content_type = response.headers.get('content-type', '').lower()
+            if 'text/html' in content_type:
+                logger.logger.info(f'download_url_file => NO DOWNLOADED LINK: {url}')
+                message = await message.edit(self.templatesLanguage.template("MESSAGE_NO_LINKS_DOWNLOAD"))
+                return 
+
+            response = requests.get(url, stream=True)
             if response.status_code == 200:
                 file_path = os.path.join(self.PATH_LINKS, file_name)
-                
+                message = await message.edit(self.templatesLanguage.template("MESSAGE_DOWNLOAD").format(path=self.PATH_LINKS))
                 self.create_directory(self.PATH_LINKS)
                 
                 with open(file_path, 'wb') as file:
                     file.write(response.content)
                 
+                    file_path = self.moveFile(file_path)
+
                     self.change_permissions(file_path)
                     file_size = len(response.content) / 1024 / 1024 
                     download_end_time = time.time()
                     elapsed_time_total = download_end_time - download_start_time
                     total_speed = file_size / elapsed_time_total if elapsed_time_total > 0 else 0
                     end_time_short = time.strftime('%H:%M', time.localtime())
+                    f_elapsed_time_total = self.format_time(elapsed_time_total)
 
                     message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=file_path) + os.linesep  # Add a line separator at the end
                     message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE_SIZE").format(file_size=file_size) + os.linesep  # Add a line separator at the end
-                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=elapsed_time_total) + os.linesep  # Add a line separator at the end
+                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=f_elapsed_time_total) + os.linesep  # Add a line separator at the end
                     message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_SPEED").format(speed=total_speed) + os.linesep  # Add a line separator at the end
                     message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
 
@@ -491,17 +498,41 @@ class TelegramBot:
     async def commands(self, message):
         try:
             logger.logger.info(f'commands => message: {message}')
-
-            if message.message == '/help':
-                await self.command_handler.show_help(message)
-            if message.message == '/version':
-                await self.command_handler.show_version(message)
+            logger.logger.info(f'commands => message: {message.message}')
+            if self.AUTHORIZED_USER(message):
+                if message.message == '/help':
+                    await self.command_handler.show_help(message)
+                if message.message == '/version':
+                    await self.command_handler.show_version(message)
             if message.message == '/id':
                 await self.command_handler.show_id(message)
 
         except Exception as e:
             logger.logger.error(f'commands => Exception: {e}')
 
+    def format_time(self, seconds):
+        try:
+            minutes, seconds = divmod(int(seconds), 60)
+            hours, minutes = divmod(minutes, 60)
+
+
+            #message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=downloaded_file) 
+
+            HOUR=self.templatesLanguage.template("HOUR")
+            MINUTE=self.templatesLanguage.template("MINUTE")
+            SECOND=self.templatesLanguage.template("SECOND")
+
+            time_parts = [
+                f"{hours} {HOUR}{'s' * (hours != 1)}" if hours else "",
+                f"{minutes} {MINUTE}{'s' * (minutes != 1)}" if minutes else "",
+                f"{seconds} {SECOND}{'s' * (seconds != 1)}" if seconds else ""
+            ]
+
+            formatted_time = " ".join(filter(None, time_parts))
+            return formatted_time
+        except Exception as e:
+            logger.logger.error(f"format_time {seconds}. {e}")
+            return seconds
 
 if __name__ == '__main__':
     
