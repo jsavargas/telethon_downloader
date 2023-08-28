@@ -27,7 +27,7 @@ class TelegramBot:
         self.constants = EnvironmentReader()
         self.templatesLanguage = LanguageTemplates(language=self.constants.get_variable("LANGUAGE"))
 
-        self.VERSION = "3.2.7"
+        self.VERSION = "3.2.8-rc1"
         self.SESSION = self.constants.get_variable("SESSION")
         self.API_ID = self.constants.get_variable("API_ID")
         self.API_HASH = self.constants.get_variable("API_HASH")
@@ -404,13 +404,13 @@ class TelegramBot:
             logger.logger.error(f'create_directory Exception : {path} [{e}]')
 
     def change_permissions(self, path):
-            try:
-                if hasattr(self, 'PUID') and hasattr(self, 'PGID') and self.PUID is not None and self.PGID is not None:
-                    if os.path.exists(path): os.chown(path, self.PUID, self.PGID)
-                if os.path.exists(path): os.chmod(path, 0o755)  # Cambiar permisos a 755 (rwxr-xr-x)
-                logger.logger.info(f"Changed permissions for {path} using PUID={self.PUID} and PGID={self.PGID}")
-            except FileNotFoundError:
-                logger.logger.error(f"File or directory not found: {path}")
+        try:
+            if hasattr(self, 'PUID') and hasattr(self, 'PGID') and self.PUID is not None and self.PGID is not None:
+                if os.path.exists(path): os.chown(path, self.PUID, self.PGID)
+            if os.path.exists(path): os.chmod(path, 0o755)  # Cambiar permisos a 755 (rwxr-xr-x)
+            logger.logger.info(f"Changed permissions for {path} using PUID={self.PUID} and PGID={self.PGID}")
+        except FileNotFoundError:
+            logger.logger.error(f"File or directory not found: {path}")
 
     def postProcess(self, path):
         try:

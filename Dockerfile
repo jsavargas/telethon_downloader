@@ -1,22 +1,18 @@
-FROM python:3 AS basetelethon
-
+FROM python:3.9-alpine AS basetelethon
 
 WORKDIR /app
 
 COPY requirements.txt requirements.txt
 
-RUN apt-get update && apt-get upgrade -y  && \ 
-	apt-get install -y \
-	ffmpeg \
-	#python3 \
-	#python3-setuptools \
-	python3-pip && \
-	#usermod -d /app abc  && \
-	python3 -m pip install --upgrade pip  && \
-	pip3 install -r requirements.txt --upgrade && \
-	apt-get remove --purge -y build-essential  && \
-	apt-get autoclean -y && apt-get autoremove -y  && \
-	rm -rf /default /etc/default /tmp/* /etc/cont-init.d/* /var/lib/apt/lists/* /var/tmp/*
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache ffmpeg && \
+    apk add --no-cache build-base && \
+    apk add --no-cache git && \
+    pip install --upgrade pip && \
+    pip install -r requirements.txt --upgrade && \
+    apk del build-base git && \
+    rm -rf /tmp/* /var/cache/apk/*
 
 
 

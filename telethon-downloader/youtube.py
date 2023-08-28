@@ -53,13 +53,15 @@ class YouTubeDownloader:
             await message.edit(f'downloading {total_downloads} videos...')
             res_youtube = ydl.download([url])
 
+            filename = os.path.basename(file_name)
+            final_file = os.path.join(youtube_path,filename)
+
             if (res_youtube == False):
                 os.chmod(youtube_path, 0o777)
-                filename = os.path.basename(file_name)
-                logger.logger.info(f'DOWNLOADED {total_downloads} VIDEO YOUTUBE [{file_name}] [{youtube_path}][{filename}]')
+                logger.logger.info(f'DOWNLOADED ==> {total_downloads} VIDEO YOUTUBE [{file_name}] [{youtube_path}][{filename}]')
                 end_time_short = time.strftime('%H:%M', time.localtime())
                 await message.edit(f'Downloading finished {total_downloads} video at {end_time_short}\n{youtube_path}')
-                self.change_permissions(file_name)
+                self.change_permissions(final_file)
             else:
                 logger.logger.info(f'ERROR: ONE OR MORE YOUTUBE VIDEOS NOT DOWNLOADED [{total_downloads}] [{url}] [{youtube_path}]')
                 await message.edit(f'ERROR: one or more videos not downloaded') 
@@ -111,13 +113,15 @@ class YouTubeDownloader:
         return None
 
     def change_permissions(self, path):
-            try:
-                if hasattr(self.constants, 'PUID') and hasattr(self.constants, 'PGID') and self.constants.PUID is not None and self.constants.PGID is not None:
-                    PUID = int(self.constants.get_variable("PUID")) if (str(self.constants.get_variable("PUID"))).isdigit() else None
-                    PGID = int(self.constants.get_variable("PGID")) if (str(self.constants.get_variable("PGID"))).isdigit() else None
+        logger.logger.info(f'change_permissions [{path}]')
+        try:
+            if hasattr(self.constants, 'PUID') and hasattr(self.constants, 'PGID') and self.constants.PUID is not None and self.constants.PGID is not None:
+                PUID = int(self.constants.get_variable("PUID")) if (str(self.constants.get_variable("PUID"))).isdigit() else None
+                PGID = int(self.constants.get_variable("PGID")) if (str(self.constants.get_variable("PGID"))).isdigit() else None
+                if os.path.exists(path): 
                     os.chown(path, PUID, PGID)
-                os.chmod(path, 0o755)  # Cambiar permisos a 755 (rwxr-xr-x)
-                print(f"Changed permissions for {path} using PUID={self.constants.PUID} and PGID={self.constants.PGID}")
-            except FileNotFoundError as e:
-                logger.logger.error(f"File or directory not found: {path} => {e}")
+                    os.chmod(path, 0o755)  # Cambiar permisos a 755 (rwxr-xr-x)
+                    logger.logger.info(f"Changed permissions for {path} using PUID={self.constants.PUID} and PGID={self.constants.PGID}")
+        except FileNotFoundError as e:
+            logger.logger.error(f"File or directory not found: {path} => {e}")
 
