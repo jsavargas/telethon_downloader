@@ -1,45 +1,72 @@
 import os
 
-from logger import logger
+import logger
+
+class EnvironmentReader:
+    def __init__(self):
+
+        # Define some variables so the code reads easier
+        self.API_ID = os.environ.get('TG_API_ID')
+        self.API_HASH = os.environ.get('TG_API_HASH')
+        self.BOT_TOKEN = os.environ.get('TG_BOT_TOKEN')
+        self.SESSION = os.environ.get('TG_SESSION', 'bottorrent')
+
+        self.PUID = os.environ.get('PUID')
+        self.PGID = os.environ.get('PGID')
+
+        self.TG_AUTHORIZED_USER_ID = os.environ.get('TG_AUTHORIZED_USER_ID', False)
+        self.TG_MAX_PARALLEL = int(os.environ.get('TG_MAX_PARALLEL',4))
+        self.TG_PROGRESS_DOWNLOAD =  os.environ.get('TG_PROGRESS_DOWNLOAD', True)
+        self.PROGRESS_STATUS_SHOW =  os.environ.get('PROGRESS_STATUS_SHOW', 50)
+
+        self.TG_DOWNLOAD_PATH = os.environ.get('TG_DOWNLOAD_PATH', '/download')
+        self.TG_DOWNLOAD_PATH_TORRENTS = os.environ.get('TG_DOWNLOAD_PATH_TORRENTS', '/watch')
+        self.PATH_YOUTUBE = os.path.join(self.TG_DOWNLOAD_PATH,'youtube')
+        self.YOUTUBE_AUDIOS_FOLDER = os.path.join(self.TG_DOWNLOAD_PATH,'youtube_audios')
+        self.PATH_TMP = os.path.join(self.TG_DOWNLOAD_PATH,'tmp')
+        self.PATH_COMPLETED = os.path.join(self.TG_DOWNLOAD_PATH,'completed')
 
 
-# Define some variables so the code reads easier
-API_ID = os.environ.get('TG_API_ID')
-API_HASH = os.environ.get('TG_API_HASH')
-BOT_TOKEN = os.environ.get('TG_BOT_TOKEN')
-SESSION = os.environ.get('TG_SESSION', 'bottorrent')
+        self.YOUTUBE_LINKS_SOPORTED = os.environ.get('YOUTUBE_LINKS_SOPORTED', 'youtube.com,youtu.be')
+        self.YOUTUBE_DEFAULT_DOWNLOAD = os.environ.get('YOUTUBE_DEFAULT_DOWNLOAD', 'VIDEO')
+        self.YOUTUBE_FORMAT_AUDIO = os.environ.get('YOUTUBE_FORMAT_AUDIO', 'bestaudio/best')  #best
+        self.YOUTUBE_FORMAT_VIDEO = os.environ.get('YOUTUBE_FORMAT_VIDEO', 'bestvideo+bestaudio/best')  #best
+        self.YOUTUBE_TIMEOUT_OPTION = int(os.environ.get('YOUTUBE_TIMEOUT_OPTION',5))
+        self.YOUTUBE_SHOW_OPTION = os.environ.get('YOUTUBE_SHOW_OPTION', True)
 
-PUID = os.environ.get('PUID')
-PGID = os.environ.get('PGID')
+        self.TG_DL_TIMEOUT = int(os.environ.get('TG_DL_TIMEOUT',3600))
 
-TG_AUTHORIZED_USER_ID = os.environ.get('TG_AUTHORIZED_USER_ID', False)
-TG_MAX_PARALLEL = int(os.environ.get('TG_MAX_PARALLEL',4))
-TG_PROGRESS_DOWNLOAD =  os.environ.get('TG_PROGRESS_DOWNLOAD', True)
-PROGRESS_STATUS_SHOW =  os.environ.get('PROGRESS_STATUS_SHOW', 50)
-
-TG_DOWNLOAD_PATH = os.environ.get('TG_DOWNLOAD_PATH', '/download')
-TG_DOWNLOAD_PATH_TORRENTS = os.environ.get('TG_DOWNLOAD_PATH_TORRENTS', '/watch')
-PATH_YOUTUBE = os.path.join(TG_DOWNLOAD_PATH,'youtube')
-YOUTUBE_AUDIOS_FOLDER = os.path.join(TG_DOWNLOAD_PATH,'youtube_audios')
-PATH_TMP = os.path.join(TG_DOWNLOAD_PATH,'tmp')
-PATH_COMPLETED = os.path.join(TG_DOWNLOAD_PATH,'completed')
+        self.TG_UNZIP_TORRENTS = os.environ.get('TG_UNZIP_TORRENTS', False)
+        self.TG_FOLDER_BY_AUTHORIZED = os.environ.get('TG_FOLDER_BY_AUTHORIZED', False)
 
 
-YOUTUBE_LINKS_SOPORTED = os.environ.get('YOUTUBE_LINKS_SOPORTED', 'youtube.com,youtu.be')
-YOUTUBE_DEFAULT_DOWNLOAD = os.environ.get('YOUTUBE_DEFAULT_DOWNLOAD', 'VIDEO')
-YOUTUBE_FORMAT_AUDIO = os.environ.get('YOUTUBE_FORMAT_AUDIO', 'bestaudio/best')  #best
-YOUTUBE_FORMAT_VIDEO = os.environ.get('YOUTUBE_FORMAT_VIDEO', 'bestvideo+bestaudio/best')  #best
-YOUTUBE_TIMEOUT_OPTION = int(os.environ.get('YOUTUBE_TIMEOUT_OPTION',5))
-YOUTUBE_SHOW_OPTION = os.environ.get('YOUTUBE_SHOW_OPTION', True)
+        self.LANGUAGE = os.environ.get('APP_LANGUAGE', 'en_EN')
 
-TG_DL_TIMEOUT = int(os.environ.get('TG_DL_TIMEOUT',3600))
+        self.PATH_CONFIG = '/config/config.ini'
 
-TG_UNZIP_TORRENTS = os.environ.get('TG_UNZIP_TORRENTS', False)
-TG_FOLDER_BY_AUTHORIZED = os.environ.get('TG_FOLDER_BY_AUTHORIZED', False)
+        self.YOUTUBE = 'youtube'
 
 
-LANGUAGE = os.environ.get('APP_LANGUAGE', 'en_EN')
+    def print_variables(self):
+        print(f"API_ID: {self.API_ID}")
+        print(f"API_HASH: {self.API_HASH}")
+        print(f"BOT_TOKEN: {self.BOT_TOKEN}")
+        print(f"SESSION: {self.SESSION}")
 
-PATH_CONFIG = '/config/config.ini'
+    def printAttribute(self, attribute_name):
+        if hasattr(self, attribute_name):
+            attribute_value = getattr(self, attribute_name)
+            logger.logger.info(f"{attribute_name}: {attribute_value}")
+        else:
+            attribute_value = getattr(self, attribute_name)
+            logger.logger.info(f"{attribute_name}: {attribute_value}")
 
-YOUTUBE = 'youtube'
+    def get_variable(self, variable_name):
+        value = getattr(self, variable_name, None)
+        if isinstance(value, str):
+            return value.strip() if value is not None else None
+        return value
+
+
+
+

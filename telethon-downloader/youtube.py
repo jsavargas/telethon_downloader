@@ -5,14 +5,14 @@ import time
 import asyncio
 
 import logger
-import constants
+from constants import EnvironmentReader
 
 class YouTubeDownloader:
     def __init__(self):
+        self.constants = EnvironmentReader()
         self.ydl_opts = {
-            'progress_hooks': [self.progress_hook],
-            'format': constants.YOUTUBE_FORMAT_VIDEO, 
-            'outtmpl': f'{constants.PATH_YOUTUBE}/%(title)s.%(ext)s',
+            'format': self.constants.get_variable("YOUTUBE_FORMAT_VIDEO"), 
+            'outtmpl': f'{self.constants.get_variable("PATH_YOUTUBE")}/%(title)s.%(ext)s',
             'cachedir':'False', 
             "retries": 10, 
             'merge_output_format':'mkv',
@@ -29,15 +29,17 @@ class YouTubeDownloader:
             info_dict = ydl.extract_info(url, download=False)
             file_name = ydl.prepare_filename(info_dict)
             total_downloads = 1
-            youtube_path = constants.PATH_YOUTUBE
+            youtube_path = self.constants.get_variable("PATH_YOUTUBE")
+            self.change_permissions(youtube_path)
+
             if '_type' in info_dict and info_dict["_type"] == 'playlist':
                 total_downloads = len(info_dict['entries'])
-                youtube_path = os.path.join(constants.PATH_YOUTUBE,info_dict['uploader'], info_dict['title'])
+                youtube_path = os.path.join(self.constants.get_variable("PATH_YOUTUBE"),info_dict['uploader'], info_dict['title'])
             else:
-                youtube_path = os.path.join(constants.PATH_YOUTUBE,info_dict['uploader'])
+                youtube_path = os.path.join(self.constants.get_variable("PATH_YOUTUBE"),info_dict['uploader'])
 
             ydl_opts = { 
-                'format': constants.YOUTUBE_FORMAT_VIDEO,  
+                'format': self.constants.get_variable("YOUTUBE_FORMAT_VIDEO"),  
                 'outtmpl': f'{youtube_path}/%(title)s.%(ext)s',
                 'cachedir':'False',
                 'ignoreerrors': True, 
@@ -57,29 +59,37 @@ class YouTubeDownloader:
                 logger.logger.info(f'DOWNLOADED {total_downloads} VIDEO YOUTUBE [{file_name}] [{youtube_path}][{filename}]')
                 end_time_short = time.strftime('%H:%M', time.localtime())
                 await message.edit(f'Downloading finished {total_downloads} video at {end_time_short}\n{youtube_path}')
+                self.change_permissions(file_name)
             else:
                 logger.logger.info(f'ERROR: ONE OR MORE YOUTUBE VIDEOS NOT DOWNLOADED [{total_downloads}] [{url}] [{youtube_path}]')
                 await message.edit(f'ERROR: one or more videos not downloaded') 
 
     async def downloadAudio(self, url, message):
+        os.makedirs(self.constants.get_variable("YOUTUBE_AUDIOS_FOLDER"), exist_ok=True)
+        youtube_path = os.path.join(self.constants.get_variable("YOUTUBE_AUDIOS_FOLDER"))
+        self.change_permissions(youtube_path)
+
         logger.logger.info(f'downloadAudio [{url}] [{message}]')
         
-        os.makedirs(constants.YOUTUBE_AUDIOS_FOLDER, exist_ok=True)
-        youtube_path = os.path.join(constants.YOUTUBE_AUDIOS_FOLDER)
+        #ydl_opts.update(self.ydl_opts)
 
         ydl_opts = {
-            'format': constants.YOUTUBE_FORMAT_AUDIO,  
+            'format': self.constants.get_variable("YOUTUBE_FORMAT_AUDIO"),  
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio', 
                 'preferredcodec': 'mp3',     
                 'preferredquality': '320',   
             }],
-            'outtmpl': os.path.join(youtube_path, '%(title)s.%(ext)s')
+            'outtmpl': os.path.join(youtube_path, '%(title)s.%(ext)s'),
+            'merge_output_format':'mp3'
         }
 
-        with YoutubeDL(self.ydl_opts) as ydl:
+        with YoutubeDL(ydl_opts) as ydl:
+
             info_dict = ydl.extract_info(url, download=False)
-            #logger.logger.info(f'downloadAudio info_dict: [{info_dict}]')
+            file_name = ydl.prepare_filename(info_dict)[:-5] + ".mp3" if ydl.prepare_filename(info_dict).endswith(".webm") else ydl.prepare_filename(info_dict)
+            logger.logger.info(f'DOWNLOADING AUDIO YOUTUBE 1 [{url}] [{file_name}]')
+            
             total_downloads = 1
             if '_type' in info_dict and info_dict["_type"] == 'playlist':
                 total_downloads = len(info_dict['entries'])
@@ -88,10 +98,26 @@ class YouTubeDownloader:
 
         with YoutubeDL(ydl_opts) as ydl:
             await message.edit(f'downloading {total_downloads} audios...')
+            
             res_youtube = ydl.download([url])
 
             if (res_youtube == False):
-                os.chmod(constants.YOUTUBE_AUDIOS_FOLDER, 0o777)
+                logger.logger.info(f'downloadAudio destination: [{file_name}]')
+                os.chmod(self.constants.get_variable("YOUTUBE_AUDIOS_FOLDER"), 0o777)
                 end_time_short = time.strftime('%H:%M', time.localtime())
                 await message.edit(f'Downloading finished {total_downloads} audio at {end_time_short}\n{youtube_path}')
+                self.change_permissions(file_name)
+                return file_name
+        return None
+
+    def change_permissions(self, path):
+            try:
+                if hasattr(self.constants, 'PUID') and hasattr(self.constants, 'PGID') and self.constants.PUID is not None and self.constants.PGID is not None:
+                    PUID = int(self.constants.get_variable("PUID")) if (str(self.constants.get_variable("PUID"))).isdigit() else None
+                    PGID = int(self.constants.get_variable("PGID")) if (str(self.constants.get_variable("PGID"))).isdigit() else None
+                    os.chown(path, PUID, PGID)
+                os.chmod(path, 0o755)  # Cambiar permisos a 755 (rwxr-xr-x)
+                print(f"Changed permissions for {path} using PUID={self.constants.PUID} and PGID={self.constants.PGID}")
+            except FileNotFoundError as e:
+                logger.logger.error(f"File or directory not found: {path} => {e}")
 

@@ -11,8 +11,8 @@ import asyncio
 from pathlib import Path
 
 import logger
-import constants
 import config_manager
+from constants import EnvironmentReader
 from youtube import YouTubeDownloader
 from command_handler import CommandHandler
 from language_templates import LanguageTemplates
@@ -20,39 +20,41 @@ from language_templates import LanguageTemplates
 
 class TelegramBot:
     def __init__(self):
-        
-        self.VERSION = "3.2.4"
-        self.SESSION = constants.SESSION
-        self.API_ID = constants.API_ID
-        self.API_HASH = constants.API_HASH
-        self.BOT_TOKEN = constants.BOT_TOKEN
-        
-        self.PUID = int(constants.PUID) if (str(constants.PUID)).isdigit() else None
-        self.PGID = int(constants.PGID) if (str(constants.PGID)).isdigit() else None
 
-        self.TG_AUTHORIZED_USER_ID = constants.TG_AUTHORIZED_USER_ID.replace(" ", "").split(",")
-        self.TG_PROGRESS_DOWNLOAD = (constants.TG_PROGRESS_DOWNLOAD == "True" or constants.TG_PROGRESS_DOWNLOAD == True)
-        self.TG_MAX_PARALLEL = constants.TG_MAX_PARALLEL
-        self.PROGRESS_STATUS_SHOW = int(constants.PROGRESS_STATUS_SHOW)
+        self.constants = EnvironmentReader()
+        
+        self.VERSION = "3.2.5"
+        self.SESSION = self.constants.get_variable("SESSION")
+        self.API_ID = self.constants.get_variable("API_ID")
+        self.API_HASH = self.constants.get_variable("API_HASH")
+        self.BOT_TOKEN = self.constants.get_variable("BOT_TOKEN")
+        
+        self.PUID = int(self.constants.get_variable("PUID")) if (str(self.constants.get_variable("PUID"))).isdigit() else None
+        self.PGID = int(self.constants.get_variable("PGID")) if (str(self.constants.get_variable("PGID"))).isdigit() else None
+
+        self.TG_AUTHORIZED_USER_ID = self.constants.get_variable("TG_AUTHORIZED_USER_ID").replace(" ", "").split(",")
+        self.TG_PROGRESS_DOWNLOAD = (self.constants.get_variable("TG_PROGRESS_DOWNLOAD") == "True" or self.constants.get_variable("TG_PROGRESS_DOWNLOAD") == True)
+        self.TG_MAX_PARALLEL = self.constants.get_variable("TG_MAX_PARALLEL")
+        self.PROGRESS_STATUS_SHOW = int(self.constants.get_variable("PROGRESS_STATUS_SHOW"))
 
         self.max_retries = 3
         self.semaphore = asyncio.Semaphore(self.TG_MAX_PARALLEL) 
 
-        self.TG_DOWNLOAD_PATH = constants.TG_DOWNLOAD_PATH
-        self.TG_DOWNLOAD_PATH_TORRENTS = constants.TG_DOWNLOAD_PATH_TORRENTS
-        self.PATH_TMP = constants.PATH_TMP
-        self.PATH_COMPLETED = constants.PATH_COMPLETED
-        self.PATH_YOUTUBE = constants.PATH_YOUTUBE
+        self.TG_DOWNLOAD_PATH = self.constants.get_variable("TG_DOWNLOAD_PATH")
+        self.TG_DOWNLOAD_PATH_TORRENTS = self.constants.get_variable("TG_DOWNLOAD_PATH_TORRENTS")
+        self.PATH_TMP = self.constants.get_variable("PATH_TMP")
+        self.PATH_COMPLETED = self.constants.get_variable("PATH_COMPLETED")
+        self.PATH_YOUTUBE = self.constants.get_variable("PATH_YOUTUBE")
 
-        self.PATH_CONFIG = constants.PATH_CONFIG
+        self.PATH_CONFIG = self.constants.get_variable("PATH_CONFIG")
         self.CONFIG_MANAGER = config_manager.ConfigurationManager(self.PATH_CONFIG)
 
         self.DEFAULT_PATH_EXTENSIONS = self.CONFIG_MANAGER.get_section_keys('DEFAULT_PATH')
 
-        self.YOUTUBE_LINKS_SOPORTED = constants.YOUTUBE_LINKS_SOPORTED.replace(" ", "").split(",")
-        self.YOUTUBE_DEFAULT_DOWNLOAD = constants.YOUTUBE_DEFAULT_DOWNLOAD
-        self.YOUTUBE_TIMEOUT_OPTION = int(constants.YOUTUBE_TIMEOUT_OPTION) if (str(constants.YOUTUBE_TIMEOUT_OPTION)).isdigit() else 5 
-        self.YOUTUBE_SHOW_OPTION = (constants.YOUTUBE_SHOW_OPTION == "True" or constants.YOUTUBE_SHOW_OPTION == True)
+        self.YOUTUBE_LINKS_SOPORTED = self.constants.get_variable("YOUTUBE_LINKS_SOPORTED").replace(" ", "").split(",")
+        self.YOUTUBE_DEFAULT_DOWNLOAD = self.constants.get_variable("YOUTUBE_DEFAULT_DOWNLOAD")
+        self.YOUTUBE_TIMEOUT_OPTION = int(self.constants.get_variable("YOUTUBE_TIMEOUT_OPTION")) if (str(self.constants.get_variable("YOUTUBE_TIMEOUT_OPTION"))).isdigit() else 5 
+        self.YOUTUBE_SHOW_OPTION = (self.constants.get_variable("YOUTUBE_SHOW_OPTION") == "True" or self.constants.get_variable("YOUTUBE_SHOW_OPTION") == True)
         
         self.youtubeLinks = {}  
 
@@ -63,7 +65,7 @@ class TelegramBot:
         self.ytdownloader = YouTubeDownloader()
         self.command_handler = CommandHandler(self)
 
-        self.templatesLanguage = LanguageTemplates(language=constants.LANGUAGE)
+        self.templatesLanguage = LanguageTemplates(language=self.constants.get_variable("LANGUAGE"))
 
         
         self.printEnvironment()
@@ -82,11 +84,14 @@ class TelegramBot:
         self.printAttribute("BOT_TOKEN")
         self.printAttribute("PUID")
         self.printAttribute("PGID")
+        self.printAttribute("TG_AUTHORIZED_USER_ID")
         self.printAttribute("YOUTUBE_FORMAT_AUDIO")
         self.printAttribute("YOUTUBE_FORMAT_VIDEO")
         self.printAttribute("YOUTUBE_DEFAULT_DOWNLOAD")
         self.printAttribute("YOUTUBE_TIMEOUT_OPTION")
         self.printAttribute("YOUTUBE_SHOW_OPTION")
+
+        self.printAttribute("LANGUAGE")
 
         self.printAttribute("VERSION")
 
@@ -95,7 +100,7 @@ class TelegramBot:
             attribute_value = getattr(self, attribute_name)
             logger.logger.info(f"{attribute_name}: {attribute_value}")
         else:
-            attribute_value = getattr(constants, attribute_name)
+            attribute_value = getattr(self.constants, attribute_name)
             logger.logger.info(f"{attribute_name}: {attribute_value}")
 
 
@@ -156,13 +161,13 @@ class TelegramBot:
             await self.download_media(media, message)
         except Exception as e:
             if retry_count < self.max_retries:
-                logger.logger.error(f"Descarga fallida, reintentando... Intento {retry_count + 1}")
+                logger.logger.error(f"Download failed, retrying... Attempt {retry_count + 1}")
                 await self.download_media_with_retries(media, message, retry_count + 1)
             else:
-                logger.logger.error(f"Descarga fallida después de {self.max_retries} intentos")
+                logger.logger.error(f"Download failed after {self.max_retries} attempts")
 
-    async def evaluateMessageMediaWebPage(self, message, media):
-        logger.logger.info(f'evaluateMessageMediaWebPage => media: {media}')
+    async def evaluateMessageMedia(self, message, media):
+        logger.logger.info(f'evaluateMessageMedia => media: {media}')
         if media and hasattr(media, 'document'):
             return True
         if isinstance(media, MessageMediaPhoto):
@@ -184,7 +189,7 @@ class TelegramBot:
         #group_name = await self.get_group_name(int(message.fwd_from.from_id.channel_id))
         #logger.logger.info(f'download_media => group_name: {group_name}')
         
-        if not await self.evaluateMessageMediaWebPage(message, media): return
+        if not await self.evaluateMessageMedia(message, media): return
 
         text = message.message
         message = await message.reply(f'Download in queue...')
@@ -217,6 +222,8 @@ class TelegramBot:
                 megabytes_total = total / 1024 / 1024
                 message_text = f'Downloading in: {self.PATH_TMP}\n'
                 message_text += f'progress: {megabytes_current:.2f} MB / {megabytes_total:.2f} MB'
+                message_text = self.templatesLanguage.template("PROGRESS_CALLBACK_PATH").format(path=self.PATH_TMP) + os.linesep  # Add a line separator at the end
+                message_text += self.templatesLanguage.template("PROGRESS_CALLBACK_PROGRESS").format(current=megabytes_current, total=megabytes_total)
                 if current == total or current % (self.PROGRESS_STATUS_SHOW * 1024 * 1024) == 0:
                     await self.client.edit_message(message.chat_id, message.id, message_text)
             finally:
@@ -236,14 +243,32 @@ class TelegramBot:
     async def downloadMessageMediaPhoto(self, media, message):
         try:
             logger.logger.info(f'downloadMessageMediaPhoto')
+            
+            last_size = 0
 
             desired_size_type = 'y'  
-            #for size in media.photo.sizes:
-            #    if size.type == desired_size_type:
-            #        logger.logger.info(f"Desired Size Type: {desired_size_type}, Width: {size.w}, Height: {size.h}, size: {size.sizes}")
-            #        size = size.sizes[-1]
-            #        break
-            last_size = next((size.sizes[-1] for size in media.photo.sizes if size.type == desired_size_type), None)
+            for size in media.photo.sizes:
+                if hasattr(size, 'size'):
+                    logger.logger.info(f"Desired size:::: {size}")
+                    last_size = size.size if size.size > last_size else last_size
+
+                if hasattr(size, 'sizes'):
+                    logger.logger.info(f"Desired size IF: {size}")
+                    last_size = size.sizes[-1]
+                    break
+                                
+                #if size.type == desired_size_type:
+                #    logger.logger.info(f"Desired size Type: {size}")
+                #else:
+                #    logger.logger.info(f"Desired size:::: {size}")
+
+                #if size.type == desired_size_type:
+                #    logger.logger.info(f"Desired size Type: {size}")
+                #    logger.logger.info(f"Desired Size Type: {desired_size_type}, Width: {size.w}, Height: {size.h}, size: {size.sizes}")
+                #    size = size.sizes[-1]
+                #    break
+
+            #last_size = next((size.sizes[-1] for size in media.photo.sizes if size.type == desired_size_type), None)
             logger.logger.info(f'downloadMessageMediaPhoto last_size: {last_size}')
             await self.download(media.photo, message, last_size)
         except Exception as e:
@@ -273,21 +298,27 @@ class TelegramBot:
             megabytes_total = total_size / 1024 / 1024
             download_start_time = time.time()
             
-            
-            message = await message.edit(f'Descargando en: {self.PATH_TMP}')
+            message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD").format(path=self.PATH_TMP)
+            message = await message.edit(message_text)
             archivo_descarga = await self.client.download_media(media, file=self.PATH_TMP, progress_callback=self.progress_callback(message))
             archivo_descarga = self.moveFile(archivo_descarga)
             end_time_short = time.strftime('%H:%M', time.localtime())
-            logger.logger.info(f'Archivo descargado en: {archivo_descarga}')
+            logger.logger.info(f'File downloaded in: {archivo_descarga}')
             download_end_time = time.time()
             elapsed_time_total = download_end_time - download_start_time
             total_speed = megabytes_total / elapsed_time_total if elapsed_time_total > 0 else 0
 
-            final_message = f'Archivo descargado en: {archivo_descarga}\n'
-            final_message += f'Descarga completada en: {elapsed_time_total:.2f} segundos\n'
-            final_message += f'Velocidad promedio de descarga: {total_speed:.2f} MB/s\n'
-            final_message += f'at: {end_time_short}'
-            message = await message.edit(f'{final_message}')
+            message_text = f'File downloaded in: {archivo_descarga}\n'
+            message_text += f'Descarga completada en: {elapsed_time_total:.2f} segundos\n'
+            message_text += f'Velocidad promedio de descarga: {total_speed:.2f} MB/s\n'
+            message_text += f'at: {end_time_short}'
+
+            _message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(archivo_descarga=archivo_descarga) + os.linesep  # Add a line separator at the end
+            _message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=elapsed_time_total) + os.linesep  # Add a line separator at the end
+            _message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_SPEED").format(speed=total_speed) + os.linesep  # Add a line separator at the end
+            _message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
+
+            message = await message.edit(f'{message_text}')
         except Exception as e:
             logger.logger.error(f'download Exception: {e}')
             message = await message.edit(f'Exception download: {e}')
