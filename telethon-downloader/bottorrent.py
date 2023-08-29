@@ -27,7 +27,7 @@ class TelegramBot:
         self.constants = EnvironmentReader()
         self.templatesLanguage = LanguageTemplates(language=self.constants.get_variable("LANGUAGE"))
 
-        self.VERSION = "3.2.8-rc1"
+        self.VERSION = "3.2.8-rc3"
         self.SESSION = self.constants.get_variable("SESSION")
         self.API_ID = self.constants.get_variable("API_ID")
         self.API_HASH = self.constants.get_variable("API_HASH")
@@ -65,7 +65,7 @@ class TelegramBot:
         
         self.youtubeLinks = {}  
 
-        self.client = TelegramClient(self.SESSION, self.API_ID, self.API_HASH)
+        self.client = TelegramClient(self.SESSION, self.API_ID, self.API_HASH, proxy = None, request_retries = 10, flood_sleep_threshold = 120)
         self.client.add_event_handler(self.handle_new_message, events.NewMessage)
         self.client.add_event_handler(self.handle_buttons, events.CallbackQuery)
         
@@ -149,7 +149,7 @@ class TelegramBot:
             elif self.AUTHORIZED_USER(event.message):
                 #await self.downloadLinks(message, media, text)
                 #if event.media:
-                await self.download_media_with_retries(event.media, event.message)
+                await self.download_media_with_retries(event, event.media, event.message)
                 #elif event.message.message:
                 #    await self.processMessage(event.media, event.message)
         except Exception as e:
@@ -182,9 +182,9 @@ class TelegramBot:
                 await event.edit('Downloading Audio')
                 await self.ytdownloader.downloadAudio(url, event)
 
-    async def download_media_with_retries(self, media, message, retry_count=0):
+    async def download_media_with_retries(self, event, media, message, retry_count=0):
         try:
-            await self.download_media(media, message)
+            await self.download_media(event, media, message)
         except Exception as e:
             if retry_count < self.max_retries:
                 logger.logger.error(f"Download failed, retrying... Attempt {retry_count + 1}")
@@ -192,7 +192,7 @@ class TelegramBot:
             else:
                 logger.logger.error(f"Download failed after {self.max_retries} attempts")
 
-    async def download_media(self, media, message):
+    async def download_media(self, event, media, message):
         logger.logger.info(f'download_media => media: {media}')
         logger.logger.info(f'download_media => message: {message}')
         logger.logger.info(f'download_media => fwd_from: {message.fwd_from}')
@@ -205,13 +205,13 @@ class TelegramBot:
 
             if isinstance(media, MessageMediaWebPage):
                 logger.logger.info(f'download_media => MessageMediaWebPage')
-                await self.downloadMessageMediaWebPage(media, message, text)
+                await self.downloadMessageMediaWebPage(event, message, media, text)
         
             elif isinstance(media, MessageMediaPhoto):
-                await self.downloadMessageMediaPhoto(media, message)
+                await self.downloadMessageMediaPhoto(event, message, media)
 
             elif media and hasattr(media, 'document'):
-                await self.downloadDocumentAttributeFilename(media, message)
+                await self.downloadDocumentAttributeFilename(event, message, media)
 
             else:
                 logger.logger.info(f'download_media NO MEDIA')
@@ -244,14 +244,14 @@ class TelegramBot:
             
         return callback
 
-    async def downloadMessageMediaWebPage(self, media, message, text):
+    async def downloadMessageMediaWebPage(self, event, message, media, text):
         logger.logger.info(f'downloadMessageMediaWebPage => message: {message}')
         logger.logger.info(f'downloadMessageMediaWebPage => media: {media}')
         logger.logger.info(f'downloadMessageMediaWebPage => message.message: {text}')
 
         await self.downloadLinks(message, media, text)
     
-    async def downloadMessageMediaPhoto(self, media, message):
+    async def downloadMessageMediaPhoto(self, event, message, media):
         try:
             logger.logger.info(f'downloadMessageMediaPhoto')
             
@@ -268,54 +268,44 @@ class TelegramBot:
                     last_size = size.sizes[-1]
                     break
                                 
-                #if size.type == desired_size_type:
-                #    logger.logger.info(f"Desired size Type: {size}")
-                #else:
-                #    logger.logger.info(f"Desired size:::: {size}")
-
-                #if size.type == desired_size_type:
-                #    logger.logger.info(f"Desired size Type: {size}")
-                #    logger.logger.info(f"Desired Size Type: {desired_size_type}, Width: {size.w}, Height: {size.h}, size: {size.sizes}")
-                #    size = size.sizes[-1]
-                #    break
-
-            #last_size = next((size.sizes[-1] for size in media.photo.sizes if size.type == desired_size_type), None)
             logger.logger.info(f'downloadMessageMediaPhoto last_size: {last_size}')
-            await self.download(media.photo, message, last_size)
+            await self.download(event, message, media.photo, last_size)
         except Exception as e:
-            message = await message.edit(f'Exception download: {e}')
+            message = await message.edit(f'Exception downloadMessageMediaPhoto: {e}')
 
-    async def downloadDocumentAttributeFilename(self, media, message):
+    async def downloadDocumentAttributeFilename(self, event, message, media):
         try:
             logger.logger.info(f'downloadDocumentAttributeFilename')
             for attr in media.document.attributes:
                 if isinstance(attr, DocumentAttributeFilename):
-                    #message = await message.edit(f'Comenzando descarga en: {self.PATH_TMP}')
-                    #archivo_descarga = await self.client.download_media(media.document, file=self.PATH_TMP, progress_callback=self.progress_callback(message))
-                    #archivo_descarga = self.moveFile(archivo_descarga)
-                    #end_time_short = time.strftime('%H:%M', time.localtime())
-                    #logger.logger.info(f'Archivo descargado en: {archivo_descarga}')
-                    #message = await message.edit(f'Archivo descargado con éxito en: {archivo_descarga}\n at: {end_time_short}')
 
-                    await self.download(media.document, message, media.document.size)
+                    await self.download(event, message, media.document, media.document.size)
         except Exception as e:
             message = await message.edit(f'Exception download: {e}')
 
 
-    async def download(self, media, message, total_size):
+    async def download(self, event, message, media, total_size):
         logger.logger.info(f'download media: {media}')
         logger.logger.info(f'download message: {message}')
         try:
             megabytes_total = total_size / 1024 / 1024
             download_start_time = time.time()
-            
+            self.create_directory(self.PATH_TMP)
+
+            logger.logger.info(f'download download_start_time temp 1: {download_start_time} download_end_time: {time.time()} elapsed_time_total: {time.time() - download_start_time} total_speed:  ')
+
             message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD").format(path=self.PATH_TMP)
             message = await message.edit(message_text)
 
+            logger.logger.info(f'download download_start_time temp 2: {download_start_time} download_end_time: {time.time()} elapsed_time_total: {time.time() - download_start_time} total_speed:  ')
+
             downloaded_file = await asyncio.wait_for(
-                self.client.download_media(media, file=self.PATH_TMP, progress_callback=self.progress_callback(message)),
+                self.client.download_media(event.media, file=self.PATH_TMP, progress_callback=self.progress_callback(message)),
                 timeout=self.TG_DL_TIMEOUT
             )
+            
+            logger.logger.info(f'download download_start_time temp 3: {download_start_time} download_end_time: {time.time()} elapsed_time_total: {time.time() - download_start_time} total_speed:  ')
+            logger.logger.info(f'download download_start_time temp 3: {downloaded_file} total_speed:  ')
 
             downloaded_file = self.moveFile(downloaded_file)
             end_time_short = time.strftime('%H:%M', time.localtime())
@@ -324,7 +314,7 @@ class TelegramBot:
             elapsed_time_total = download_end_time - download_start_time
             total_speed = megabytes_total / elapsed_time_total if elapsed_time_total > 0 else 0
 
-            logger.logger.info(f'download download_start_time: {download_start_time} download_end_time: {download_end_time} elapsed_time_total: {elapsed_time_total} total_speed: {total_speed} ')
+            logger.logger.info(f'download download_start_time temp 4: {download_start_time} download_end_time: {time.time()} elapsed_time_total: {time.time() - download_start_time} total_speed:  ')
 
 
             message_text = f'File downloaded in: {downloaded_file}\n'
@@ -336,6 +326,8 @@ class TelegramBot:
             message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=self.format_time(elapsed_time_total)) + os.linesep  # Add a line separator at the end
             message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_SPEED").format(speed=total_speed) + os.linesep  # Add a line separator at the end
             message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
+
+            logger.logger.info(f'download download_start_time temp 5: {download_start_time} download_end_time: {time.time()} elapsed_time_total: {time.time() - download_start_time} total_speed: {elapsed_time_total} ')
 
             message = await message.edit(f'{message_text}')
 
@@ -357,11 +349,11 @@ class TelegramBot:
             extension = path_obj.suffix
             directory = path_obj.parent
 
-            logger.logger.info(f"Full Path: {file_path}")
-            logger.logger.info(f"basename: {basename}")
-            logger.logger.info(f"Filename: {filename}")
-            logger.logger.info(f"Extension: {extension}")
-            logger.logger.info(f"Directory: {directory}")
+            logger.logger.info(f"moveFile file_path: {file_path}")
+            logger.logger.info(f"moveFile basename: {basename}")
+            logger.logger.info(f"moveFile Filename: {filename}")
+            logger.logger.info(f"moveFile Extension: {extension}")
+            logger.logger.info(f"moveFile Directory: {directory}")
             
 
             if file_path.endswith('.torrent'): 
@@ -371,7 +363,7 @@ class TelegramBot:
             else:
                 final_path = os.path.join(self.PATH_COMPLETED, basename)
 
-            logger.logger.info(f"final_path: {final_path}")
+            logger.logger.info(f"moveFile final_path: {final_path}")
 
             directorio_base = Path(final_path).parent            
             if os.path.exists(final_path):
@@ -385,18 +377,18 @@ class TelegramBot:
             self.create_directory(directorio_base)
             final_path = shutil.move(file_path, final_path)
             self.change_permissions(final_path)
-            logger.logger.info(f"final_path: {final_path}")
+            logger.logger.info(f"moveFile final_path: {final_path}")
 
             self.postProcess(final_path)
             return final_path
 
         except Exception as e:
-            logger.logger.error(f'create_directory Exception : {file_path} [{e}]')
+            logger.logger.error(f'moveFile Exception : {file_path} [{e}]')
 
     def create_directory(self, path):
         try:
             logger.logger.info(f'create_directory path: {path}')
-            if os.path.exists(path): os.makedirs(path, exist_ok=True)
+            os.makedirs(path, exist_ok=True)
             if hasattr(self, 'PUID') and hasattr(self, 'PGID') and self.PUID is not None and self.PGID is not None:
                 if os.path.exists(path): os.chown(path, self.PUID, self.PGID)
             if os.path.exists(path): os.chmod(path, 0o777)
