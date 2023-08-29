@@ -1,4 +1,4 @@
-FROM python:3.9-alpine AS basetelethon
+FROM jsavargas/telethon_downloader:ffmpeg AS basetelethon
 
 WORKDIR /app
 
@@ -6,9 +6,9 @@ COPY requirements.txt requirements.txt
 
 RUN apk update && \
     apk upgrade && \
-    apk add --no-cache ffmpeg && \
-    apk add --no-cache build-base && \
-    apk add --no-cache git && \
+    #apk add --no-cache ffmpeg && \
+    #apk add --no-cache build-base && \
+    #apk add --no-cache git && \
     pip install --upgrade pip && \
     pip install -r requirements.txt --upgrade && \
     apk del build-base git && \
@@ -21,8 +21,7 @@ FROM basetelethon
 COPY telethon-downloader /app
 COPY root/ /
 
-RUN chmod 777 /app/bottorrent.py
-RUN chmod 777 -R /etc/services.d/
+RUN chmod 777 /app/bottorrent.py && chmod 777 -R /etc/services.d/
 
 
 VOLUME /download /watch /config
