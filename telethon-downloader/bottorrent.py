@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "VERSION 3.1.12"
+VERSION = "VERSION 3.1.13-rc1"
 HELP = """
 /help		: This Screen
 /version	: Version  
@@ -148,14 +148,19 @@ async def worker(name):
         mensaje = 'STARTING DOWNLOADING %s [%s] BY [%s]' % (time.strftime('%d/%m/%Y %H:%M:%S', time.localtime()), file_path , (CID))
         logger.info(mensaje)
         try:
+            download_start_time = time.time()
+
             loop = asyncio.get_event_loop()
             if (TG_PROGRESS_DOWNLOAD == True or TG_PROGRESS_DOWNLOAD == 'True' ):
                 task = loop.create_task(client.download_media(update.message, file_path, progress_callback=lambda x,y: callback(x,y,file_path,file_name,message,_download_path)))
             else:
                 task = loop.create_task(client.download_media(update.message, file_path))
             download_result = await asyncio.wait_for(task, timeout = maximum_seconds_per_download)
+
+            elapsed_time_total = time.time() - download_start_time
+
             end_time = time.strftime('%d/%m/%Y %H:%M:%S', time.localtime())
-            end_time_short = time.strftime('%H:%M', time.localtime())
+            end_time_short = time.strftime('%H:%M:%S', time.localtime())
             filename = os.path.split(download_result)[1]
             
             if FOLDER_TO_GROUP:
@@ -182,11 +187,14 @@ async def worker(name):
             ######
             mensaje = 'DOWNLOAD FINISHED %s [%s] => [%s]' % (end_time, file_name, final_path)
             logger.info(mensaje)
-            await message.edit('Downloading finished:\n%s \nIN: %s\nat %s' % (file_name,_path,end_time_short))
+            #await message.edit('Downloading finished:\n%s \nIN: %s\nat %s' % (file_name,_path,end_time_short))
+            await message.edit(f'Downloading finished:\n{file_name} \nIN: {_path}\nDownload completed in: {format_time(elapsed_time_total)}\nat {end_time_short}')
         except asyncio.TimeoutError:
+            end_time_short = time.strftime('%H:%M:%S', time.localtime())
+            elapsed_time_total = time.time() - download_start_time
             logger.info('[%s] Time exceeded %s' % (file_name, time.strftime('%d/%m/%Y %H:%M:%S', time.localtime())))
-            await message.edit('Error!')
-            message = await update.reply('ERROR: Time exceeded downloading this file')
+            #await message.edit('Error!')
+            message = await update.reply(f'ERROR: Time exceeded downloading this file \nDownload completed in: {format_time(elapsed_time_total)}\nat: {end_time_short}')
         except Exception as e:
             logger.critical(e)
             logger.info('[EXCEPCION]: %s' % (str(e)))
@@ -295,6 +303,33 @@ async def handler(update):
         logger.info('EXCEPTION USER: %s ', str(e))
 
 
+def format_time(seconds):
+    try:
+        minutes, seconds = divmod(int(seconds), 60)
+        hours, minutes = divmod(minutes, 60)
+
+
+        #message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=downloaded_file) 
+
+        HOUR="HOUR"
+        MINUTE="MINUTE"
+        SECOND="SECOND"
+
+        HOURS="HOURS"
+        MINUTES="MINUTES"
+        SECONDS="SECONDS"
+
+        time_parts = [
+            f"{hours} {HOUR}{'s' * (hours != 1)}" if hours else "",
+            f"{minutes} {MINUTE}{'s' * (minutes != 1)}" if minutes else "",
+            f"{seconds} {SECONDS}" if seconds and (seconds != 1) else ( f"{seconds} {SECOND}" if seconds and (seconds == 1)  else "")
+        ]
+
+        formatted_time = " ".join(filter(None, time_parts))
+        return formatted_time
+    except Exception as e:
+        logger.logger.error(f"format_time {seconds}. {e}")
+        return seconds
 
 
 
