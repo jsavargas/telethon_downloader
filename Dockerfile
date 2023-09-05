@@ -12,6 +12,9 @@ RUN apk add --no-cache ffmpeg
     #apk add --no-cache build-base && \
     #apk add --no-cache git && \
 RUN pip install --upgrade pip 
+
+ENV PIP_ROOT_USER_ACTION=ignore
+
 RUN pip install --no-cache-dir -r requirements.txt
     #apk del build-base git && \
 RUN rm -rf /tmp/* /var/cache/apk/*
