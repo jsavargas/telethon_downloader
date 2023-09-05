@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from telethon import TelegramClient, events
 from telethon.tl.custom import Button
 from telethon.tl.types import MessageMediaPhoto, DocumentAttributeFilename, MessageMediaWebPage
