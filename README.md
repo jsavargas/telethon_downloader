@@ -151,4 +151,3 @@ services:
 **v3.0.1 (2021.10.28):**
 - Added config.ini file in /config
 - Added regex support
-
