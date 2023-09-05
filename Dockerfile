@@ -16,7 +16,7 @@ RUN pip install --upgrade pip
 #RUN pip install  -r requirements.txt
 RUN pip install telethon
 RUN pip install requests
-RUN pip install yt_dlp
+RUN pip install yt-dlp
     #apk del build-base git && \
 RUN rm -rf /tmp/* /var/cache/apk/*
 
