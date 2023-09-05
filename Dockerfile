@@ -6,24 +6,24 @@ WORKDIR /app
 COPY requirements.txt requirements.txt
 
 RUN apk update && \
-    apk upgrade && \
-    apk add --no-cache python3 py3-pip && \
-    apk add --no-cache ffmpeg && \
-    apk add --no-cache build-base && \
-    apk add --no-cache git && \
-    pip install --upgrade pip && \
-    pip install -r requirements.txt --upgrade && \
-    apk del build-base git && \
-    rm -rf /tmp/* /var/cache/apk/*
+    apk upgrade 
+RUN apk add --no-cache python3 py3-pip 
+RUN apk add --no-cache ffmpeg
+    #apk add --no-cache build-base && \
+    #apk add --no-cache git && \
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt --upgrade
+    #apk del build-base git && \
+RUN rm -rf /tmp/* /var/cache/apk/*
 
 
 
 FROM basetelethon
 
 COPY telethon-downloader /app
-COPY root/ /
+#COPY root/ /
 
-RUN chmod 777 /app/bottorrent.py && chmod 777 -R /etc/services.d/
+RUN chmod 777 /app/bottorrent.py 
 
 
 VOLUME /download /watch /config
