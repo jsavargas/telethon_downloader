@@ -27,7 +27,7 @@ class TelegramBot:
         self.constants = EnvironmentReader()
         self.templatesLanguage = LanguageTemplates(language=self.constants.get_variable("LANGUAGE"))
 
-        self.VERSION = "3.2.9"
+        self.VERSION = "3.2.9.110"
         self.SESSION = self.constants.get_variable("SESSION")
         self.API_ID = self.constants.get_variable("API_ID")
         self.API_HASH = self.constants.get_variable("API_HASH")
@@ -234,7 +234,7 @@ class TelegramBot:
                 megabytes_total = total / 1024 / 1024
                 message_text = f'Downloading in: {self.PATH_TMP}\n'
                 message_text += f'progress: {megabytes_current:.2f} MB / {megabytes_total:.2f} MB'
-                message_text = self.templatesLanguage.template("PROGRESS_CALLBACK_PATH").format(path=self.PATH_TMP) + os.linesep  # Add a line separator at the end
+                message_text = self.templatesLanguage.template("PROGRESS_CALLBACK_PATH").format(path=self.PATH_TMP)   # Add a line separator at the end
                 message_text += self.templatesLanguage.template("PROGRESS_CALLBACK_PROGRESS").format(current=megabytes_current, total=megabytes_total)
                 if current == total or current % (self.PROGRESS_STATUS_SHOW * 1024 * 1024) == 0:
                     await self.client.edit_message(message.chat_id, message.id, message_text)
@@ -299,8 +299,11 @@ class TelegramBot:
 
             logger.logger.info(f'download download_start_time temp 2: {download_start_time} download_end_time: {time.time()} elapsed_time_total: {time.time() - download_start_time} total_speed:  ')
 
+            loop = asyncio.get_event_loop()
+            task = loop.create_task(self.client.download_media(event.message, file=self.PATH_TMP, progress_callback=self.progress_callback(message)))
+
             downloaded_file = await asyncio.wait_for(
-                self.client.download_media(event.media, file=self.PATH_TMP, progress_callback=self.progress_callback(message)),
+                task,
                 timeout=self.TG_DL_TIMEOUT
             )
             
@@ -322,9 +325,9 @@ class TelegramBot:
             message_text += f'Velocidad promedio de descarga: {total_speed:.2f} MB/s\n'
             message_text += f'at: {end_time_short}'
 
-            message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=downloaded_file) + os.linesep  # Add a line separator at the end
-            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=self.format_time(elapsed_time_total)) + os.linesep  # Add a line separator at the end
-            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_SPEED").format(speed=total_speed) + os.linesep  # Add a line separator at the end
+            message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=downloaded_file)   # Add a line separator at the end
+            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=self.format_time(elapsed_time_total))   # Add a line separator at the end
+            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_SPEED").format(speed=total_speed)   # Add a line separator at the end
             message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
 
             logger.logger.info(f'download download_start_time temp 5: {download_start_time} download_end_time: {time.time()} elapsed_time_total: {time.time() - download_start_time} total_speed: {elapsed_time_total} ')
@@ -333,7 +336,9 @@ class TelegramBot:
 
         except asyncio.TimeoutError:
             logger.logger.error("Download timeout exceeded.")
-            message = await message.edit(self.templatesLanguage.template("MESSAGE_TIMEOUT_EXCEEDED"))
+            message_text = self.templatesLanguage.template("MESSAGE_TIMEOUT_EXCEEDED")
+            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
+            message = await message.edit(message_text)
         except Exception as e:
             logger.logger.error(f'download Exception: {e}')
             message = await message.edit(f'Exception download: {e}')
@@ -498,10 +503,10 @@ class TelegramBot:
                     end_time_short = time.strftime('%H:%M', time.localtime())
                     f_elapsed_time_total = self.format_time(elapsed_time_total)
 
-                    message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=file_path) + os.linesep  # Add a line separator at the end
-                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE_SIZE").format(file_size=file_size) + os.linesep  # Add a line separator at the end
-                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=f_elapsed_time_total) + os.linesep  # Add a line separator at the end
-                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_SPEED").format(speed=total_speed) + os.linesep  # Add a line separator at the end
+                    message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=file_path)   # Add a line separator at the end
+                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE_SIZE").format(file_size=file_size)   # Add a line separator at the end
+                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=f_elapsed_time_total)   # Add a line separator at the end
+                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_SPEED").format(speed=total_speed)   # Add a line separator at the end
                     message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
 
                     message = await message.edit(f'{message_text}')
@@ -539,14 +544,18 @@ class TelegramBot:
 
             #message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=downloaded_file) 
 
-            HOUR=self.templatesLanguage.template("HOUR")
-            MINUTE=self.templatesLanguage.template("MINUTE")
-            SECOND=self.templatesLanguage.template("SECOND")
+            HOUR=self.templatesLanguage.templateOneLine("HOUR")
+            MINUTE=self.templatesLanguage.templateOneLine("MINUTE")
+            SECOND=self.templatesLanguage.templateOneLine("SECOND")
+
+            HOURS=self.templatesLanguage.templateOneLine("HOURS")
+            MINUTES=self.templatesLanguage.templateOneLine("MINUTES")
+            SECONDS=self.templatesLanguage.templateOneLine("SECONDS")
 
             time_parts = [
                 f"{hours} {HOUR}{'s' * (hours != 1)}" if hours else "",
                 f"{minutes} {MINUTE}{'s' * (minutes != 1)}" if minutes else "",
-                f"{seconds} {SECOND}{'s' * (seconds != 1)}" if seconds else ""
+                f"{seconds} {SECONDS}" if seconds and (seconds != 1) else ( f"{seconds} {SECOND}" if seconds and (seconds == 1)  else "")
             ]
 
             formatted_time = " ".join(filter(None, time_parts))

@@ -23,6 +23,9 @@ class LanguageTemplates:
         except FileNotFoundError:
             return {}
 
-# Fin de language_templates.py
     def template(self, template_name, default_message="Language template not found."):
+        return self.templates.get(template_name, default_message) + os.linesep 
+
+    def templateOneLine(self, template_name, default_message="Language template not found."):
         return self.templates.get(template_name, default_message)
+
