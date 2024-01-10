@@ -128,6 +128,9 @@ services:
 
 ## **Changelog:**
 
+**v3.1.13 (2024.01.10):**
+- upgrade telethon to version 1.33.1
+
 **v3.1.12 (2023.08.17):**
 - upgrade yt-dlp to version 2023.07.06
 
