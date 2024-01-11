@@ -29,7 +29,7 @@ class TelegramBot:
         self.constants = EnvironmentReader()
         self.templatesLanguage = LanguageTemplates(language=self.constants.get_variable("LANGUAGE"))
 
-        self.VERSION = "3.1.1.101"
+        self.VERSION = "3.2.1.103"
         self.SESSION = self.constants.get_variable("SESSION")
         self.API_ID = self.constants.get_variable("API_ID")
         self.API_HASH = self.constants.get_variable("API_HASH")
@@ -337,13 +337,17 @@ class TelegramBot:
             message = await message.edit(f'{message_text}')
 
         except asyncio.TimeoutError:
-            logger.logger.error("Download timeout exceeded.")
+            end_time_short = time.strftime('%H:%M', time.localtime())
+            logger.logger.error(f'Download TimeoutError Exception: {e}')
             message_text = self.templatesLanguage.template("MESSAGE_TIMEOUT_EXCEEDED")
             message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
             message = await message.edit(message_text)
         except Exception as e:
-            logger.logger.error(f'download Exception: {e}')
-            message = await message.edit(f'Exception download: {e}')
+            end_time_short = time.strftime('%H:%M', time.localtime())
+            logger.logger.error(f'Download Exception: {e}')
+            message_text = self.templatesLanguage.template("MESSAGE_TIMEOUT_EXCEEDED")
+            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
+            message = await message.edit(message_text)
 
     def moveFile(self, file_path):
         try:
