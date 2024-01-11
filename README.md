@@ -128,6 +128,9 @@ services:
 
 ## **Changelog:**
 
+**v3.2.1 (2024.01.11):**
+- upgrade telethon to version 1.33.1
+
 **v3.1.13 (2024.01.10):**
 - upgrade telethon to version 1.33.1
 
