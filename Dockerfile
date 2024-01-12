@@ -1,13 +1,17 @@
-FROM python:3 AS basetelethon
+FROM python:3.9-slim-bullseye AS basetelethon
 
 
 WORKDIR /app
 
 COPY requirements.txt requirements.txt
 
-RUN apt-get update && apt-get upgrade -y  && \ 
-	apt-get install -y \
-	ffmpeg \
+RUN \
+  sed -i -e's/ main/ main contrib non-free/g' /etc/apt/sources.list \
+  && apt-get -q update                                              \
+  && apt-get -qy dist-upgrade                                       \
+  && apt-get install -qy ffmpeg                                    \
+	unzip \
+	unrar \
 	#python3 \
 	#python3-setuptools \
 	python3-pip && \
@@ -18,7 +22,8 @@ RUN apt-get update && apt-get upgrade -y  && \
 	apt-get autoclean -y && apt-get autoremove -y  && \
 	rm -rf /default /etc/default /tmp/* /etc/cont-init.d/* /var/lib/apt/lists/* /var/tmp/*
 
-
+COPY 7zz /usr/local/bin/7zz
+RUN chmod 777 /usr/local/bin/7zz
 
 FROM basetelethon
 
