@@ -30,7 +30,7 @@ class TelegramBot:
         self.constants = EnvironmentReader()
         self.templatesLanguage = LanguageTemplates(language=self.constants.get_variable("LANGUAGE"))
 
-        self.VERSION = "3.2.1.106"
+        self.VERSION = "3.2.1.107"
         self.SESSION = self.constants.get_variable("SESSION")
         self.API_ID = self.constants.get_variable("API_ID")
         self.API_HASH = self.constants.get_variable("API_HASH")
@@ -75,8 +75,6 @@ class TelegramBot:
         self.ytdownloader = YouTubeDownloader()
         self.command_handler = CommandHandler(self)
 
-
-        
         self.printEnvironment()
         self.create_directorys()
 
@@ -262,7 +260,7 @@ class TelegramBot:
         except Exception as e:
             return None
                
-    def progress_callback(self, message):
+    def progress_callback(self, message, from_id=None):
         async def callback(current, total):
             if not self.TG_PROGRESS_DOWNLOAD: return 
             try:
@@ -270,7 +268,8 @@ class TelegramBot:
                 megabytes_total = total / 1024 / 1024
                 message_text = f'Downloading in: {self.PATH_TMP}\n'
                 message_text += f'progress: {megabytes_current:.2f} MB / {megabytes_total:.2f} MB'
-                message_text = self.templatesLanguage.template("PROGRESS_CALLBACK_PATH").format(path=self.PATH_TMP)   
+                message_text = self.templatesLanguage.template("PROGRESS_CALLBACK_PATH").format(path=self.PATH_TMP)
+                message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_FROM_ID").format(from_id=from_id)
                 message_text += self.templatesLanguage.template("PROGRESS_CALLBACK_PROGRESS").format(current=megabytes_current, total=megabytes_total)
                 if current == total or current % (self.PROGRESS_STATUS_SHOW * 1024 * 1024) == 0:
                     await self.client.edit_message(message.chat_id, message.id, message_text)
@@ -327,7 +326,7 @@ class TelegramBot:
         logger.logger.info(f'download => fwd_from: {self.resolve_id(event.fwd_from)}')
 
         try:
-            fwd_from = self.resolve_id(event.fwd_from)
+            from_id = self.resolve_id(event.fwd_from)
 
             megabytes_total = total_size / 1024 / 1024
             download_start_time = time.time()
@@ -336,12 +335,13 @@ class TelegramBot:
             logger.logger.info(f'download download_start_time temp 1: {download_start_time} download_end_time: {time.time()} elapsed_time_total: {time.time() - download_start_time} total_speed:  ')
 
             message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD").format(path=self.PATH_TMP)
+            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_FROM_ID").format(from_id=from_id)   
             message = await message.edit(message_text)
 
             logger.logger.info(f'download download_start_time temp 2: {download_start_time} download_end_time: {time.time()} elapsed_time_total: {time.time() - download_start_time} total_speed:  ')
 
             loop = asyncio.get_event_loop()
-            task = loop.create_task(self.client.download_media(event.message, file=self.PATH_TMP, progress_callback=self.progress_callback(message)))
+            task = loop.create_task(self.client.download_media(event.message, file=self.PATH_TMP, progress_callback=self.progress_callback(message, from_id)))
 
             downloaded_file = await asyncio.wait_for(
                 task,
@@ -351,7 +351,7 @@ class TelegramBot:
             logger.logger.info(f'download download_start_time temp 3: {download_start_time} download_end_time: {time.time()} elapsed_time_total: {time.time() - download_start_time} total_speed:  ')
             logger.logger.info(f'download download_start_time temp 3: {downloaded_file} total_speed:  ')
 
-            downloaded_file = await self.moveFile(downloaded_file)
+            downloaded_file = await self.moveFile(downloaded_file, from_id)
             end_time_short = time.strftime('%H:%M', time.localtime())
             logger.logger.info(f'File downloaded in: {downloaded_file}')
             download_end_time = time.time()
@@ -364,7 +364,7 @@ class TelegramBot:
             message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=downloaded_file)   
             message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=self.format_time(elapsed_time_total))   
             message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_SPEED").format(speed=total_speed)   
-            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_FWD_FROM").format(fwd_from=fwd_from)   
+            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_FROM_ID").format(from_id=from_id)   
             message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
 
             logger.logger.info(f'download download_start_time temp 5: {download_start_time} download_end_time: {time.time()} elapsed_time_total: {time.time() - download_start_time} total_speed: {elapsed_time_total} ')
@@ -384,7 +384,7 @@ class TelegramBot:
             message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
             message = await message.edit(message_text)
 
-    async def moveFile(self, file_path):
+    async def moveFile(self, file_path, from_id=None):
         try:
             final_path = None
 
@@ -400,11 +400,15 @@ class TelegramBot:
             logger.logger.info(f"moveFile Filename: {filename}")
             logger.logger.info(f"moveFile Extension: {extension}")
             logger.logger.info(f"moveFile Directory: {directory}")
+            logger.logger.info(f"moveFile from_id: {from_id}")
             
             self.DEFAULT_PATH_EXTENSIONS = self.getConfigurationManager()
+            self.GROUP_PATH = self.getConfigurationManager('GROUP_PATH')
 
             if file_path.endswith('.torrent'): 
                 final_path = os.path.join(self.TG_DOWNLOAD_PATH_TORRENTS, basename)
+            elif str(from_id) in self.GROUP_PATH:
+                final_path = os.path.join(self.CONFIG_MANAGER.get_value('GROUP_PATH', str(from_id)), basename)
             elif extension[1:] in self.DEFAULT_PATH_EXTENSIONS:
                 final_path = os.path.join(self.CONFIG_MANAGER.get_value('DEFAULT_PATH', extension[1:]), basename)
             else:
@@ -432,6 +436,18 @@ class TelegramBot:
 
         except Exception as e:
             logger.logger.error(f'moveFile Exception : {file_path} [{e}]')
+
+    def clearNameFolders(self, folderName):
+        try:
+
+            return folderName
+
+            for i, char in enumerate(folderName):
+                if char.isalnum():
+                    return folderName[i:]
+            return str(folderName)
+        except Exception as e:
+            logger.logger.error(f'clearNameFolders Exception : {file_path} [{e}]')
 
     def create_directory(self, path):
         try:
