@@ -21,6 +21,15 @@ class ConfigurationManager:
             }
             config['REGEX_PATH'] = {'/example/i': '/download/example'}
             
+            config['GROUP_PATH'] = {'0000000000': '/download/example'}
+            
+            with open(self.config_path, 'w') as config_file:
+                config.write(config_file)
+
+        if not config.has_section('GROUP_PATH'):
+            config.add_section('GROUP_PATH')
+            config.set('GROUP_PATH', '0000000000', '/download/example')
+
             with open(self.config_path, 'w') as config_file:
                 config.write(config_file)
 
