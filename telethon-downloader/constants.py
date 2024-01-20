@@ -37,8 +37,10 @@ class EnvironmentReader:
 
         self.TG_DL_TIMEOUT = int(os.environ.get('TG_DL_TIMEOUT',3600))
 
-        self.TG_UNZIP_TORRENTS = os.environ.get('TG_UNZIP_TORRENTS', False)
         self.TG_FOLDER_BY_AUTHORIZED = os.environ.get('TG_FOLDER_BY_AUTHORIZED', False)
+        self.TG_UNZIP_TORRENTS = os.environ.get('TG_UNZIP_TORRENTS', False)
+        self.UNZIP = os.environ.get('UNZIP', False)
+        self.UNRAR = os.environ.get('UNRAR', False)
 
 
         self.LANGUAGE = os.environ.get('APP_LANGUAGE', 'en_EN')

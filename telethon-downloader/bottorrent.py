@@ -2,7 +2,7 @@
 
 from telethon import TelegramClient, events
 from telethon.tl.custom import Button
-from telethon.tl.types import MessageMediaPhoto, DocumentAttributeFilename, MessageMediaWebPage
+from telethon.tl.types import MessageMediaPhoto, DocumentAttributeFilename, MessageMediaWebPage, PeerUser, PeerChannel
 from telethon.utils import get_peer_id, resolve_id
 
 import os
@@ -21,6 +21,7 @@ from constants import EnvironmentReader
 from youtube import YouTubeDownloader
 from command_handler import CommandHandler
 from language_templates import LanguageTemplates
+from file_extractor import FileExtractor
 
 
 class TelegramBot:
@@ -29,7 +30,7 @@ class TelegramBot:
         self.constants = EnvironmentReader()
         self.templatesLanguage = LanguageTemplates(language=self.constants.get_variable("LANGUAGE"))
 
-        self.VERSION = "3.2.1.103"
+        self.VERSION = "3.2.1.106"
         self.SESSION = self.constants.get_variable("SESSION")
         self.API_ID = self.constants.get_variable("API_ID")
         self.API_HASH = self.constants.get_variable("API_HASH")
@@ -56,9 +57,8 @@ class TelegramBot:
         self.TG_DOWNLOAD_PATH_TORRENTS = self.constants.get_variable("TG_DOWNLOAD_PATH_TORRENTS")
 
         self.PATH_CONFIG = self.constants.get_variable("PATH_CONFIG")
-        self.CONFIG_MANAGER = config_manager.ConfigurationManager(self.PATH_CONFIG)
 
-        self.DEFAULT_PATH_EXTENSIONS = self.CONFIG_MANAGER.get_section_keys('DEFAULT_PATH')
+        self.DEFAULT_PATH_EXTENSIONS = self.getConfigurationManager()
 
         self.YOUTUBE_LINKS_SOPORTED = self.constants.get_variable("YOUTUBE_LINKS_SOPORTED").replace(" ", "").split(",")
         self.YOUTUBE_DEFAULT_DOWNLOAD = self.constants.get_variable("YOUTUBE_DEFAULT_DOWNLOAD")
@@ -99,6 +99,8 @@ class TelegramBot:
         self.printAttribute("YOUTUBE_DEFAULT_DOWNLOAD")
         self.printAttribute("YOUTUBE_TIMEOUT_OPTION")
         self.printAttribute("YOUTUBE_SHOW_OPTION")
+        self.printAttribute("UNZIP")
+        self.printAttribute("UNRAR")
 
         self.printAttribute("LANGUAGE")
 
@@ -111,6 +113,10 @@ class TelegramBot:
         else:
             attribute_value = getattr(self.constants, attribute_name)
             logger.logger.info(f"{attribute_name}: {attribute_value}")
+
+    def getConfigurationManager(self):
+        self.CONFIG_MANAGER = config_manager.ConfigurationManager(self.PATH_CONFIG)
+        return self.CONFIG_MANAGER.get_section_keys('DEFAULT_PATH')
 
     def printAttributeHidden(self, attribute_name):
         if hasattr(self, attribute_name):
@@ -145,6 +151,8 @@ class TelegramBot:
         try:
             logger.logger.info(f'handle_new_message => event: {event}')
             logger.logger.info(f'handle_new_message => message: {event.message.message}')
+            logger.logger.info(f'handle_new_message => fwd_from: {self.resolve_id(event.fwd_from)}')
+
             if (event.message.message).startswith('/'):
                 await self.commands(event.message)
 
@@ -155,7 +163,7 @@ class TelegramBot:
                 #elif event.message.message:
                 #    await self.processMessage(event.media, event.message)
         except Exception as e:
-            logger.logger.error(f"handle_new_message: {e}")
+            logger.logger.error(f"handle_new_message Exception: {e}")
             message = await event.reply(f'Exception in hanld enew message: {e}')
 
     async def handle_buttons(self, event):
@@ -184,6 +192,28 @@ class TelegramBot:
                 await event.edit('Downloading Audio')
                 await self.ytdownloader.downloadAudio(url, event)
 
+
+    def resolve_id(self, fwd_from):
+        try:
+            real_id = get_peer_id(fwd_from.from_id)
+            bot_group_t, peer_type = resolve_id(real_id)
+            if peer_type == PeerChannel:
+                logger.logger.info(f'resolve_id => fwd_from channel_id: {fwd_from.from_id.channel_id}')
+                logger.logger.info(f'resolve_id => real_id: {real_id}')
+                logger.logger.info(f'resolve_id => bot_group_t: {bot_group_t}')
+                logger.logger.info(f'resolve_id => peer_type: {peer_type}')
+            elif peer_type == PeerUser:
+                logger.logger.info(f'resolve_id => fwd_from user_id: {fwd_from.from_id.user_id}')
+                logger.logger.info(f'resolve_id => real_id: {real_id}')
+                logger.logger.info(f'resolve_id => bot_group_t: {bot_group_t}')
+                logger.logger.info(f'resolve_id => peer_type: {peer_type}')
+
+            return real_id
+        except Exception as e:
+            logger.logger.error(f"resolve_id Exception: {e}")
+
+
+
     async def download_media_with_retries(self, event, media, message, retry_count=0):
         try:
             await self.download_media(event, media, message)
@@ -197,7 +227,7 @@ class TelegramBot:
     async def download_media(self, event, media, message):
         logger.logger.info(f'download_media => media: {media}')
         logger.logger.info(f'download_media => message: {message}')
-        logger.logger.info(f'download_media => fwd_from: {message.fwd_from}')
+        logger.logger.info(f'download_media => fwd_from: {self.resolve_id(event.fwd_from)}')
         
         text = message.message
         message = await message.reply(f'Download in queue...')
@@ -236,7 +266,7 @@ class TelegramBot:
                 megabytes_total = total / 1024 / 1024
                 message_text = f'Downloading in: {self.PATH_TMP}\n'
                 message_text += f'progress: {megabytes_current:.2f} MB / {megabytes_total:.2f} MB'
-                message_text = self.templatesLanguage.template("PROGRESS_CALLBACK_PATH").format(path=self.PATH_TMP)   # Add a line separator at the end
+                message_text = self.templatesLanguage.template("PROGRESS_CALLBACK_PATH").format(path=self.PATH_TMP)   
                 message_text += self.templatesLanguage.template("PROGRESS_CALLBACK_PROGRESS").format(current=megabytes_current, total=megabytes_total)
                 if current == total or current % (self.PROGRESS_STATUS_SHOW * 1024 * 1024) == 0:
                     await self.client.edit_message(message.chat_id, message.id, message_text)
@@ -273,6 +303,7 @@ class TelegramBot:
             logger.logger.info(f'downloadMessageMediaPhoto last_size: {last_size}')
             await self.download(event, message, media.photo, last_size)
         except Exception as e:
+            logger.logger.error(f'downloadMessageMediaPhoto Exception: {e}')
             message = await message.edit(f'Exception downloadMessageMediaPhoto: {e}')
 
     async def downloadDocumentAttributeFilename(self, event, message, media):
@@ -287,9 +318,13 @@ class TelegramBot:
 
 
     async def download(self, event, message, media, total_size):
-        logger.logger.info(f'download media: {media}')
-        logger.logger.info(f'download message: {message}')
+        logger.logger.info(f'download => media: {media}')
+        logger.logger.info(f'download => message: {message}')
+        logger.logger.info(f'download => fwd_from: {self.resolve_id(event.fwd_from)}')
+
         try:
+            fwd_from = self.resolve_id(event.fwd_from)
+
             megabytes_total = total_size / 1024 / 1024
             download_start_time = time.time()
             self.create_directory(self.PATH_TMP)
@@ -312,7 +347,7 @@ class TelegramBot:
             logger.logger.info(f'download download_start_time temp 3: {download_start_time} download_end_time: {time.time()} elapsed_time_total: {time.time() - download_start_time} total_speed:  ')
             logger.logger.info(f'download download_start_time temp 3: {downloaded_file} total_speed:  ')
 
-            downloaded_file = self.moveFile(downloaded_file)
+            downloaded_file = await self.moveFile(downloaded_file)
             end_time_short = time.strftime('%H:%M', time.localtime())
             logger.logger.info(f'File downloaded in: {downloaded_file}')
             download_end_time = time.time()
@@ -322,14 +357,10 @@ class TelegramBot:
             logger.logger.info(f'download download_start_time temp 4: {download_start_time} download_end_time: {time.time()} elapsed_time_total: {time.time() - download_start_time} total_speed:  ')
 
 
-            message_text = f'File downloaded in: {downloaded_file}\n'
-            message_text += f'Descarga completada en: {elapsed_time_total:.2f} segundos\n'
-            message_text += f'Velocidad promedio de descarga: {total_speed:.2f} MB/s\n'
-            message_text += f'at: {end_time_short}'
-
-            message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=downloaded_file)   # Add a line separator at the end
-            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=self.format_time(elapsed_time_total))   # Add a line separator at the end
-            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_SPEED").format(speed=total_speed)   # Add a line separator at the end
+            message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=downloaded_file)   
+            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=self.format_time(elapsed_time_total))   
+            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_SPEED").format(speed=total_speed)   
+            message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_FWD_FROM").format(fwd_from=fwd_from)   
             message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
 
             logger.logger.info(f'download download_start_time temp 5: {download_start_time} download_end_time: {time.time()} elapsed_time_total: {time.time() - download_start_time} total_speed: {elapsed_time_total} ')
@@ -338,18 +369,18 @@ class TelegramBot:
 
         except asyncio.TimeoutError:
             end_time_short = time.strftime('%H:%M', time.localtime())
-            logger.logger.error(f'Download TimeoutError Exception: {e}')
+            logger.logger.error(f'Download TimeoutError Exception')
             message_text = self.templatesLanguage.template("MESSAGE_TIMEOUT_EXCEEDED")
             message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
             message = await message.edit(message_text)
         except Exception as e:
             end_time_short = time.strftime('%H:%M', time.localtime())
             logger.logger.error(f'Download Exception: {e}')
-            message_text = self.templatesLanguage.template("MESSAGE_TIMEOUT_EXCEEDED")
+            message_text = self.templatesLanguage.template("MESSAGE_EXCEPTION")
             message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
             message = await message.edit(message_text)
 
-    def moveFile(self, file_path):
+    async def moveFile(self, file_path):
         try:
             final_path = None
 
@@ -366,6 +397,7 @@ class TelegramBot:
             logger.logger.info(f"moveFile Extension: {extension}")
             logger.logger.info(f"moveFile Directory: {directory}")
             
+            self.DEFAULT_PATH_EXTENSIONS = self.getConfigurationManager()
 
             if file_path.endswith('.torrent'): 
                 final_path = os.path.join(self.TG_DOWNLOAD_PATH_TORRENTS, basename)
@@ -391,6 +423,7 @@ class TelegramBot:
             logger.logger.info(f"moveFile final_path: {final_path}")
 
             self.postProcess(final_path)
+            await self.unCompress(final_path)
             return final_path
 
         except Exception as e:
@@ -408,18 +441,72 @@ class TelegramBot:
 
     def change_permissions(self, path):
         try:
-            if hasattr(self, 'PUID') and hasattr(self, 'PGID') and self.PUID is not None and self.PGID is not None:
-                if os.path.exists(path): os.chown(path, self.PUID, self.PGID)
-            if os.path.exists(path): os.chmod(path, 0o755)  # Cambiar permisos a 755 (rwxr-xr-x)
-            logger.logger.info(f"Changed permissions for {path} using PUID={self.PUID} and PGID={self.PGID}")
+            if os.path.isfile(path):
+                os.chmod(path, 0o755)
+                if hasattr(self, 'PUID') and hasattr(self, 'PGID') and self.PUID is not None and self.PGID is not None:
+                    os.chown(path, self.PUID, self.PGID)
+                    logger.logger.info(f"[!] Changed permissions isfile {path} using PUID={self.PUID} and PGID={self.PGID}")
+            else:
+                for dirpath, dirnames, filenames in os.walk(path):
+                    os.chmod(dirpath, 0o755)
+                    if hasattr(self, 'PUID') and hasattr(self, 'PGID') and self.PUID is not None and self.PGID is not None:
+                        os.chown(dirpath, self.PUID, self.PGID)
+                        logger.logger.info(f"[!] Changed permissions dirpath {dirpath} using PUID={self.PUID} and PGID={self.PGID}")
+
+                    for filename in filenames:
+                        filepath = os.path.join(dirpath, filename)
+                        os.chmod(filepath, 0o755)
+                        if hasattr(self, 'PUID') and hasattr(self, 'PGID') and self.PUID is not None and self.PGID is not None:
+                            os.chown(filepath, self.PUID, self.PGID)
+                            logger.logger.info(f"[!] Changed permissions filepath {filepath} using PUID={self.PUID} and PGID={self.PGID}")
+            
+            logger.logger.info(f"[!] Changed permissions for {path} using PUID={self.PUID} and PGID={self.PGID}")
         except FileNotFoundError:
-            logger.logger.error(f"File or directory not found: {path}")
+            logger.logger.error(f"change_permissions except File or directory not found: {path}")
 
     def postProcess(self, path):
         try:
             logger.logger.info(f'postProcess path: {path}')
         except Exception as e:
             logger.logger.error(f'postProcess Exception : {path} [{e}]')
+        
+    async def unCompress(self, file_path):
+        try:
+            file_name_with_extension = os.path.basename(file_path)
+            file_name, file_extension = os.path.splitext(file_name_with_extension)
+
+            logger.logger.info(f'unCompress path: [{file_path}] [{file_name_with_extension}] file_name:[{file_name}] file_extension:[{file_extension}]')
+
+            invalid_patterns = [r'\.part[0-9]+\.rar', r'\.part[0-9]+.*\.rar', r'\.zip\.[0-9]+', r'\.zip.*\.[0-9]+', r'\.z[0-9]+']
+
+            for pattern in invalid_patterns:
+                if re.search(pattern, file_name_with_extension, re.IGNORECASE):
+                    #logger.logger.info(f'unCompress IF path: [{file_path}] [{file_name_with_extension}] file_name:[{file_name}] file_extension:[{file_extension}]')
+                    return 
+
+            directorio_destino = os.path.join(
+                os.path.dirname(file_path),
+                os.path.splitext(os.path.basename(file_path))[0]
+            )
+
+            
+            if file_name_with_extension.endswith(".rar"):
+                logger.logger.info(f'unCompress endswith rar: [{file_path}] [{file_name_with_extension}] file_name:[{file_name}] file_extension:[{file_extension}]')
+
+                self.create_directory(directorio_destino)
+                extractor_rar = FileExtractor()
+                await extractor_rar.descomprimir_unrar(file_path, directorio_destino)
+                self.change_permissions(directorio_destino)
+
+                pass
+            if file_name_with_extension.endswith(".zip"):
+                logger.logger.info(f'unCompress endswith zip: [{file_path}] [{file_name_with_extension}] file_name:[{file_name}] file_extension:[{file_extension}]')
+                pass
+
+            return
+
+        except Exception as e:
+            logger.logger.error(f'unCompress Exception : {file_path} [{e}]')
         
     async def downloadLinks(self, message, media, text):
         logger.logger.info(f'downloadLinks => media: {media}')
@@ -499,7 +586,7 @@ class TelegramBot:
                 with open(file_path, 'wb') as file:
                     file.write(response.content)
                 
-                    file_path = self.moveFile(file_path)
+                    file_path = await self.moveFile(file_path)
 
                     self.change_permissions(file_path)
                     file_size = len(response.content) / 1024 / 1024 
@@ -509,10 +596,10 @@ class TelegramBot:
                     end_time_short = time.strftime('%H:%M', time.localtime())
                     f_elapsed_time_total = self.format_time(elapsed_time_total)
 
-                    message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=file_path)   # Add a line separator at the end
-                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE_SIZE").format(file_size=file_size)   # Add a line separator at the end
-                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=f_elapsed_time_total)   # Add a line separator at the end
-                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_SPEED").format(speed=total_speed)   # Add a line separator at the end
+                    message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=file_path)   
+                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE_SIZE").format(file_size=file_size)   
+                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_COMPLETED").format(elapsed_time=f_elapsed_time_total)   
+                    message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_SPEED").format(speed=total_speed)   
                     message_text += self.templatesLanguage.template("MESSAGE_DOWNLOAD_AT").format(end_time=end_time_short)
 
                     message = await message.edit(f'{message_text}')
