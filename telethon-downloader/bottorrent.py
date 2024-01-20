@@ -59,6 +59,7 @@ class TelegramBot:
         self.PATH_CONFIG = self.constants.get_variable("PATH_CONFIG")
 
         self.DEFAULT_PATH_EXTENSIONS = self.getConfigurationManager()
+        self.GROUP_PATH = self.getConfigurationManager('GROUP_PATH')
 
         self.YOUTUBE_LINKS_SOPORTED = self.constants.get_variable("YOUTUBE_LINKS_SOPORTED").replace(" ", "").split(",")
         self.YOUTUBE_DEFAULT_DOWNLOAD = self.constants.get_variable("YOUTUBE_DEFAULT_DOWNLOAD")
@@ -90,7 +91,7 @@ class TelegramBot:
         self.printAttributeHidden("API_ID")
         self.printAttributeHidden("API_HASH")
         self.printAttributeHidden("BOT_TOKEN")
-        self.printAttribute("TG_AUTHORIZED_USER_ID")
+        self.printAttributeHidden("TG_AUTHORIZED_USER_ID")
         self.printAttribute("PUID")
         self.printAttribute("PGID")
         self.printAttribute("TG_DL_TIMEOUT")
@@ -114,22 +115,25 @@ class TelegramBot:
             attribute_value = getattr(self.constants, attribute_name)
             logger.logger.info(f"{attribute_name}: {attribute_value}")
 
-    def getConfigurationManager(self):
+    def getConfigurationManager(self, section_keys='DEFAULT_PATH'):
         self.CONFIG_MANAGER = config_manager.ConfigurationManager(self.PATH_CONFIG)
-        return self.CONFIG_MANAGER.get_section_keys('DEFAULT_PATH')
+        return self.CONFIG_MANAGER.get_section_keys(section_keys)
 
     def printAttributeHidden(self, attribute_name):
+
         if hasattr(self, attribute_name):
             attribute_value = getattr(self, attribute_name)
-            
-            half_len = len(attribute_value) // 3
-            attribute_value = attribute_value[:half_len] + '*' * (len(attribute_value) - half_len)
-
-
-            logger.logger.info(f"{attribute_name}: {attribute_value}")
         else:
             attribute_value = getattr(self.constants, attribute_name)
-            half_len = len(attribute_value) // 2
+
+        if isinstance(attribute_value, list):
+            _attribute_value = []
+            for value in attribute_value:
+                half_len = len(value) // 2
+                _attribute_value.append(value[:half_len] + '*' * (len(value) - half_len))
+            logger.logger.info(f"{attribute_name}: {_attribute_value}")
+        elif isinstance(attribute_value, str):
+            half_len = len(attribute_value) // 3
             attribute_value = attribute_value[:half_len] + '*' * (len(attribute_value) - half_len)
             logger.logger.info(f"{attribute_name}: {attribute_value}")
 
