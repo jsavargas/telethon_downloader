@@ -22,6 +22,7 @@ from youtube import YouTubeDownloader
 from command_handler import CommandHandler
 from language_templates import LanguageTemplates
 from file_extractor import FileExtractor
+from download_manager import DownloadPathManager
 
 
 class TelegramBot:
@@ -30,7 +31,7 @@ class TelegramBot:
         self.constants = EnvironmentReader()
         self.templatesLanguage = LanguageTemplates(language=self.constants.get_variable("LANGUAGE"))
 
-        self.VERSION = "3.2.1.108"
+        self.VERSION = "3.2.1.109"
         self.SESSION = self.constants.get_variable("SESSION")
         self.API_ID = self.constants.get_variable("API_ID")
         self.API_HASH = self.constants.get_variable("API_HASH")
@@ -60,6 +61,7 @@ class TelegramBot:
 
         self.DEFAULT_PATH_EXTENSIONS = self.getConfigurationManager()
         self.GROUP_PATH = self.getConfigurationManager('GROUP_PATH')
+        self.SECTIONS = self.getConfigurationManagerAll()
 
         self.YOUTUBE_LINKS_SOPORTED = self.constants.get_variable("YOUTUBE_LINKS_SOPORTED").replace(" ", "").split(",")
         self.YOUTUBE_DEFAULT_DOWNLOAD = self.constants.get_variable("YOUTUBE_DEFAULT_DOWNLOAD")
@@ -116,6 +118,10 @@ class TelegramBot:
     def getConfigurationManager(self, section_keys='DEFAULT_PATH'):
         self.CONFIG_MANAGER = config_manager.ConfigurationManager(self.PATH_CONFIG)
         return self.CONFIG_MANAGER.get_section_keys(section_keys)
+
+    def getConfigurationManagerAll(self):
+        self.CONFIG_MANAGER = config_manager.ConfigurationManager(self.PATH_CONFIG)
+        return self.CONFIG_MANAGER.get_all_sections()
 
     def printAttributeHidden(self, attribute_name):
 
@@ -404,11 +410,17 @@ class TelegramBot:
             
             self.DEFAULT_PATH_EXTENSIONS = self.getConfigurationManager()
             self.GROUP_PATH = self.getConfigurationManager('GROUP_PATH')
+            self.REGEX_PATH = self.getConfigurationManager('REGEX_PATH')
+
+            self.SECTIONS = self.getConfigurationManagerAll()
+            self.DownloadPathManager = DownloadPathManager(self.SECTIONS)
 
             if file_path.endswith('.torrent'): 
                 final_path = os.path.join(self.TG_DOWNLOAD_PATH_TORRENTS, basename)
             elif str(from_id) in self.GROUP_PATH:
                 final_path = os.path.join(self.CONFIG_MANAGER.get_value('GROUP_PATH', str(from_id)), basename)
+            elif (downloadPath := self.DownloadPathManager.getREGEXPATH(filename)):
+                final_path = os.path.join(downloadPath, basename)
             elif extension[1:] in self.DEFAULT_PATH_EXTENSIONS:
                 final_path = os.path.join(self.CONFIG_MANAGER.get_value('DEFAULT_PATH', extension[1:]), basename)
             else:
