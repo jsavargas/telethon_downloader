@@ -30,7 +30,7 @@ class TelegramBot:
         self.constants = EnvironmentReader()
         self.templatesLanguage = LanguageTemplates(language=self.constants.get_variable("LANGUAGE"))
 
-        self.VERSION = "3.2.1.107"
+        self.VERSION = "3.2.1.108"
         self.SESSION = self.constants.get_variable("SESSION")
         self.API_ID = self.constants.get_variable("API_ID")
         self.API_HASH = self.constants.get_variable("API_HASH")
@@ -63,7 +63,7 @@ class TelegramBot:
 
         self.YOUTUBE_LINKS_SOPORTED = self.constants.get_variable("YOUTUBE_LINKS_SOPORTED").replace(" ", "").split(",")
         self.YOUTUBE_DEFAULT_DOWNLOAD = self.constants.get_variable("YOUTUBE_DEFAULT_DOWNLOAD")
-        self.YOUTUBE_TIMEOUT_OPTION = int(self.constants.get_variable("YOUTUBE_TIMEOUT_OPTION")) if (str(self.constants.get_variable("YOUTUBE_TIMEOUT_OPTION"))).isdigit() else 5 
+        self.YOUTUBE_SHOW_OPTION_TIMEOUT = int(self.constants.get_variable("YOUTUBE_SHOW_OPTION_TIMEOUT")) if (str(self.constants.get_variable("YOUTUBE_SHOW_OPTION_TIMEOUT"))).isdigit() else 5 
         self.YOUTUBE_SHOW_OPTION = (self.constants.get_variable("YOUTUBE_SHOW_OPTION") == "True" or self.constants.get_variable("YOUTUBE_SHOW_OPTION") == True)
         
         self.youtubeLinks = {}  
@@ -96,8 +96,8 @@ class TelegramBot:
         self.printAttribute("YOUTUBE_FORMAT_AUDIO")
         self.printAttribute("YOUTUBE_FORMAT_VIDEO")
         self.printAttribute("YOUTUBE_DEFAULT_DOWNLOAD")
-        self.printAttribute("YOUTUBE_TIMEOUT_OPTION")
         self.printAttribute("YOUTUBE_SHOW_OPTION")
+        self.printAttribute("YOUTUBE_SHOW_OPTION_TIMEOUT")
         self.printAttribute("UNZIP")
         self.printAttribute("UNRAR")
 
@@ -447,7 +447,7 @@ class TelegramBot:
                     return folderName[i:]
             return str(folderName)
         except Exception as e:
-            logger.logger.error(f'clearNameFolders Exception : {file_path} [{e}]')
+            logger.logger.error(f'clearNameFolders Exception: [{e}]')
 
     def create_directory(self, path):
         try:
@@ -566,7 +566,7 @@ class TelegramBot:
 
                 response = await message.edit('Downloading:', buttons=[button1, button2])
 
-                await asyncio.sleep(self.YOUTUBE_TIMEOUT_OPTION)
+                await asyncio.sleep(self.YOUTUBE_SHOW_OPTION_TIMEOUT)
 
             logger.logger.info(f'youTubeDownloader => self.youtubeLinks: {self.youtubeLinks} => {message.id}')
 
@@ -639,12 +639,12 @@ class TelegramBot:
             logger.logger.info(f'commands => message: {message}')
             logger.logger.info(f'commands => message: {message.message}')
             if self.AUTHORIZED_USER(message):
-                if message.message == '/help':
-                    await self.command_handler.show_help(message)
-                if message.message == '/version':
-                    await self.command_handler.show_version(message)
-            if message.message == '/id':
-                await self.command_handler.show_id(message)
+                process_command = self.command_handler.process_command(message)
+                if process_command: await message.respond(process_command)
+            elif message.message == '/id':
+                #await self.command_handler.show_id(message)
+                process_command = self.command_handler.process_command(message)
+                await message.respond(process_command)
 
         except Exception as e:
             logger.logger.error(f'commands => Exception: {e}')

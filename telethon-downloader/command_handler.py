@@ -1,33 +1,49 @@
 from telethon.utils import get_peer_id, resolve_id
 
 import logger
-import constants
 
 class CommandHandler:
     def __init__(self, environments):
-        self.commands = {
-            '/help': self.show_help,
-            '/version': self.show_version
+        self.command_dict = {
+            "/help": self.handle_help,
+            "/version": self.handle_version,
+            "/id": self.handle_id,
         }
+
         self.environments = environments
-    
-    async def handle_command(self, command, event):
-        handler = self.commands.get(command)
-        if handler:
-            await handler(event)
-    
-    async def show_help(self, message):
+
+    def process_command(self, message):
+        try:
+            command = str(message.message)
+            logger.logger.info(f'process_command => command: {command}')
+            
+            handler_method = self.command_dict.get(command)
+
+            if self._function_accepts_args(handler_method):
+                return handler_method(message)
+            else:
+                return handler_method()
+
+        except Exception as e:
+            logger.logger.info(f'process_command => Exception: {e}')
+
+    def _function_accepts_args(self, func):
+        # Verificar si la función acepta argumentos adicionales
+        return hasattr(func, '__code__') and func.__code__.co_argcount > 1
+
+    async def handle_help(self):
         help_message = "¡Bienvenido al bot!\n\n"
         help_message += "Comandos disponibles:\n"
         help_message += "/id - Show id user/group\n"
         help_message += "/help - Muestra la ayuda\n"
         help_message += "/version - Muestra la versión del programa"
-        await message.respond(help_message)
+        return help_message
     
-    async def show_version(self, event):
-        await event.respond(f'version: {self.environments.VERSION}')
+    def handle_version(self):
+        logger.logger.info(f'handle_version: {self.environments.VERSION}')
+        return f'version: {self.environments.VERSION}'
 
-    async def show_id(self, message):
+    def handle_id(self, message):
         real_id = get_peer_id(message.peer_id)
         logger.logger.info(f'commands => real_id: {real_id}')
-        await message.respond(f'id: {str(real_id)}')
+        return f'id: {str(real_id)}'

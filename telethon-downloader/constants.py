@@ -32,7 +32,7 @@ class EnvironmentReader:
         self.YOUTUBE_DEFAULT_DOWNLOAD = os.environ.get('YOUTUBE_DEFAULT_DOWNLOAD', 'VIDEO')
         self.YOUTUBE_FORMAT_AUDIO = os.environ.get('YOUTUBE_FORMAT_AUDIO', 'bestaudio/best')  #best
         self.YOUTUBE_FORMAT_VIDEO = os.environ.get('YOUTUBE_FORMAT_VIDEO', 'bestvideo+bestaudio/best')  #best
-        self.YOUTUBE_TIMEOUT_OPTION = int(os.environ.get('YOUTUBE_TIMEOUT_OPTION',5))
+        self.YOUTUBE_SHOW_OPTION_TIMEOUT = int(os.environ.get('YOUTUBE_SHOW_OPTION_TIMEOUT',5))
         self.YOUTUBE_SHOW_OPTION = os.environ.get('YOUTUBE_SHOW_OPTION', True)
 
         self.TG_DL_TIMEOUT = int(os.environ.get('TG_DL_TIMEOUT',3600))

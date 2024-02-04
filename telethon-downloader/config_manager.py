@@ -10,7 +10,7 @@ class ConfigurationManager:
 
         if not config.read(self.config_path):
             # Config file doesn't exist, create a new one with default values
-            config['DEFAULT'] = {'key1': 'value1', 'key2': 'value2'}
+            config['DEFAULT'] = {'pdf': '/download/pdf', 'cbr': '/download/pdf'}
             config['DEFAULT_PATH'] = {
                 'pdf': '/download/pdf',
                 'cbr': '/download/pdf',
