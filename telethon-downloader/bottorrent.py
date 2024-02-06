@@ -33,12 +33,13 @@ from download_manager import DownloadPathManager
 
 class TelegramBot:
     def __init__(self):
+        self.VERSION = "3.2.1.111"
+
         self.constants = EnvironmentReader()
         self.templatesLanguage = LanguageTemplates(
             language=self.constants.get_variable("LANGUAGE")
         )
 
-        self.VERSION = "3.2.1.109"
         self.SESSION = self.constants.get_variable("SESSION")
         self.API_ID = self.constants.get_variable("API_ID")
         self.API_HASH = self.constants.get_variable("API_HASH")
@@ -111,6 +112,10 @@ class TelegramBot:
         self.YOUTUBE_SHOW_OPTION = (
             self.constants.get_variable("YOUTUBE_SHOW_OPTION") == "True"
             or self.constants.get_variable("YOUTUBE_SHOW_OPTION") == True
+        )
+
+        self.ignored_extensions = os.environ.get("IGNORED_EXTENSIONS", "torrent").split(
+            ","
         )
 
         self.youtubeLinks = {}
@@ -285,15 +290,45 @@ class TelegramBot:
         except Exception as e:
             logger.logger.error(f"resolve_id Exception: {e}")
 
+    def is_torrent_file(self, event, media, message):
+        try:
+            logger.logger.info(
+                f"is_torrent_file file_name: {media.document.attributes[0].file_name}"
+            )
+
+            path_obj = Path(media.document.attributes[0].file_name)
+
+            _basename = path_obj.name
+            _filename = path_obj.stem
+            _extension = path_obj.suffix
+            _directory = path_obj.parent
+
+            logger.logger.info(f"moveFile basename: {_basename}")
+            logger.logger.info(f"moveFile Filename: {_filename}")
+            logger.logger.info(f"moveFile Extension: {_extension}")
+            logger.logger.info(f"moveFile Directory: {_directory}")
+
+            extension = _extension.split(".")[-1]
+
+            if extension.lower() in self.ignored_extensions:
+                return True
+
+        except Exception as e:
+            logger.logger.error(f"is_torrent_file Exception {e}")
+            return False
+
     async def download_media_with_retries(self, event, media, message, retry_count=0):
         try:
             await self.download_media(event, media, message)
         except Exception as e:
             if retry_count < self.max_retries:
                 logger.logger.error(
-                    f"Download failed, retrying... Attempt {retry_count + 1}"
+                    f"Download failed, retrying... Attempt {retry_count}"
                 )
-                await self.download_media_with_retries(media, message, retry_count + 1)
+                await asyncio.sleep(5)
+                await self.download_media_with_retries(
+                    event, media, message, retry_count + 1
+                )
             else:
                 logger.logger.error(
                     f"Download failed after {self.max_retries} attempts"
@@ -308,6 +343,19 @@ class TelegramBot:
 
         text = message.message
         message = await message.reply(f"Download in queue...")
+
+        is_torrent_file = None
+
+        if media and hasattr(media, "document"):
+            is_torrent_file = self.is_torrent_file(event, media, message)
+            if is_torrent_file:
+                logger.logger.info(
+                    f"download_media => is_torrent_file: {is_torrent_file}"
+                )
+                await self.downloadDocumentAttributeFilename(event, message, media)
+
+        if is_torrent_file:
+            return True
 
         async with self.semaphore:
             message = await message.edit(f"Download in progress")
