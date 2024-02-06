@@ -136,11 +136,12 @@ services:
 
 **v3.2.1 (2024.02.04):**
 - **Enhancement:** Complete code restructuring.
+- **Enhancement:** Group downloads by extension, file names, and group IDs.
+- **Enhancement:** Implemented immediate download for torrent files without queuing.
 - **Feature:** Added buttons for downloading audio or video from YouTube.
 - **Feature:** Added support for downloading links.
 - **Feature:** Implemented the ability to unzip both zip and rar files.
 - **Feature:** Language templates for multi-language support.
-- **Enhancement:** Group downloads by extension, file names, and group IDs.
 
 **v3.1.13 (2024.01.10):**
 - upgrade telethon to version 1.33.1
