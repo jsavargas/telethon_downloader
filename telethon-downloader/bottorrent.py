@@ -295,44 +295,8 @@ class TelegramBot:
         except Exception as e:
             logger.logger.error(f"resolve_id Exception: {e}")
 
-    def is_torrent_file(self, event, message):
-        try:
-            file_name = (
-                getattr(event.media.document.attributes[0], "file_name", None)
-                if event.media.document.attributes
-                else None
-            )
-
-            logger.logger.info(f"is_torrent_file file_name: {file_name}")
-
-            if not file_name:
-                return False
-
-            path_obj = Path(file_name)
-
-            _basename = path_obj.name
-            _filename = path_obj.stem
-            _extension = path_obj.suffix
-            _directory = path_obj.parent
-
-            logger.logger.info(f"moveFile basename: {_basename}")
-            logger.logger.info(f"moveFile Filename: {_filename}")
-            logger.logger.info(f"moveFile Extension: {_extension}")
-            logger.logger.info(f"moveFile Directory: {_directory}")
-
-            extension = _extension.split(".")[-1]
-
-            if extension.lower() in self.ignored_extensions:
-                return True
-
-        except Exception as e:
-            logger.logger.error(f"is_torrent_file Exception {e}")
-            return False
-
     async def download_pending_messages(self):
         try:
-            logger.logger.info("download_pending_messages")
-
             loaded_messages = self.pendingMessagesHandler.load_from_json()
             grouped = None
             # Group messages by user_id
@@ -414,7 +378,7 @@ class TelegramBot:
             is_torrent_file = None
 
             if event.media and hasattr(event.media, "document"):
-                is_torrent_file = self.is_torrent_file(event, message)
+                is_torrent_file = self.is_torrent_file(event)
                 if is_torrent_file:
                     logger.logger.info(
                         f"download_media => is_torrent_file: {is_torrent_file}"
@@ -459,40 +423,6 @@ class TelegramBot:
             return None
         except Exception as e:
             return None
-
-    def progress_callback(self, message, from_id=None):
-        async def callback(current, total):
-            if not self.TG_PROGRESS_DOWNLOAD:
-                return
-            try:
-                megabytes_current = current / 1024 / 1024
-                megabytes_total = total / 1024 / 1024
-                message_text = f"Downloading in: {self.PATH_TMP}\n"
-                message_text += (
-                    f"progress: {megabytes_current:.2f} MB / {megabytes_total:.2f} MB"
-                )
-                message_text = self.templatesLanguage.template(
-                    "PROGRESS_CALLBACK_PATH"
-                ).format(path=self.PATH_TMP)
-                if from_id:
-                    message_text += self.templatesLanguage.template(
-                        "MESSAGE_DOWNLOAD_FROM_ID"
-                    ).format(from_id=from_id)
-                message_text += self.templatesLanguage.template(
-                    "PROGRESS_CALLBACK_PROGRESS"
-                ).format(current=megabytes_current, total=megabytes_total)
-                if (
-                    current == total
-                    or current % (self.PROGRESS_STATUS_SHOW * 1024 * 1024) == 0
-                ):
-                    await self.client.edit_message(
-                        message.chat_id, message.id, message_text
-                    )
-            finally:
-                # logger.logger.error(f'callback Exception: {e}')
-                return
-
-        return callback
 
     async def downloadMessageMediaWebPage(self, event, message):
         try:
@@ -685,13 +615,6 @@ class TelegramBot:
             extension = path_obj.suffix
             directory = path_obj.parent
 
-            logger.logger.info(f"moveFile file_path: {file_path}")
-            logger.logger.info(f"moveFile basename: {basename}")
-            logger.logger.info(f"moveFile Filename: {filename}")
-            logger.logger.info(f"moveFile Extension: {extension}")
-            logger.logger.info(f"moveFile Directory: {directory}")
-            logger.logger.info(f"moveFile from_id: {from_id}")
-
             self.DEFAULT_PATH_EXTENSIONS = self.getConfigurationManager()
             self.GROUP_PATH = self.getConfigurationManager("GROUP_PATH")
             self.REGEX_PATH = self.getConfigurationManager("REGEX_PATH")
@@ -715,8 +638,6 @@ class TelegramBot:
             else:
                 final_path = os.path.join(self.PATH_COMPLETED, basename)
 
-            logger.logger.info(f"moveFile final_path: {final_path}")
-
             directorio_base = Path(final_path).parent
             if os.path.exists(final_path):
                 destination_filename = basename
@@ -739,90 +660,6 @@ class TelegramBot:
 
         except Exception as e:
             logger.logger.error(f"moveFile Exception : {file_path} [{e}]")
-
-    def clearNameFolders(self, folderName):
-        try:
-            return folderName
-
-            for i, char in enumerate(folderName):
-                if char.isalnum():
-                    return folderName[i:]
-            return str(folderName)
-        except Exception as e:
-            logger.logger.error(f"clearNameFolders Exception: [{e}]")
-
-    def create_directory(self, path):
-        try:
-            logger.logger.info(f"create_directory path: {path}")
-            os.makedirs(path, exist_ok=True)
-            if (
-                hasattr(self, "PUID")
-                and hasattr(self, "PGID")
-                and self.PUID is not None
-                and self.PGID is not None
-            ):
-                if os.path.exists(path):
-                    os.chown(path, self.PUID, self.PGID)
-            if os.path.exists(path):
-                os.chmod(path, 0o777)
-        except Exception as e:
-            logger.logger.error(f"create_directory Exception : {path} [{e}]")
-
-    def change_permissions(self, path):
-        try:
-            if os.path.isfile(path):
-                os.chmod(path, 0o755)
-                if (
-                    hasattr(self, "PUID")
-                    and hasattr(self, "PGID")
-                    and self.PUID is not None
-                    and self.PGID is not None
-                ):
-                    os.chown(path, self.PUID, self.PGID)
-                    logger.logger.info(
-                        f"[!] Changed permissions isfile {path} using PUID={self.PUID} and PGID={self.PGID}"
-                    )
-            else:
-                for dirpath, dirnames, filenames in os.walk(path):
-                    os.chmod(dirpath, 0o755)
-                    if (
-                        hasattr(self, "PUID")
-                        and hasattr(self, "PGID")
-                        and self.PUID is not None
-                        and self.PGID is not None
-                    ):
-                        os.chown(dirpath, self.PUID, self.PGID)
-                        logger.logger.info(
-                            f"[!] Changed permissions dirpath {dirpath} using PUID={self.PUID} and PGID={self.PGID}"
-                        )
-
-                    for filename in filenames:
-                        filepath = os.path.join(dirpath, filename)
-                        os.chmod(filepath, 0o755)
-                        if (
-                            hasattr(self, "PUID")
-                            and hasattr(self, "PGID")
-                            and self.PUID is not None
-                            and self.PGID is not None
-                        ):
-                            os.chown(filepath, self.PUID, self.PGID)
-                            logger.logger.info(
-                                f"[!] Changed permissions filepath {filepath} using PUID={self.PUID} and PGID={self.PGID}"
-                            )
-
-            logger.logger.info(
-                f"[!] Changed permissions for {path} using PUID={self.PUID} and PGID={self.PGID}"
-            )
-        except FileNotFoundError:
-            logger.logger.error(
-                f"change_permissions except File or directory not found: {path}"
-            )
-
-    def postProcess(self, path):
-        try:
-            logger.logger.info(f"postProcess path: {path}")
-        except Exception as e:
-            logger.logger.error(f"postProcess Exception : {path} [{e}]")
 
     async def unCompress(self, file_path):
         try:
@@ -1004,6 +841,40 @@ class TelegramBot:
         except Exception as e:
             logger.logger.error(f"commands => Exception: {e}")
 
+    def is_torrent_file(self, event):
+        try:
+            file_name = (
+                getattr(event.media.document.attributes[0], "file_name", None)
+                if event.media.document.attributes
+                else None
+            )
+
+            logger.logger.info(f"is_torrent_file file_name: {file_name}")
+
+            if not file_name:
+                return False
+
+            path_obj = Path(file_name)
+
+            _basename = path_obj.name
+            _filename = path_obj.stem
+            _extension = path_obj.suffix
+            _directory = path_obj.parent
+
+            logger.logger.info(f"moveFile basename: {_basename}")
+            logger.logger.info(f"moveFile Filename: {_filename}")
+            logger.logger.info(f"moveFile Extension: {_extension}")
+            logger.logger.info(f"moveFile Directory: {_directory}")
+
+            extension = _extension.split(".")[-1]
+
+            if extension.lower() in self.ignored_extensions:
+                return True
+
+        except Exception as e:
+            logger.logger.error(f"is_torrent_file Exception {e}")
+            return False
+
     def format_time(self, seconds):
         try:
             minutes, seconds = divmod(int(seconds), 60)
@@ -1032,6 +903,124 @@ class TelegramBot:
         except Exception as e:
             logger.logger.error(f"format_time {seconds}. {e}")
             return seconds
+
+    def progress_callback(self, message, from_id=None):
+        async def callback(current, total):
+            if not self.TG_PROGRESS_DOWNLOAD:
+                return
+            try:
+                megabytes_current = current / 1024 / 1024
+                megabytes_total = total / 1024 / 1024
+                message_text = f"Downloading in: {self.PATH_TMP}\n"
+                message_text += (
+                    f"progress: {megabytes_current:.2f} MB / {megabytes_total:.2f} MB"
+                )
+                message_text = self.templatesLanguage.template(
+                    "PROGRESS_CALLBACK_PATH"
+                ).format(path=self.PATH_TMP)
+                if from_id:
+                    message_text += self.templatesLanguage.template(
+                        "MESSAGE_DOWNLOAD_FROM_ID"
+                    ).format(from_id=from_id)
+                message_text += self.templatesLanguage.template(
+                    "PROGRESS_CALLBACK_PROGRESS"
+                ).format(current=megabytes_current, total=megabytes_total)
+                if (
+                    current == total
+                    or current % (self.PROGRESS_STATUS_SHOW * 1024 * 1024) == 0
+                ):
+                    await self.client.edit_message(
+                        message.chat_id, message.id, message_text
+                    )
+            finally:
+                # logger.logger.error(f'callback Exception: {e}')
+                return
+
+        return callback
+
+    def create_directory(self, path):
+        try:
+            logger.logger.info(f"create_directory path: {path}")
+            os.makedirs(path, exist_ok=True)
+            if (
+                hasattr(self, "PUID")
+                and hasattr(self, "PGID")
+                and self.PUID is not None
+                and self.PGID is not None
+            ):
+                if os.path.exists(path):
+                    os.chown(path, self.PUID, self.PGID)
+            if os.path.exists(path):
+                os.chmod(path, 0o777)
+        except Exception as e:
+            logger.logger.error(f"create_directory Exception : {path} [{e}]")
+
+    def change_permissions(self, path):
+        try:
+            if os.path.isfile(path):
+                os.chmod(path, 0o755)
+                if (
+                    hasattr(self, "PUID")
+                    and hasattr(self, "PGID")
+                    and self.PUID is not None
+                    and self.PGID is not None
+                ):
+                    os.chown(path, self.PUID, self.PGID)
+                    logger.logger.info(
+                        f"[!] Changed permissions isfile {path} using PUID={self.PUID} and PGID={self.PGID}"
+                    )
+            else:
+                for dirpath, dirnames, filenames in os.walk(path):
+                    os.chmod(dirpath, 0o755)
+                    if (
+                        hasattr(self, "PUID")
+                        and hasattr(self, "PGID")
+                        and self.PUID is not None
+                        and self.PGID is not None
+                    ):
+                        os.chown(dirpath, self.PUID, self.PGID)
+                        logger.logger.info(
+                            f"[!] Changed permissions dirpath {dirpath} using PUID={self.PUID} and PGID={self.PGID}"
+                        )
+
+                    for filename in filenames:
+                        filepath = os.path.join(dirpath, filename)
+                        os.chmod(filepath, 0o755)
+                        if (
+                            hasattr(self, "PUID")
+                            and hasattr(self, "PGID")
+                            and self.PUID is not None
+                            and self.PGID is not None
+                        ):
+                            os.chown(filepath, self.PUID, self.PGID)
+                            logger.logger.info(
+                                f"[!] Changed permissions filepath {filepath} using PUID={self.PUID} and PGID={self.PGID}"
+                            )
+
+            logger.logger.info(
+                f"[!] Changed permissions for {path} using PUID={self.PUID} and PGID={self.PGID}"
+            )
+        except FileNotFoundError:
+            logger.logger.error(
+                f"change_permissions except File or directory not found: {path}"
+            )
+
+    def postProcess(self, path):
+        try:
+            logger.logger.info(f"postProcess path: {path}")
+        except Exception as e:
+            logger.logger.error(f"postProcess Exception : {path} [{e}]")
+
+    def clearNameFolders(self, folderName):
+        try:
+            return folderName
+
+            for i, char in enumerate(folderName):
+                if char.isalnum():
+                    return folderName[i:]
+            return str(folderName)
+        except Exception as e:
+            logger.logger.error(f"clearNameFolders Exception: [{e}]")
 
 
 if __name__ == "__main__":
