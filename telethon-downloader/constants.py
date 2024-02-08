@@ -5,7 +5,6 @@ import logger
 
 class EnvironmentReader:
     def __init__(self):
-
         # Define some variables so the code reads easier
         self.API_ID = os.environ.get("TG_API_ID")
         self.API_HASH = os.environ.get("TG_API_HASH")
@@ -53,12 +52,14 @@ class EnvironmentReader:
 
         self.TG_FOLDER_BY_AUTHORIZED = os.environ.get("TG_FOLDER_BY_AUTHORIZED", False)
         self.TG_UNZIP_TORRENTS = os.environ.get("TG_UNZIP_TORRENTS", False)
-        self.UNZIP = os.environ.get("UNZIP", False)
-        self.UNRAR = os.environ.get("UNRAR", False)
+        self.ENABLED_UNZIP = os.environ.get("ENABLED_UNZIP", False)
+        self.ENABLED_UNRAR = os.environ.get("ENABLED_UNRAR", False)
+        self.ENABLED_7Z = os.environ.get("ENABLED_7Z", False)
 
         self.LANGUAGE = os.environ.get("APP_LANGUAGE", "en_EN")
 
         self.PATH_CONFIG = "/config/config.ini"
+        self.PATH_PENDING_MESSAGES = "/config/pending_messages.json"
 
         self.YOUTUBE = "youtube"
 
