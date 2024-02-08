@@ -8,21 +8,26 @@ services:
     restart: unless-stopped
     network_mode: host
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TG_AUTHORIZED_USER_ID=                          # <telegram chat_id authorized>
-      - TG_API_ID=
+      - PUID=99
+      - PGID=100
+      - TG_AUTHORIZED_USER_ID=    #<telegram chat_id authorized>
+      - TG_API_ID=168631
       - TG_API_HASH= 
       - TG_BOT_TOKEN=
       - TZ=America/Santiago
-      - APP_LANGUAGE=en_EN                              # OPTIONAL
-      - TG_PROGRESS_DOWNLOAD=True                       # OPTIONAL
-      - PROGRESS_STATUS_SHOW=10                         # OPTIONAL
+      - APP_LANGUAGE=es_ES        # OPTIONAL
+      - TG_UNZIP_TORRENTS=True    # OPTIONA
+      - ENABLED_UNZIP=True        # OPTIONA
+      - ENABLED_UNRAR=True        # OPTIONA
+      - ENABLED_7Z=True           # OPTIONA
+      - TG_PROGRESS_DOWNLOAD=True # OPTIONAL
+      - PROGRESS_STATUS_SHOW=10   # OPTIONAL
+      - TG_DL_TIMEOUT=4600        # OPTIONAL
       - YOUTUBE_FORMAT_AUDIO=bestaudio/best             # OPTIONAL
       - YOUTUBE_FORMAT_VIDEO=bestvideo+bestaudio/best   # OPTIONAL
-      - YOUTUBE_DEFAULT_DOWNLOAD=VIDEO                  # OPTIONAL (AUDIO/VIDEO) 
-      - YOUTUBE_SHOW_OPTION=True                        # OPTIONAL (True/False)
-      - YOUTUBE_SHOW_OPTION_TIMEOUT=3                   # OPTIONAL
+      - YOUTUBE_DEFAULT_DOWNLOAD=VIDEO  # OPTIONAL (AUDIO/VIDEO) 
+      - YOUTUBE_SHOW_OPTION=True        # OPTIONAL (True/False)
+      - YOUTUBE_TIMEOUT_OPTION=3        # OPTIONAL
     volumes:
       - /path/to/config:/config
       - /path/to/download:/download
