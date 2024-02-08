@@ -334,9 +334,6 @@ class TelegramBot:
             logger.logger.info("download_pending_messages")
 
             loaded_messages = self.pendingMessagesHandler.load_from_json()
-            logger.logger.info(
-                f" [!!] download_pending_messages loaded_messages: {loaded_messages}"
-            )
             grouped = None
             # Group messages by user_id
             grouped_dict = {}
