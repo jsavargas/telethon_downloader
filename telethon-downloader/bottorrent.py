@@ -384,7 +384,18 @@ class TelegramBot:
                     logger.logger.info(
                         f"download_media => is_torrent_file: {is_torrent_file}"
                     )
-                    await self.downloadDocumentAttributeFilename(event, message)
+
+                    result = await self.downloadDocumentAttributeFilename(
+                        event, message
+                    )
+
+                    if isinstance(result, Exception):
+                        logger.logger.info(f"download_media Exception if: {result}")
+                        return result
+
+                    self.pendingMessagesHandler.remove_pending_message(
+                        event.peer_id.user_id, event.id
+                    )
 
             if is_torrent_file:
                 return True
@@ -844,10 +855,12 @@ class TelegramBot:
 
     def is_torrent_file(self, event):
         try:
-            file_name = (
-                getattr(event.media.document.attributes[0], "file_name", None)
-                if event.media.document.attributes
-                else None
+            file_name = next((attr.file_name for attr in event.media.document.attributes if isinstance(attr, DocumentAttributeFilename)), None)  # fmt: skip
+
+            # file_name = getattr(next((attr for attr in event.media.document.attributes if isinstance(attr, DocumentAttributeFilename)), None), 'file_name', None)  # fmt: skip
+
+            logger.logger.info(
+                f"is_torrent_file DocumentAttributeFilename: {file_name}"
             )
 
             logger.logger.info(f"is_torrent_file file_name: {file_name}")
