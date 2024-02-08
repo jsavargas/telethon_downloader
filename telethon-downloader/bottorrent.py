@@ -351,7 +351,7 @@ class TelegramBot:
             if isinstance(result, Exception):
                 if retry_count < self.max_retries:
                     logger.logger.error(
-                        f"Download failed, retrying... Attempt {retry_count} => {result}"
+                        f"Download failed, retrying... isinstance {retry_count} => {result}"
                     )
                     await self.download_media_with_retries(event, retry_count + 1)
 
@@ -372,9 +372,16 @@ class TelegramBot:
 
             message = await event.reply("Download in queue...")
 
-            self.pendingMessagesHandler.add_pending_message(
-                event.peer_id.user_id, event.id
+            user_or_chat_id = (
+                event.peer_id.user_id
+                if hasattr(event.peer_id, "user_id")
+                else event.peer_id.chat_id
+                if hasattr(event.peer_id, "chat_id")
+                else None
             )
+            self.pendingMessagesHandler.add_pending_message(
+                user_or_chat_id, event.id
+            ) if user_or_chat_id is not None else None
 
             is_torrent_file = None
 
@@ -421,10 +428,11 @@ class TelegramBot:
                     return result
 
                 self.pendingMessagesHandler.remove_pending_message(
-                    event.peer_id.user_id, event.id
+                    user_or_chat_id, event.id
                 )
         except Exception as e:
             logger.logger.error(f"download_media Exception: {e}")
+            message = await message.edit(f"Exception: {e}")
             return e
 
     async def get_group_name(self, chat_id):
