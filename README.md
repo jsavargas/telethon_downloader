@@ -129,15 +129,19 @@ services:
 ## **Changelog:**
 
 ### [Unreleased]
-- **Feature:** Retry mechanism for failed downloads (in development).
 - **Feature:** Server-to-Telegram forwarding of files (in development).
 - **Feature:** Re-downloading of files (in development).
 - **Feature:** RAR file decompression (in development).
 
-**v3.2.1 (2024.02.04):**
+**v3.2.1 (2024.02.08):**
 - **Enhancement:** Complete code restructuring.
 - **Enhancement:** Group downloads by extension, file names, and group IDs.
 - **Enhancement:** Implemented immediate download for torrent files without queuing.
+- **Enhancement:** Added language templates for en_EN and es_ES.
+- **Enhancement:** Templates are stored in the /config/locale path.
+- **Enhancement:** They are automatically initialized if they do not exist.
+- **Enhancement:** Any language added in the docker-compose that does not have an existing template will default to English.
+- **Enhancement:** Implemented retry for downloads from a pending_messages.json file when downloads are pending.
 - **Feature:** Added buttons for downloading audio or video from YouTube.
 - **Feature:** Added support for downloading links.
 - **Feature:** Implemented the ability to unzip both zip and rar files.
