@@ -64,7 +64,7 @@ class LanguageTemplates:
         ]
 
         locale_dir = os.path.join("/config", "locale")
-        en_template_path = os.path.join(locale_dir, "en_US.txt")
+        en_template_path = os.path.join(locale_dir, "en_EN.txt")
         es_template_path = os.path.join(locale_dir, "es_ES.txt")
 
         if not os.path.exists(locale_dir):

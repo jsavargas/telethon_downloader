@@ -1,10 +1,8 @@
 WELCOME=Telethon Downloader Started: Version: {msg1}
-
 PROGRESS_CALLBACK_PATH=Download in {path}
 PROGRESS_CALLBACK_PROGRESS=progress: {current:.2f} MB / {total:.2f} MB
 
 MESSAGE_DOWNLOAD=Downloading in: {path}
-
 
 MESSAGE_DOWNLOAD_FILE=File downloaded in: {downloaded_file}
 MESSAGE_DOWNLOAD_FILE_SIZE=File size: {file_size:.2f} MB
@@ -17,7 +15,6 @@ MESSAGE_TIMEOUT_EXCEEDED=Download timeout exceeded...
 MESSAGE_EXCEPTION=Download exception...
 MESSAGE_NO_LINKS_DOWNLOAD=No links to download.
 
-
 HOUR=hour
 MINUTE=minute
 SECOND=second
@@ -25,17 +22,3 @@ SECOND=second
 HOURS=hours
 MINUTES=minutes
 SECONDS=seconds
-
-
-
-
-
-
-
-MESSAGE_DOWNLOAD_URL=File downloaded in: {downloaded_file}
-
-MESSAGE_2=Download progress: {percent}%
-MESSAGE_3=An error occurred while processing the request.
-MESSAGE_5=Download progress 2 variables: {percent}%  -- {filename}%
-
-
