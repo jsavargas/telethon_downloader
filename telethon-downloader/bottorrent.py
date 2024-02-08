@@ -36,7 +36,7 @@ from pending_messages_handler import PendingMessagesHandler
 
 class TelegramBot:
     def __init__(self):
-        self.VERSION = "3.2.1.112"
+        self.VERSION = "3.2.1.113"
 
         self.constants = EnvironmentReader()
         self.templatesLanguage = LanguageTemplates(
