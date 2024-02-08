@@ -22,6 +22,7 @@ import asyncio
 import requests
 from pathlib import Path
 from urllib.parse import urlparse
+from datetime import timedelta
 
 import logger
 import config_manager
@@ -877,10 +878,18 @@ class TelegramBot:
 
     def format_time(self, seconds):
         try:
-            minutes, seconds = divmod(int(seconds), 60)
-            hours, minutes = divmod(minutes, 60)
+            total_seconds = float(seconds)
 
-            # message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD_FILE").format(downloaded_file=downloaded_file)
+            integer_part = int(total_seconds)
+            fractional_part = total_seconds - integer_part
+
+            time_delta = timedelta(
+                seconds=integer_part, milliseconds=fractional_part * 1000
+            )
+            time_parts = str(time_delta).split(", ")
+
+            hours, minutes, rest = time_parts[0].split(":")
+            seconds, milliseconds = rest.split(".")
 
             HOUR = self.templatesLanguage.templateOneLine("HOUR")
             MINUTE = self.templatesLanguage.templateOneLine("MINUTE")
@@ -891,12 +900,11 @@ class TelegramBot:
             SECONDS = self.templatesLanguage.templateOneLine("SECONDS")
 
             time_parts = [
-                f"{hours} {HOUR}{'s' * (hours != 1)}" if hours else "",
-                f"{minutes} {MINUTE}{'s' * (minutes != 1)}" if minutes else "",
-                f"{seconds} {SECONDS}"
-                if seconds and (seconds != 1)
-                else (f"{seconds} {SECOND}" if seconds and (seconds == 1) else ""),
-            ]
+                f"{hours} {HOUR}{'s' * (int(hours) != 1)}" if int(hours) else "",
+                f"{minutes} {MINUTE}{'s' * (int(minutes) != 1)}" if int(minutes) else "",
+                f"{seconds} {SECONDS}",
+                f"{milliseconds} ms" if milliseconds else "",
+            ]  # fmt: skip
 
             formatted_time = " ".join(filter(None, time_parts))
             return formatted_time
