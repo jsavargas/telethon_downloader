@@ -10,12 +10,13 @@ class FileExtractor:
     async def extract_unrar(self, file, destination_directory):
         try:
             command = f'unrar x "{file}" -o "{destination_directory}"'
-            logger.logger.info(f"extract_unrar => command: {command}")
+            logger.logger.info(f"extract_unrar starting => command: {command}")
 
             process = await asyncio.create_subprocess_shell(
                 command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
             await process.communicate()
+            logger.logger.info(f"extract_unrar finish => command: {command}")
         except Exception as e:
             logger.logger.error(f"Error extracting with unrar: {str(e)}")
 

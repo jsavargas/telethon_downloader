@@ -544,6 +544,16 @@ class TelegramBot:
             logger.logger.info(f"download => downloaded_file: {downloaded_file}")
 
             downloaded_file = await self.moveFile(downloaded_file, from_id)
+
+            logger.logger.info(f"download => finish moveFile: {downloaded_file}")
+
+            self.postProcess(downloaded_file)
+            await self.unCompress(downloaded_file)
+
+            # asyncio.create_task(extract_unrar("archivo.rar", "destino/", client, chat_id, message_id))
+
+            logger.logger.info(f"download => finish unCompress: {downloaded_file}")
+
             end_time_short = time.strftime("%H:%M", time.localtime())
             logger.logger.info(f"File downloaded in: {downloaded_file}")
             download_end_time = time.time()
@@ -674,8 +684,6 @@ class TelegramBot:
             self.change_permissions(final_path)
             logger.logger.info(f"moveFile final_path: {final_path}")
 
-            self.postProcess(final_path)
-            await self.unCompress(final_path)
             return final_path
 
         except Exception as e:
@@ -700,7 +708,6 @@ class TelegramBot:
 
             for pattern in invalid_patterns:
                 if re.search(pattern, file_name_with_extension, re.IGNORECASE):
-                    # logger.logger.info(f'unCompress IF path: [{file_path}] [{file_name_with_extension}] file_name:[{file_name}] file_extension:[{file_extension}]')
                     return
 
             directorio_destino = os.path.join(
