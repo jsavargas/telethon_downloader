@@ -37,7 +37,7 @@ from pending_messages_handler import PendingMessagesHandler
 
 class TelegramBot:
     def __init__(self):
-        self.VERSION = "3.2.1.114"
+        self.VERSION = "3.2.1.115"
 
         self.constants = EnvironmentReader()
         self.templatesLanguage = LanguageTemplates(
@@ -401,7 +401,7 @@ class TelegramBot:
                         return result
 
                     self.pendingMessagesHandler.remove_pending_message(
-                        event.peer_id.user_id, event.id
+                        user_or_chat_id, event.id
                     )
 
             if is_torrent_file:
