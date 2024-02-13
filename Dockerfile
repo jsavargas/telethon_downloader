@@ -12,7 +12,7 @@ RUN sed -i -e's/ main/ main contrib non-free/g' /etc/apt/sources.list && \
     #    ffmpeg \
     #    unrar \
     #    unzip \
-    python3-pip && \
+        python3-pip && \
     python3 -m pip install --upgrade pip  && \
     pip3 install -r requirements.txt --upgrade && \
     apt-get remove --purge -y build-essential  && \
