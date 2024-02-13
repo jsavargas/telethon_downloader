@@ -7,11 +7,11 @@ COPY requirements.txt requirements.txt
 
 RUN sed -i -e's/ main/ main contrib non-free/g' /etc/apt/sources.list && \
     apt-get -q update && \
-    apt-get -qy dist-upgrade && \
-    apt-get install -qy \
-        ffmpeg \
-        unrar \
-        unzip \
+    #apt-get -qy dist-upgrade && \
+    #apt-get install -qy \
+    #    ffmpeg \
+    #    unrar \
+    #    unzip \
     python3-pip && \
     python3 -m pip install --upgrade pip  && \
     pip3 install -r requirements.txt --upgrade && \
