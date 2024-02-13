@@ -1,5 +1,5 @@
 #FROM jsavargas/telethon_downloader:ffmpeg AS basetelethon
-FROM python:bullseye AS basetelethon
+FROM python AS basetelethon
 
 WORKDIR /app
 
