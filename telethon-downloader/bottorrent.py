@@ -37,7 +37,7 @@ from pending_messages_handler import PendingMessagesHandler
 
 class TelegramBot:
     def __init__(self):
-        self.VERSION = "4.0.0.11"
+        self.VERSION = "4.0.0.13"
 
         self.constants = EnvironmentReader()
         self.templatesLanguage = LanguageTemplates(
@@ -536,17 +536,23 @@ class TelegramBot:
                     progress_callback=self.progress_callback(message, from_id),
                 )
             )
-            logger.logger.info(f"download => task: {event.id} > {task} >> [{self.TG_DL_TIMEOUT}]")
+            logger.logger.info(
+                f"download => task: {event.id} > {task} >> [{self.TG_DL_TIMEOUT}]"
+            )
 
             downloaded_file = await asyncio.wait_for(task, timeout=self.TG_DL_TIMEOUT)
-          
+
             logger.logger.info(f"download => downloaded_file: {downloaded_file}")
 
             # Check if the downloaded file ends with ".tmp" and remove it from the file name
             if downloaded_file.endswith(".tmp"):
                 file_path = os.path.join(self.PATH_TMP, downloaded_file)
-                os.rename(file_path, file_path[:-4])  # Remove the last 4 characters (".tmp")
-                logger.logger.info(f"File renamed: {downloaded_file} to {downloaded_file[:-4]}")
+                os.rename(
+                    file_path, file_path[:-4]
+                )  # Remove the last 4 characters (".tmp")
+                logger.logger.info(
+                    f"File renamed: {downloaded_file} to {downloaded_file[:-4]}"
+                )
                 downloaded_file = downloaded_file[:-4]
 
             logger.logger.info(
@@ -924,7 +930,7 @@ class TelegramBot:
 
             hours, minutes, rest = time_parts[0].split(":")
             seconds, milliseconds = rest.split(".")
-            milliseconds = milliseconds[:3]  
+            milliseconds = milliseconds[:3]
 
             HOUR = self.templatesLanguage.templateOneLine("HOUR")
             MINUTE = self.templatesLanguage.templateOneLine("MINUTE")
@@ -956,8 +962,11 @@ class TelegramBot:
                 nonlocal last_percentage
 
                 percentage = int(current / total * 100)
-                if (percentage <= 5 and percentage % 1 == 0 and percentage != last_percentage) or (percentage % 10 == 0 and percentage != last_percentage):
-
+                if (
+                    percentage <= 5
+                    and percentage % 1 == 0
+                    and percentage != last_percentage
+                ) or (percentage % 10 == 0 and percentage != last_percentage):
                     speed = current / (time.time() - start_time) / (1024 * 1024)
 
                     megabytes_total = total / 1024 / 1024
