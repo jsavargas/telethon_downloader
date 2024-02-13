@@ -17,10 +17,6 @@ RUN pip3 install telethon[cryptg]
 RUN apt-get remove --purge -y build-essential \
                                 python3-dev \
                 && apt autoremove -y \
-                && rm -rf /var/lib/apt/lists/* \
-                && chmod +x /app/tg_downloader.py \
-                && chown -R 1000:1000 /app
-
-USER 1000:1000
+                && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENTRYPOINT ["/app/tg_downloader.py"]
