@@ -1,6 +1,7 @@
 WELCOME=Telethon Downloader Started: Version: {msg1}
 PROGRESS_CALLBACK_PATH=Download in {path}
-PROGRESS_CALLBACK_PROGRESS=progress: {current:.2f} MB / {total:.2f} MB
+PROGRESS_CALLBACK_STARTING=starting: {starting}
+PROGRESS_CALLBACK_PROGRESS=progress: {percentage}% / {total:.2f} MB, Speed {speed:.2f} MB/s
 
 MESSAGE_DOWNLOAD=Downloading in: {path}
 

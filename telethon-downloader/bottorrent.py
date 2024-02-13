@@ -37,7 +37,7 @@ from pending_messages_handler import PendingMessagesHandler
 
 class TelegramBot:
     def __init__(self):
-        self.VERSION = "3.2.1.115"
+        self.VERSION = "4.0.0.10"
 
         self.constants = EnvironmentReader()
         self.templatesLanguage = LanguageTemplates(
@@ -216,6 +216,7 @@ class TelegramBot:
         self.printAttributeHidden("TG_AUTHORIZED_USER_ID")
         self.printAttribute("PUID")
         self.printAttribute("PGID")
+        self.printAttribute("TG_MAX_PARALLEL")
         self.printAttribute("TG_DL_TIMEOUT")
         self.printAttribute("TG_PROGRESS_DOWNLOAD")
         self.printAttribute("PROGRESS_STATUS_SHOW")
@@ -329,11 +330,10 @@ class TelegramBot:
                 #    file_path = await message.download_media(file="descargas")
                 for message in messages:
                     logger.logger.info(
-                        f" [!!] download_pending_messages message: {message}"
+                        f" [!!] download_pending_messages message: {message.id}"
                     )
-
-                    # new_message_event, message.media, message
-                    await self.download_media_with_retries(message)
+                    asyncio.create_task(self.download_media_with_retries(message))
+                    # await self.download_media_with_retries(message)
 
         except Exception as e:
             logger.logger.error(f"download_pending_messages Exception {grouped}: {e}")
@@ -522,12 +522,11 @@ class TelegramBot:
             ).format(from_id=from_id)
             message = await message.edit(message_text)
 
-            if isinstance(event.media, MessageMediaDocument) and not any(
-                isinstance(attr, DocumentAttributeFilename)
-                for attr in event.media.document.attributes
-            ):
-                logger.logger.info("DocumentAttributeFilename => None")
-                file_name = (event.message).replace("\n", " ") if event.message else ""
+            if isinstance(event.media, MessageMediaDocument):
+                for attr in event.media.document.attributes:
+                    if isinstance(attr, DocumentAttributeFilename):
+                        file_name = f"{attr.file_name}.tmp"
+                        break
 
             loop = asyncio.get_event_loop()
             task = loop.create_task(
@@ -537,22 +536,37 @@ class TelegramBot:
                     progress_callback=self.progress_callback(message, from_id),
                 )
             )
-            logger.logger.info(f"download => task: {task}")
+            logger.logger.info(f"download => task: {event.id} > {task} >> [{self.TG_DL_TIMEOUT}]")
 
             downloaded_file = await asyncio.wait_for(task, timeout=self.TG_DL_TIMEOUT)
-
+          
             logger.logger.info(f"download => downloaded_file: {downloaded_file}")
+
+            # Check if the downloaded file ends with ".tmp" and remove it from the file name
+            if downloaded_file.endswith(".tmp"):
+                file_path = os.path.join(self.PATH_TMP, downloaded_file)
+                os.rename(file_path, file_path[:-4])  # Remove the last 4 characters (".tmp")
+                logger.logger.info(f"File renamed: {downloaded_file} to {downloaded_file[:-4]}")
+                downloaded_file = downloaded_file[:-4]
+
+            logger.logger.info(
+                f"download => downloaded_file: {event.id} > [{downloaded_file}]"
+            )
 
             downloaded_file = await self.moveFile(downloaded_file, from_id)
 
-            logger.logger.info(f"download => finish moveFile: {downloaded_file}")
+            logger.logger.info(
+                f"download => finish moveFile: {event.id} > {downloaded_file}"
+            )
 
             self.postProcess(downloaded_file)
             await self.unCompress(downloaded_file)
 
             # asyncio.create_task(extract_unrar("archivo.rar", "destino/", client, chat_id, message_id))
 
-            logger.logger.info(f"download => finish unCompress: {downloaded_file}")
+            logger.logger.info(
+                f"download => finish unCompress: {event.id} {downloaded_file}"
+            )
 
             end_time_short = time.strftime("%H:%M", time.localtime())
             logger.logger.info(f"File downloaded in: {downloaded_file}")
@@ -584,17 +598,19 @@ class TelegramBot:
 
             message = await message.edit(f"{message_text}")
 
-        except asyncio.TimeoutError:
+        except asyncio.TimeoutError as e:
             end_time_short = time.strftime("%H:%M", time.localtime())
-            logger.logger.error(f"Download TimeoutError Exception")
+            logger.logger.error(f"Download TimeoutError Exception: {event.id}")
+            self.TG_DL_TIMEOUT = self.TG_DL_TIMEOUT + (60 * 30)
             message_text = self.templatesLanguage.template("MESSAGE_TIMEOUT_EXCEEDED")
             message_text += self.templatesLanguage.template(
                 "MESSAGE_DOWNLOAD_AT"
             ).format(end_time=end_time_short)
             message = await message.edit(message_text)
+            return e
         except Exception as e:
             end_time_short = time.strftime("%H:%M", time.localtime())
-            logger.logger.error(f"Download Exception: {e}")
+            logger.logger.error(f"Download Exception: {event.id} > {e}")
             message_text = self.templatesLanguage.template("MESSAGE_EXCEPTION")
             message_text += self.templatesLanguage.template(
                 "MESSAGE_DOWNLOAD_AT"
@@ -861,7 +877,6 @@ class TelegramBot:
                 if process_command:
                     await message.respond(process_command)
             elif message.message == "/id":
-                # await self.command_handler.show_id(message)
                 process_command = self.command_handler.process_command(message)
                 await message.respond(process_command)
 
@@ -872,13 +887,9 @@ class TelegramBot:
         try:
             file_name = next((attr.file_name for attr in event.media.document.attributes if isinstance(attr, DocumentAttributeFilename)), None)  # fmt: skip
 
-            # file_name = getattr(next((attr for attr in event.media.document.attributes if isinstance(attr, DocumentAttributeFilename)), None), 'file_name', None)  # fmt: skip
-
             logger.logger.info(
                 f"is_torrent_file DocumentAttributeFilename: {file_name}"
             )
-
-            logger.logger.info(f"is_torrent_file file_name: {file_name}")
 
             if not file_name:
                 return False
@@ -889,11 +900,6 @@ class TelegramBot:
             _filename = path_obj.stem
             _extension = path_obj.suffix
             _directory = path_obj.parent
-
-            logger.logger.info(f"moveFile basename: {_basename}")
-            logger.logger.info(f"moveFile Filename: {_filename}")
-            logger.logger.info(f"moveFile Extension: {_extension}")
-            logger.logger.info(f"moveFile Directory: {_directory}")
 
             extension = _extension.split(".")[-1]
 
@@ -918,6 +924,7 @@ class TelegramBot:
 
             hours, minutes, rest = time_parts[0].split(":")
             seconds, milliseconds = rest.split(".")
+            milliseconds = milliseconds[:3]  
 
             HOUR = self.templatesLanguage.templateOneLine("HOUR")
             MINUTE = self.templatesLanguage.templateOneLine("MINUTE")
@@ -944,34 +951,48 @@ class TelegramBot:
         async def callback(current, total):
             if not self.TG_PROGRESS_DOWNLOAD:
                 return
+
             try:
-                megabytes_current = current / 1024 / 1024
-                megabytes_total = total / 1024 / 1024
-                message_text = f"Downloading in: {self.PATH_TMP}\n"
-                message_text += (
-                    f"progress: {megabytes_current:.2f} MB / {megabytes_total:.2f} MB"
-                )
-                message_text = self.templatesLanguage.template(
-                    "PROGRESS_CALLBACK_PATH"
-                ).format(path=self.PATH_TMP)
-                if from_id:
+                nonlocal last_percentage
+
+                percentage = int(current / total * 100)
+                if (percentage <= 5 and percentage % 1 == 0 and percentage != last_percentage) or (percentage % 10 == 0 and percentage != last_percentage):
+
+                    speed = current / (time.time() - start_time) / (1024 * 1024)
+
+                    megabytes_total = total / 1024 / 1024
+                    message_text = self.templatesLanguage.template(
+                        "PROGRESS_CALLBACK_PATH"
+                    ).format(path=self.PATH_TMP)
+                    if from_id:
+                        message_text += self.templatesLanguage.template(
+                            "MESSAGE_DOWNLOAD_FROM_ID"
+                        ).format(from_id=from_id)
                     message_text += self.templatesLanguage.template(
-                        "MESSAGE_DOWNLOAD_FROM_ID"
-                    ).format(from_id=from_id)
-                message_text += self.templatesLanguage.template(
-                    "PROGRESS_CALLBACK_PROGRESS"
-                ).format(current=megabytes_current, total=megabytes_total)
-                if (
-                    current == total
-                    or current % (self.PROGRESS_STATUS_SHOW * 1024 * 1024) == 0
-                ):
+                        "PROGRESS_CALLBACK_STARTING"
+                    ).format(starting=_start_time)
+
+                    message_text += self.templatesLanguage.template(
+                        "PROGRESS_CALLBACK_PROGRESS"
+                    ).format(
+                        percentage=int(percentage), total=megabytes_total, speed=speed
+                    )
+
                     await self.client.edit_message(
                         message.chat_id, message.id, message_text
                     )
-            finally:
-                # logger.logger.error(f'callback Exception: {e}')
+                    last_percentage = percentage
+                    if percentage % 10 == 0:
+                        logger.logger.info(
+                            f"Downloading... {message.id} >> {int(percentage)}% - Speed: {speed:.2f} MB/s"
+                        )
+            except Exception:
                 return
 
+        last_percentage = -1
+        start_time = time.time()
+        _start_time = time.strftime("%H:%M:%S", time.localtime())
+        logger.logger.info(f"progress_callback started {message.id}.")
         return callback
 
     def create_directory(self, path):

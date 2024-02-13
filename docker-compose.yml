@@ -20,9 +20,10 @@ services:
       - ENABLED_UNZIP=True        # OPTIONA
       - ENABLED_UNRAR=True        # OPTIONA
       - ENABLED_7Z=True           # OPTIONA
+      - TG_MAX_PARALLEL=4         # OPTIONAL
+      - TG_DL_TIMEOUT=4600        # OPTIONAL
       - TG_PROGRESS_DOWNLOAD=True # OPTIONAL
       - PROGRESS_STATUS_SHOW=10   # OPTIONAL
-      - TG_DL_TIMEOUT=4600        # OPTIONAL
       - YOUTUBE_FORMAT_AUDIO=bestaudio/best             # OPTIONAL
       - YOUTUBE_FORMAT_VIDEO=bestvideo+bestaudio/best   # OPTIONAL
       - YOUTUBE_DEFAULT_DOWNLOAD=VIDEO  # OPTIONAL (AUDIO/VIDEO) 

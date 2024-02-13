@@ -126,15 +126,15 @@ services:
 ```
 
 
-## **Changelog:**
+# **Changelog:**
 
-### [Unreleased]
+## [Unreleased]
 - **Feature:** Server-to-Telegram forwarding of files (in development).
 - **Feature:** Re-downloading of files (in development).
 - **Feature:** RAR file decompression (in development).
 
-**v3.2.1 (2024.02.08):**
-- **Enhancement:** Complete code restructuring.
+## [Version 4.0.1] - 2024-02-13
+- **Enhancement:** Completely restructured the code.
 - **Enhancement:** Group downloads by extension, file names, and group IDs.
 - **Enhancement:** Implemented immediate download for torrent files without queuing.
 - **Enhancement:** Added language templates for en_EN and es_ES.
@@ -142,10 +142,17 @@ services:
 - **Enhancement:** They are automatically initialized if they do not exist.
 - **Enhancement:** Any language added in the docker-compose that does not have an existing template will default to English.
 - **Enhancement:** Implemented retry for downloads from a pending_messages.json file when downloads are pending.
+- **Enhancement:** Background tasks for handling `download_pending_messages`.
+- **Enhancement:** Progress indication during downloads now includes percentage and download speed.
+- **Enhancement:** Increased timeout by 30 minutes for failed downloads due to timeout.
+- **Enhancement:** Improved messaging during download progress.
 - **Feature:** Added buttons for downloading audio or video from YouTube.
 - **Feature:** Added support for downloading links.
 - **Feature:** Implemented the ability to unzip both zip and rar files.
 - **Feature:** Language templates for multi-language support.
+- **Feature:** Display Telethon version information.
+- **Feature:** Upgrade Telethon version to 1.34.0.
+- **Feature:** Append ".tmp" to downloaded files and rename them after completion.
 
 **v3.1.13 (2024.01.10):**
 - upgrade telethon to version 1.33.1
