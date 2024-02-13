@@ -126,12 +126,15 @@ services:
 ```
 
 
-# **Changelog:**
+# Changelog
 
 ## [Unreleased]
 - **Feature:** Server-to-Telegram forwarding of files (in development).
 - **Feature:** Re-downloading of files (in development).
 - **Feature:** RAR file decompression (in development).
+- **Feature:** download youtube videos in mkv/mp4 (in development).
+- **Feature:** Renaming files by command, only in the current session (in development).
+
 
 ## [Version 4.0.1] - 2024-02-13
 - **Enhancement:** Completely restructured the code.
