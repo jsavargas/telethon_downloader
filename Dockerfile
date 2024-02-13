@@ -13,7 +13,7 @@ RUN sed -i -e's/ main/ main contrib non-free/g' /etc/apt/sources.list && \
     #    unrar \
     #    unzip \
     python3-pip && \
-    pythone -m pip install --upgrade pip  && \
+    python3 -m pip install --upgrade pip  && \
     pip3 install -r requirements.txt --upgrade && \
     apt-get remove --purge -y build-essential  && \
     apt-get autoclean -y && apt-get autoremove -y  && \
