@@ -5,17 +5,16 @@ WORKDIR /app
 
 COPY requirements.txt requirements.txt
 
-RUN sed -i -e's/ main/ main contrib non-free/g' /etc/apt/sources.list && \
-    apt-get -q update && \
+RUN apt-get -q update && \
     apt-get -qy dist-upgrade && \
     apt-get install -qy \
     #    ffmpeg \
     #    unrar \
     #    unzip \
         python3-pip && \
-    python3 -m pip install --upgrade pip  && \
-    pip3 install -r requirements.txt --upgrade && \
-    apt-get remove --purge -y build-essential  && \
+    python3 -m pip install --upgrade pip 
+RUN pip3 install -r requirements.txt --upgrade
+RUN apt-get remove --purge -y build-essential  && \
     apt-get autoclean -y && apt-get autoremove -y  && \
     rm -rf /default /etc/default /tmp/* /etc/cont-init.d/* /var/lib/apt/lists/* /var/tmp/*
 
