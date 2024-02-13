@@ -1,5 +1,5 @@
 #FROM jsavargas/telethon_downloader:ffmpeg AS basetelethon
-FROM python AS basetelethon
+FROM ubuntu AS basetelethon
 
 RUN apt-get update && \
  apt-get install -y --no-install-recommends \
