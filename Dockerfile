@@ -11,7 +11,7 @@ RUN apt-get update && \
 	python3-wheel \
 	build-essential
 
-RUN pip install -U cryptg telethon telethon[cryptg] 
+RUN pip install -U cryptg telethon 
 
 
 FROM basetelethon
