@@ -1,7 +1,7 @@
 #FROM jsavargas/telethon_downloader:ffmpeg AS basetelethon
-FROM python:3-slim AS basetelethon
+FROM python AS basetelethon
 
-RUN pip install -U cryptg telethon 
+RUN pip install -U cryptg telethon telethon[cryptg] 
 
 
 FROM basetelethon
