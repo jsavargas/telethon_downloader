@@ -1,3 +1,4 @@
 telethon
+cryptg
 requests
 yt_dlp
