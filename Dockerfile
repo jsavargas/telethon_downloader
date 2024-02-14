@@ -23,8 +23,6 @@ RUN \
     apt-get autoclean -y && apt-get autoremove -y  && \
     rm -rf /default /etc/default /tmp/* /etc/cont-init.d/* /var/lib/apt/lists/* /var/tmp/*
 
-COPY 7zz /usr/local/bin/7zz
-RUN chmod 777 /usr/local/bin/7zz
 
 FROM basetelethon
 
