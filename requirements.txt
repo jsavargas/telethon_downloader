@@ -1,3 +1,4 @@
+tgcrypto
 telethon 
 requests
 yt_dlp
