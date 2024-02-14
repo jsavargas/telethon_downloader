@@ -13,7 +13,7 @@ RUN	apt-get install -y \
     python3 \
     python3-setuptools \
     python3-pip && \
-    pip3 install --upgrade pip cryptg && \
+    pip3 install --upgrade pip cryptg==0.3.1 && \
     #pip3 install -r requirements.txt  && \
     apt-get remove --purge -y build-essential && \
     apt-get autoclean -y && apt-get autoremove -y && \
