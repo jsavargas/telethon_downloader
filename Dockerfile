@@ -15,7 +15,7 @@ RUN	apt-get install -y \
     python3-pip && \
     usermod -d /app abc && \
     python3 -m pip install --upgrade pip && \
-    pip3 install --upgrade pip telethon requests yt_dlp  && \
+    pip3 install --upgrade pip telethon requests yt_dlp cryptg && \
     #pip3 install -r requirements.txt  && \
     apt-get remove --purge -y build-essential && \
     apt-get autoclean -y && apt-get autoremove -y && \
