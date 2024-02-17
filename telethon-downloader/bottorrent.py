@@ -325,15 +325,8 @@ class TelegramBot:
                     int(grouped), ids=grouped_dict[grouped]
                 )
 
-                # Descargar el archivo si existe en el mensaje
-                # if message.media and hasattr(message.media, "document"):
-                #    file_path = await message.download_media(file="descargas")
                 for message in messages:
-                    logger.logger.info(
-                        f" [!!] download_pending_messages message: {message.id}"
-                    )
                     asyncio.create_task(self.download_media_with_retries(message))
-                    # await self.download_media_with_retries(message)
 
         except Exception as e:
             logger.logger.error(f"download_pending_messages Exception {grouped}: {e}")

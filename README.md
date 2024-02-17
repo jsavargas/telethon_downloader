@@ -134,6 +134,7 @@ services:
 - **Feature:** RAR file decompression (in development).
 - **Feature:** download youtube videos in mkv/mp4 (in development).
 - **Feature:** Renaming files by command, only in the current session (in development).
+- **Feature:** Disable `pending_messages` via `DISABLE_PENDING_MESSAGES` environment variable.
 
 
 ## [Version 4.0.1] - 2024-02-13
