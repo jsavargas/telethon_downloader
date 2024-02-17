@@ -167,12 +167,6 @@ class TelegramBot:
     async def handle_new_message(self, event):
         try:
             logger.logger.info(f"handle_new_message => event: {event}")
-            logger.logger.info(
-                f"handle_new_message => message: {event.message.message}"
-            )
-            logger.logger.info(
-                f"handle_new_message => fwd_from: {self.resolve_id(event.fwd_from)}"
-            )
 
             if (event.message.message).startswith("/"):
                 await self.commands(event.message)
@@ -333,12 +327,7 @@ class TelegramBot:
 
     async def download_media_with_retries(self, event, retry_count=1):
         try:
-            logger.logger.info(f" [!!] download_media_with_retries event: {event}")
-            logger.logger.info(
-                f" [!!] download_media_with_retries media: {event.media}"
-            )
-            logger.logger.info(f" [!!] download_media_with_retries message: {event}")
-            logger.logger.info(f" [!!] ")
+            logger.logger.info(" [!!] download_media_with_retries event")
 
             result = await self.download_media(event)
             if isinstance(result, Exception):
@@ -361,7 +350,7 @@ class TelegramBot:
 
     async def download_media(self, event):
         try:
-            logger.logger.info(f"download_media => event: {event}")
+            # logger.logger.info(f"download_media => event: {event}")
 
             message = await event.reply("Download in queue...")
 
