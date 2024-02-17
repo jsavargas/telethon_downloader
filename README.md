@@ -106,23 +106,37 @@ Before working with Telegram's API, you need to get your own API ID and hash:
 ```dockerfile
 version: '3'
 services:
-  telethon_downloader:
+  telethon-downloader:
     image: jsavargas/telethon_downloader
-    container_name: telethon_downloader
+    container_name: telethon-downloader
     restart: unless-stopped
     network_mode: host
     environment:
-      - 'PUID=1000'
-      - 'PGID=1000'
-      - 'TG_AUTHORIZED_USER_ID=63460,645261' #<telegram chat_id authorized>
-      - 'TG_API_ID=<telegram API key generated at ´Generating Telegram API keys´>'
-      - 'TG_API_HASH=<telegram API hash generated at ´Generating Telegram API keys´>' 
-      - 'TG_BOT_TOKEN=<telegram BOT token generated at ´Creating a Telegram Bot´>'
-      - 'TZ=America/Santiago'
+      - PUID=1000
+      - PGID=1000
+      - TG_AUTHORIZED_USER_ID=63460,645261 #<telegram chat_id authorized>
+      - TG_API_ID=<telegram API key generated at ´Generating Telegram API keys´>
+      - TG_API_HASH=<telegram API hash generated at ´Generating Telegram API keys´> 
+      - TG_BOT_TOKEN=<telegram BOT token generated at ´Creating a Telegram Bot´>
+      - TZ=America/Santiago
+      - APP_LANGUAGE=es_ES        # OPTIONAL
+      - TG_UNZIP_TORRENTS=True    # OPTIONA
+      - ENABLED_UNZIP=True        # OPTIONA
+      - ENABLED_UNRAR=True        # OPTIONA
+      - TG_MAX_PARALLEL=4         # OPTIONAL
+      - TG_DL_TIMEOUT=4600        # OPTIONAL
+      - TG_PROGRESS_DOWNLOAD=True # OPTIONAL
+      - PROGRESS_STATUS_SHOW=10   # OPTIONAL
+      - YOUTUBE_FORMAT_AUDIO=bestaudio/best             # OPTIONAL
+      - YOUTUBE_FORMAT_VIDEO=bestvideo+bestaudio/best   # OPTIONAL
+      - YOUTUBE_DEFAULT_DOWNLOAD=VIDEO  # OPTIONAL (AUDIO/VIDEO) 
+      - YOUTUBE_SHOW_OPTION=True        # OPTIONAL (True/False)
+      - YOUTUBE_TIMEOUT_OPTION=3        # OPTIONAL
     volumes:
       - /path/to/config:/config
       - /path/to/download/torrent/watch:/watch
       - /path/to/download:/download
+
 ```
 
 
@@ -131,13 +145,14 @@ services:
 ## [Unreleased]
 - **Feature:** Server-to-Telegram forwarding of files (in development).
 - **Feature:** Re-downloading of files (in development).
+- **Feature:** 7Z (in development).
 - **Feature:** RAR file decompression (in development).
 - **Feature:** download youtube videos in mkv/mp4 (in development).
 - **Feature:** Renaming files by command, only in the current session (in development).
 - **Feature:** Disable `pending_messages` via `DISABLE_PENDING_MESSAGES` environment variable.
 
 
-## [Version 4.0.1] - 2024-02-13
+## [Version 4.0.1] - 2024-02-17
 - **Enhancement:** Completely restructured the code.
 - **Enhancement:** Group downloads by extension, file names, and group IDs.
 - **Enhancement:** Implemented immediate download for torrent files without queuing.

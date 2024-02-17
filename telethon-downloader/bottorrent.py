@@ -608,8 +608,6 @@ class TelegramBot:
 
     async def downloadLinks(self, event, message):
         try:
-            logger.logger.info(f"downloadLinks => event.media: {event.media}")
-            logger.logger.info(f"downloadLinks => message.message: {message.message}")
             logger.logger.info(f"downloadLinks => event.message: {event.message}")
 
             url_pattern = r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"

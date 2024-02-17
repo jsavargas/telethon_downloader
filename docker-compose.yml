@@ -19,7 +19,6 @@ services:
       - TG_UNZIP_TORRENTS=True    # OPTIONA
       - ENABLED_UNZIP=True        # OPTIONA
       - ENABLED_UNRAR=True        # OPTIONA
-      - ENABLED_7Z=True           # OPTIONA
       - TG_MAX_PARALLEL=4         # OPTIONAL
       - TG_DL_TIMEOUT=4600        # OPTIONAL
       - TG_PROGRESS_DOWNLOAD=True # OPTIONAL
