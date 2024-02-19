@@ -130,6 +130,7 @@ services:
       - YOUTUBE_FORMAT_AUDIO=bestaudio/best             # OPTIONAL
       - YOUTUBE_FORMAT_VIDEO=bestvideo+bestaudio/best   # OPTIONAL
       - YOUTUBE_DEFAULT_DOWNLOAD=VIDEO  # OPTIONAL (AUDIO/VIDEO) 
+      - YOUTUBE_DEFAULT_EXTENSION=MKV   # OPTIONAL (mkv/mp4) 
       - YOUTUBE_SHOW_OPTION=True        # OPTIONAL (True/False)
       - YOUTUBE_TIMEOUT_OPTION=3        # OPTIONAL
     volumes:
@@ -147,10 +148,12 @@ services:
 - **Feature:** Re-downloading of files (in development).
 - **Feature:** 7Z (in development).
 - **Feature:** RAR file decompression (in development).
-- **Feature:** download youtube videos in mkv/mp4 (in development).
 - **Feature:** Renaming files by command, only in the current session (in development).
 - **Feature:** Disable `pending_messages` via `DISABLE_PENDING_MESSAGES` environment variable.
 
+
+## [Version 4.0.2] - 2024-02-19
+- **Feature:** download youtube videos in mkv/mp4.
 
 ## [Version 4.0.1] - 2024-02-17
 - **Enhancement:** Completely restructured the code.

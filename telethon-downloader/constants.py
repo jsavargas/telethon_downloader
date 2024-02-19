@@ -31,11 +31,14 @@ class EnvironmentReader:
         self.PATH_LINKS = os.path.join(self.TG_DOWNLOAD_PATH, "links")
         self.PATH_TMP = os.path.join(self.TG_DOWNLOAD_PATH, "tmp")
 
-        self.YOUTUBE_LINKS_SOPORTED = os.environ.get(
-            "YOUTUBE_LINKS_SOPORTED", "youtube.com,youtu.be"
+        self.YOUTUBE_LINKS_SUPPORTED = os.environ.get(
+            "YOUTUBE_LINKS_SUPPORTED", "youtube.com,youtu.be"
         )
         self.YOUTUBE_DEFAULT_DOWNLOAD = os.environ.get(
             "YOUTUBE_DEFAULT_DOWNLOAD", "VIDEO"
+        )
+        self.YOUTUBE_DEFAULT_EXTENSION = os.environ.get(
+            "YOUTUBE_DEFAULT_EXTENSION", "MKV"
         )
         self.YOUTUBE_FORMAT_AUDIO = os.environ.get(
             "YOUTUBE_FORMAT_AUDIO", "bestaudio/best"

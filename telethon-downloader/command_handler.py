@@ -33,13 +33,13 @@ class CommandHandler:
         # Verificar si la función acepta argumentos adicionales
         return hasattr(func, "__code__") and func.__code__.co_argcount > 1
 
-    async def handle_help(self):
-        help_message = "¡Bienvenido al bot!\n\n"
-        help_message += "Comandos disponibles:\n"
-        help_message += "/id - Show id user/group\n"
-        help_message += "/help - Muestra la ayuda\n"
-        help_message += "/telethon - Muestra la versión de telethon\n"
-        help_message += "/version - Muestra la versión del programa"
+    def handle_help(self):
+        help_message = "Welcome to the bot!\n\n"
+        help_message += "Available commands:\n"
+        help_message += "/id - Shows the user/group ID\n"
+        help_message += "/help - Displays the help message\n"
+        help_message += "/telethon - Displays the Telethon version\n"
+        help_message += "/version - Displays the bot version"
         return help_message
 
     def handle_version(self):

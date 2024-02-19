@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from telethon import TelegramClient, events
+from telethon import TelegramClient, events, __version__ as telethon_version
 from telethon.tl.custom import Button
 from telethon.tl.types import (
     MessageMediaPhoto,
@@ -37,7 +37,8 @@ from pending_messages_handler import PendingMessagesHandler
 
 class TelegramBot:
     def __init__(self):
-        self.VERSION = "4.0.1"
+        self.VERSION = "4.0.2"
+        self.TELETHON_VERSION = telethon_version
 
         self.constants = EnvironmentReader()
         self.templatesLanguage = LanguageTemplates(
@@ -111,8 +112,8 @@ class TelegramBot:
         self.GROUP_PATH = self.getConfigurationManager("GROUP_PATH")
         self.SECTIONS = self.getConfigurationManagerAll()
 
-        self.YOUTUBE_LINKS_SOPORTED = (
-            self.constants.get_variable("YOUTUBE_LINKS_SOPORTED")
+        self.YOUTUBE_LINKS_SUPPORTED = (
+            self.constants.get_variable("YOUTUBE_LINKS_SUPPORTED")
             .replace(" ", "")
             .split(",")
         )
@@ -156,7 +157,9 @@ class TelegramBot:
 
     async def start(self):
         await self.client.start(bot_token=str(self.BOT_TOKEN))
-        msg_txt = self.templatesLanguage.template("WELCOME").format(msg1=self.VERSION)
+        msg_txt = self.templatesLanguage.template("WELCOME")
+        msg_txt += self.templatesLanguage.template("BOT_VERSION").format(msg1=self.VERSION)
+        msg_txt += self.templatesLanguage.template("TELETHON_VERSION").format(msg1=self.TELETHON_VERSION)
         await self.client.send_message(int(self.TG_AUTHORIZED_USER_ID[0]), msg_txt)
         logger.logger.info("********** START TELETHON DOWNLOADER **********")
 
@@ -216,7 +219,9 @@ class TelegramBot:
         self.printAttribute("PROGRESS_STATUS_SHOW")
         self.printAttribute("YOUTUBE_FORMAT_AUDIO")
         self.printAttribute("YOUTUBE_FORMAT_VIDEO")
+        self.printAttribute("YOUTUBE_LINKS_SUPPORTED")
         self.printAttribute("YOUTUBE_DEFAULT_DOWNLOAD")
+        self.printAttribute("YOUTUBE_DEFAULT_EXTENSION")
         self.printAttribute("YOUTUBE_SHOW_OPTION")
         self.printAttribute("YOUTUBE_SHOW_OPTION_TIMEOUT")
         self.printAttribute("ENABLED_UNZIP")
@@ -226,6 +231,7 @@ class TelegramBot:
         self.printAttribute("LANGUAGE")
 
         self.printAttribute("VERSION")
+        self.printAttribute("TELETHON_VERSION")
 
     def printAttribute(self, attribute_name):
         if hasattr(self, attribute_name):
@@ -616,7 +622,7 @@ class TelegramBot:
             tasks = []
 
             for url in urls:
-                if any(yt in url for yt in self.YOUTUBE_LINKS_SOPORTED):
+                if any(yt in url for yt in self.YOUTUBE_LINKS_SUPPORTED):
                     task = self.youTubeDownloader(message, url)
                     tasks.append(task)
                 elif all([urlparse(url).scheme, urlparse(url).netloc]):
@@ -769,9 +775,13 @@ class TelegramBot:
                 if self.YOUTUBE_DEFAULT_DOWNLOAD.upper() == "VIDEO":
                     await message.edit("Downloading video")
                     await self.ytdownloader.downloadVideo(text, message)
-                if self.YOUTUBE_DEFAULT_DOWNLOAD.upper() == "AUDIO":
+                elif self.YOUTUBE_DEFAULT_DOWNLOAD.upper() == "AUDIO":
                     await message.edit("Downloading Audio")
                     await self.ytdownloader.downloadAudio(text, message)
+                else:
+                    await message.edit("Downloading video")
+                    await self.ytdownloader.downloadVideo(text, message)
+
         except Exception as e:
             logger.logger.error(f"youTubeDownloader => Exception: {e}")
             await message.reply(f"Error: {e}")

@@ -15,7 +15,7 @@ class YouTubeDownloader:
             'outtmpl': f'{self.constants.get_variable("PATH_YOUTUBE")}/%(title)s.%(ext)s',
             'cachedir':'False', 
             "retries": 10, 
-            'merge_output_format':'mkv',
+            'merge_output_format':self.constants.get_variable("YOUTUBE_DEFAULT_EXTENSION").lower(),
             'progress_hooks': [self.progress_hook]
         }
 
@@ -25,6 +25,7 @@ class YouTubeDownloader:
             logger.logger.info(f"Descargando: {percent}")
 
     async def downloadVideo(self, url, message):
+        logger.logger.info(f'YouTubeDownloader downloadVideo [{url}] [{message}]')
         with YoutubeDL(self.ydl_opts) as ydl:
             info_dict = ydl.extract_info(url, download=False)
             file_name = ydl.prepare_filename(info_dict)
@@ -44,7 +45,7 @@ class YouTubeDownloader:
                 'cachedir':'False',
                 'ignoreerrors': True, 
                 'retries': 10, 
-                'merge_output_format':'mkv'
+                'merge_output_format':self.constants.get_variable("YOUTUBE_DEFAULT_EXTENSION").lower()
             }
             ydl_opts.update(ydl_opts)
 
@@ -67,6 +68,7 @@ class YouTubeDownloader:
                 await message.edit(f'ERROR: one or more videos not downloaded') 
 
     async def downloadAudio(self, url, message):
+        logger.logger.info(f'YouTubeDownloader downloadAudio [{url}] [{message}]')
         os.makedirs(self.constants.get_variable("YOUTUBE_AUDIOS_FOLDER"), exist_ok=True)
         youtube_path = os.path.join(self.constants.get_variable("YOUTUBE_AUDIOS_FOLDER"))
         self.change_permissions(youtube_path)
