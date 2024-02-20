@@ -37,7 +37,7 @@ from pending_messages_handler import PendingMessagesHandler
 
 class TelegramBot:
     def __init__(self):
-        self.VERSION = "4.0.2"
+        self.VERSION = "4.0.3"
         self.TELETHON_VERSION = telethon_version
 
         self.constants = EnvironmentReader()
@@ -158,8 +158,12 @@ class TelegramBot:
     async def start(self):
         await self.client.start(bot_token=str(self.BOT_TOKEN))
         msg_txt = self.templatesLanguage.template("WELCOME")
-        msg_txt += self.templatesLanguage.template("BOT_VERSION").format(msg1=self.VERSION)
-        msg_txt += self.templatesLanguage.template("TELETHON_VERSION").format(msg1=self.TELETHON_VERSION)
+        msg_txt += self.templatesLanguage.template("BOT_VERSION").format(
+            msg1=self.VERSION
+        )
+        msg_txt += self.templatesLanguage.template("TELETHON_VERSION").format(
+            msg1=self.TELETHON_VERSION
+        )
         await self.client.send_message(int(self.TG_AUTHORIZED_USER_ID[0]), msg_txt)
         logger.logger.info("********** START TELETHON DOWNLOADER **********")
 
@@ -331,17 +335,21 @@ class TelegramBot:
         except Exception as e:
             logger.logger.error(f"download_pending_messages Exception {grouped}: {e}")
 
-    async def download_media_with_retries(self, event, retry_count=1):
+    async def download_media_with_retries(self, event, retry_count=1, message=None):
         try:
-            logger.logger.info(" [!!] download_media_with_retries event")
+            download_response = await self.download_media(event, message)
+            logger.logger.info(
+                f" [!!] download_media_with_retries download_response: [{download_response}] => [{message}]"
+            )
 
-            result = await self.download_media(event)
-            if isinstance(result, Exception):
+            if isinstance(download_response["exception"], Exception):
                 if retry_count < self.max_retries:
                     logger.logger.error(
-                        f"Download failed, retrying... isinstance {retry_count} => {result}"
+                        f"Download failed, retrying... isinstance {retry_count} => [{download_response}]"
                     )
-                    await self.download_media_with_retries(event, retry_count + 1)
+                    await self.download_media_with_retries(
+                        event, retry_count + 1, download_response["message"]
+                    )
 
         except Exception as e:
             if retry_count < self.max_retries:
@@ -354,11 +362,13 @@ class TelegramBot:
                     f"Download failed after {self.max_retries} attempts => {e}"
                 )
 
-    async def download_media(self, event):
+    async def download_media(self, event, message=None):
         try:
-            # logger.logger.info(f"download_media => event: {event}")
-
-            message = await event.reply("Download in queue...")
+            if not message:
+                message = await event.reply("Download in queue...")
+            else:
+                message = await message.edit("Download in queue, retrying... ")
+                await asyncio.sleep(3)
 
             user_or_chat_id = (
                 event.peer_id.user_id
@@ -380,48 +390,66 @@ class TelegramBot:
                         f"download_media => is_torrent_file: {is_torrent_file}"
                     )
 
-                    result = await self.downloadDocumentAttributeFilename(
+                    download_response = await self.downloadDocumentAttributeFilename(
                         event, message
                     )
 
-                    if isinstance(result, Exception):
-                        logger.logger.info(f"download_media Exception if: {result}")
-                        return result
+                    if isinstance(download_response["exception"], Exception):
+                        logger.logger.info(
+                            f"download_media is_torrent_file Exception: {download_response}"
+                        )
+                        return {
+                            "exception": download_response["exception"],
+                            "message": download_response["message"],
+                        }
 
                     self.pendingMessagesHandler.remove_pending_message(
                         user_or_chat_id, event.id
                     )
-
-            if is_torrent_file:
-                return True
+                    return {
+                        "exception": None,
+                        "message": message,
+                    }
 
             async with self.semaphore:
                 message = await message.edit("Download in progress")
-                result = None
                 if isinstance(event.media, MessageMediaDocument):
-                    result = await self.downloadDocumentAttributeFilename(
+                    download_response = await self.downloadDocumentAttributeFilename(
                         event, message
                     )
                 elif isinstance(event.media, MessageMediaPhoto):
-                    result = await self.downloadMessageMediaPhoto(event, message)
+                    download_response = await self.downloadMessageMediaPhoto(
+                        event, message
+                    )
                 elif isinstance(event.media, MessageMediaWebPage):
-                    logger.logger.info("download_media => downloadMessageMediaWebPage")
-                    result = await self.downloadMessageMediaWebPage(event, message)
+                    download_response = await self.downloadMessageMediaWebPage(
+                        event, message
+                    )
                 else:
-                    logger.logger.info("download_media => downloadLinks")
-                    result = await self.downloadLinks(event, message)
-
-                if isinstance(result, Exception):
-                    logger.logger.info(f"download_media Exception if: {result}")
-                    return result
+                    download_response = await self.downloadLinks(event, message)
+                if isinstance(download_response["exception"], Exception):
+                    logger.logger.info(
+                        f"download_media Exception if: [{download_response}]"
+                    )
+                    return {
+                        "exception": download_response["exception"],
+                        "message": download_response["message"],
+                    }
 
                 self.pendingMessagesHandler.remove_pending_message(
                     user_or_chat_id, event.id
                 )
+                return {
+                    "exception": None,
+                    "message": message,
+                }
         except Exception as e:
-            logger.logger.error(f"download_media Exception: {e}")
-            message = await message.edit(f"Exception: {e}")
-            return e
+            logger.logger.error(f"Exception 998: {e}")
+            message = await message.edit(f"Exception 998: {e} ")
+            return {
+                "exception": e,
+                "message": message,
+            }
 
     async def get_group_name(self, chat_id):
         try:
@@ -436,10 +464,17 @@ class TelegramBot:
         try:
             logger.logger.info("downloadMessageMediaWebPage")
             await self.downloadLinks(event, message)
+            return {
+                "exception": None,
+                "message": message,
+            }
         except Exception as e:
             logger.logger.error(f"downloadMessageMediaWebPage Exception: {e}")
             message = await message.edit(f"Exception downloadMessageMediaWebPage: {e}")
-            return e
+            return {
+                "exception": e,
+                "message": message,
+            }
 
     async def downloadMessageMediaPhoto(self, event, message):
         try:
@@ -458,13 +493,19 @@ class TelegramBot:
                     break
 
             logger.logger.info(f"downloadMessageMediaPhoto last_size: {last_size}")
-            result = await self.download(event, message, last_size)
-            return result
+            download_response = await self.download(event, message, last_size)
+            return {
+                "exception": download_response["exception"],
+                "message": download_response["message"],
+            }
 
         except Exception as e:
             logger.logger.error(f"downloadMessageMediaPhoto Exception: {e}")
             message = await message.edit(f"Exception downloadMessageMediaPhoto: {e}")
-            return e
+            return {
+                "exception": e,
+                "message": message,
+            }
 
     async def downloadDocumentAttributeFilename(self, event, message):
         try:
@@ -485,12 +526,17 @@ class TelegramBot:
             ):
                 logger.logger.info("download_media => It's a DocumentAttributeVideo")
 
-            result = await self.download(event, message, event.media.document.size)
-            return result
+            download_response = await self.download(
+                event, message, event.media.document.size
+            )
+            return {
+                "exception": download_response["exception"],
+                "message": download_response["message"],
+            }
 
         except Exception as e:
             message = await message.edit(f"Exception download: {e}")
-            return e
+            return {"exception": e, "message": message}
 
     async def download(self, event, message, total_size):
         logger.logger.info("download")
@@ -592,6 +638,11 @@ class TelegramBot:
 
             message = await message.edit(f"{message_text}")
 
+            return {
+                "exception": None,
+                "message": message,
+            }
+
         except asyncio.TimeoutError as e:
             end_time_short = time.strftime("%H:%M", time.localtime())
             logger.logger.error(f"Download TimeoutError Exception: {event.id}")
@@ -601,7 +652,11 @@ class TelegramBot:
                 "MESSAGE_DOWNLOAD_AT"
             ).format(end_time=end_time_short)
             message = await message.edit(message_text)
-            return e
+            return {
+                "exception": e,
+                "message": message,
+            }
+
         except Exception as e:
             end_time_short = time.strftime("%H:%M", time.localtime())
             logger.logger.error(f"Download Exception: {event.id} > {e}")
@@ -610,6 +665,10 @@ class TelegramBot:
                 "MESSAGE_DOWNLOAD_AT"
             ).format(end_time=end_time_short)
             message = await message.edit(message_text)
+            return {
+                "exception": e,
+                "message": message,
+            }
             return e
 
     async def downloadLinks(self, event, message):
@@ -636,9 +695,16 @@ class TelegramBot:
                 await message.edit(
                     self.templatesLanguage.template("MESSAGE_NO_LINKS_DOWNLOAD")
                 )
+            return {
+                "exception": None,
+                "message": message,
+            }
         except Exception as e:
             logger.logger.error(f"downloadLinks Exception: {e}")
-            return e
+            return {
+                "exception": e,
+                "message": message,
+            }
 
     async def moveFile(self, file_path, from_id=None):
         try:
