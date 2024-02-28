@@ -33,6 +33,7 @@ from language_templates import LanguageTemplates
 from file_extractor import FileExtractor
 from download_manager import DownloadPathManager
 from pending_messages_handler import PendingMessagesHandler
+from db_downloads import DownloadFilesDB
 
 
 class TelegramBot:
@@ -45,6 +46,7 @@ class TelegramBot:
             language=self.constants.get_variable("LANGUAGE")
         )
         self.pendingMessagesHandler = PendingMessagesHandler()
+        self.downloadFilesDB = DownloadFilesDB()
 
         self.SESSION = self.constants.get_variable("SESSION")
         self.API_ID = self.constants.get_variable("API_ID")
@@ -175,7 +177,13 @@ class TelegramBot:
         try:
             logger.logger.info(f"handle_new_message => event: {event}")
 
-            if (event.message.message).startswith("/"):
+            AUTHORIZED_USER = self.AUTHORIZED_USER(event.message)
+
+            if AUTHORIZED_USER and (event.message.message).startswith("/rename"):
+                logger.logger.info(f"handle_new_message => RENAME: {event}")
+                await self.renameFilesReply(event)
+
+            elif (event.message.message).startswith("/"):
                 await self.commands(event.message)
 
             elif self.AUTHORIZED_USER(event.message):
@@ -509,23 +517,6 @@ class TelegramBot:
 
     async def downloadDocumentAttributeFilename(self, event, message):
         try:
-            logger.logger.info("downloadDocumentAttributeFilename")
-            logger.logger.info(
-                f"downloadDocumentAttributeFilename: {event.media.document.attributes}"
-            )
-
-            if any(
-                isinstance(attr, DocumentAttributeFilename)
-                for attr in event.media.document.attributes
-            ):
-                logger.logger.info("download_media => It's a DocumentAttributeFilename")
-
-            if any(
-                isinstance(attr, DocumentAttributeVideo)
-                for attr in event.media.document.attributes
-            ):
-                logger.logger.info("download_media => It's a DocumentAttributeVideo")
-
             download_response = await self.download(
                 event, message, event.media.document.size
             )
@@ -539,7 +530,7 @@ class TelegramBot:
             return {"exception": e, "message": message}
 
     async def download(self, event, message, total_size):
-        logger.logger.info("download")
+        logger.logger.info(f"download: {message.id}")
         file_name = ""
         try:
             from_id = self.resolve_id(event.fwd_from)
@@ -565,13 +556,15 @@ class TelegramBot:
             loop = asyncio.get_event_loop()
             task = loop.create_task(
                 self.client.download_media(
-                    event,
+                    event.media,
                     file=os.path.join(self.PATH_TMP, file_name),
-                    progress_callback=self.progress_callback(message, from_id),
+                    progress_callback=self.progress_callback(
+                        message, event.id, from_id
+                    ),
                 )
             )
             logger.logger.info(
-                f"download => task: {event.id} > {task} >> [{self.TG_DL_TIMEOUT}]"
+                f"download => task: {event.id} > {message.id} > [{from_id}] >> [{self.TG_DL_TIMEOUT}]"
             )
 
             downloaded_file = await asyncio.wait_for(task, timeout=self.TG_DL_TIMEOUT)
@@ -599,6 +592,10 @@ class TelegramBot:
                 f"download => finish moveFile: {event.id} > {downloaded_file}"
             )
 
+            self.downloadFilesDB.add_download_files(
+                from_id, event.id, message.id, downloaded_file
+            )
+
             self.postProcess(downloaded_file)
             await self.unCompress(downloaded_file)
 
@@ -617,7 +614,7 @@ class TelegramBot:
             )
 
             logger.logger.info(
-                f"Time taken to download: {elapsed_time_total} seconds, {downloaded_file}"
+                f"download => speed: {elapsed_time_total} seconds, {downloaded_file}"
             )
 
             message_text = self.templatesLanguage.template(
@@ -645,7 +642,7 @@ class TelegramBot:
 
         except asyncio.TimeoutError as e:
             end_time_short = time.strftime("%H:%M", time.localtime())
-            logger.logger.error(f"Download TimeoutError Exception: {event.id}")
+            logger.logger.exception(f"Download TimeoutError Exception: {event.id}")
             self.TG_DL_TIMEOUT = self.TG_DL_TIMEOUT + (60 * 30)
             message_text = self.templatesLanguage.template("MESSAGE_TIMEOUT_EXCEEDED")
             message_text += self.templatesLanguage.template(
@@ -659,7 +656,7 @@ class TelegramBot:
 
         except Exception as e:
             end_time_short = time.strftime("%H:%M", time.localtime())
-            logger.logger.error(f"Download Exception: {event.id} > {e}")
+            logger.logger.exception(f"Download Exception: {event.id} > {e}")
             message_text = self.templatesLanguage.template("MESSAGE_EXCEPTION")
             message_text += self.templatesLanguage.template(
                 "MESSAGE_DOWNLOAD_AT"
@@ -949,9 +946,7 @@ class TelegramBot:
         try:
             file_name = next((attr.file_name for attr in event.media.document.attributes if isinstance(attr, DocumentAttributeFilename)), None)  # fmt: skip
 
-            logger.logger.info(
-                f"is_torrent_file DocumentAttributeFilename: {file_name}"
-            )
+            logger.logger.info(f"is_torrent_file DocumentAttributeFilename: {file_name}")  # fmt: skip
 
             if not file_name:
                 return False
@@ -1009,7 +1004,7 @@ class TelegramBot:
             logger.logger.error(f"format_time {seconds}. {e}")
             return seconds
 
-    def progress_callback(self, message, from_id=None):
+    def progress_callback(self, message, event_id, from_id=None):
         async def callback(current, total):
             if not self.TG_PROGRESS_DOWNLOAD:
                 return
@@ -1049,7 +1044,7 @@ class TelegramBot:
                     last_percentage = percentage
                     if percentage % 10 == 0:
                         logger.logger.info(
-                            f"Downloading... {message.id} >> {int(percentage)}% - Speed: {speed:.2f} MB/s"
+                            f"Downloading... {event_id} > {message.id} >> {int(percentage)}% - Speed: {speed:.2f} MB/s"
                         )
             except Exception:
                 return
@@ -1143,6 +1138,74 @@ class TelegramBot:
             return str(folderName)
         except Exception as e:
             logger.logger.error(f"clearNameFolders Exception: [{e}]")
+
+    async def renameFilesReply(self, event):
+        try:
+            logger.logger.info(f"renameFilesReply => RENAME: {event}")
+            message = event.original_update.message
+
+            # Check if the message is a reply
+            if message.reply_to:
+                new_name = (event.message.message).replace("/rename", "").strip()
+                reply = await event.reply(f"rename file to: {new_name}...")
+
+                reply_to_msg_id = message.reply_to.reply_to_msg_id
+                logger.logger.info(
+                    f"The message is a reply to message ID {reply_to_msg_id}"
+                )
+                found_element = self.downloadFilesDB.get_download_file(reply_to_msg_id)
+
+                time.sleep(10)
+                if found_element:
+                    logger.logger.info(
+                        f"renameFilesReply => found_element: {found_element['original_filename']}"
+                    )
+
+                    renameFilesReply = self.newFilenameRename(
+                        found_element["original_filename"], new_name
+                    )
+                    logger.logger.info(
+                        f"renameFilesReply => newFilenameRename: {found_element['original_filename']}, {renameFilesReply}"
+                    )
+                    reply = await reply.edit(
+                        f"rename file: {found_element['original_filename']} to: {renameFilesReply}..."
+                    )
+
+        except Exception as e:
+            logger.logger.exception(f"downloadLinks Exception: {e}")
+            return e
+
+    def newFilenameRename(self, original_filename, new_name):
+        try:
+            path_obj = Path(new_name)
+            _basename = path_obj.name
+            _filename = path_obj.stem
+            _extension = path_obj.suffix
+            _directory = path_obj.parent
+
+            if os.path.sep in new_name:
+                logger.logger.info("The string represents a directory.")
+
+                new_filename = os.path.join("/download", _directory, _basename)
+
+                return new_filename
+
+            else:
+                logger.logger.info("The string represents a file name.")
+
+                path_obj = Path(original_filename)
+
+                basename = path_obj.name
+                filename = path_obj.stem
+                extension = path_obj.suffix
+                directory = path_obj.parent
+
+                new_filename = os.path.join("/download", directory, _basename)
+                logger.logger.info(f" new_filename: {new_filename}")
+                return new_filename
+        except Exception as e:
+            logger.logger.exception(f"downloadLinks Exception: {e}")
+            return None
 
 
 if __name__ == "__main__":
