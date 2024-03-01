@@ -89,10 +89,10 @@ class YouTubeDownloader:
     async def downloadAudio(self, url, message):
         logger.logger.info(f"YouTubeDownloader downloadAudio [{url}] [{message}]")
 
-        YOUTUBE_AUDIOS_FOLDER = os.path.join(
-            self.constants.get_variable("YOUTUBE_AUDIOS_FOLDER")
+        YOUTUBE_AUDIO_FOLDER = os.path.join(
+            self.constants.get_variable("YOUTUBE_AUDIO_FOLDER")
         )
-        self.utils.create_folders(YOUTUBE_AUDIOS_FOLDER)
+        self.utils.create_folders(YOUTUBE_AUDIO_FOLDER)
 
         logger.logger.info(f"downloadAudio [{url}] [{message}]")
 
@@ -105,7 +105,7 @@ class YouTubeDownloader:
                     "preferredquality": "320",
                 }
             ],
-            "outtmpl": os.path.join(YOUTUBE_AUDIOS_FOLDER, "%(title)s.%(ext)s"),
+            "outtmpl": os.path.join(YOUTUBE_AUDIO_FOLDER, "%(title)s.%(ext)s"),
             "merge_output_format": "mp3",
         }
 
@@ -131,7 +131,7 @@ class YouTubeDownloader:
 
             if res_youtube == False:
                 logger.logger.info(f"downloadAudio destination: [{file_name}]")
-                os.chmod(self.constants.get_variable("YOUTUBE_AUDIOS_FOLDER"), 0o777)
+                os.chmod(self.constants.get_variable("YOUTUBE_AUDIO_FOLDER"), 0o777)
                 end_time_short = time.strftime("%H:%M", time.localtime())
                 await message.edit(
                     f"Downloading finished {total_downloads} audio at {end_time_short}\n{file_name}"

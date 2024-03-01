@@ -29,9 +29,10 @@ class EnvironmentReader:
         self.PATH_TMP = os.path.join(self.TG_DOWNLOAD_PATH, "tmp")
 
         ## YOUTUBE
-        self.YOUTUBE_AUDIOS_FOLDER = os.environ.get("YOUTUBE_AUDIOS_FOLDER", os.path.join(self.TG_DOWNLOAD_PATH, "youtube_audios"))  # fmt: skip
-
         self.PATH_YOUTUBE = os.path.join(self.TG_DOWNLOAD_PATH, "youtube")
+        self.YOUTUBE_AUDIO_FOLDER = os.environ.get("YOUTUBE_AUDIO_FOLDER", os.path.join(self.PATH_YOUTUBE, "youtube_audios"))  # fmt: skip
+        self.YOUTUBE_VIDEO_FOLDER = os.environ.get("YOUTUBE_VIDEO_FOLDER", os.path.join(self.PATH_YOUTUBE, "youtube_video"))  # fmt: skip
+
         self.YOUTUBE_LINKS_SUPPORTED = os.environ.get(
             "YOUTUBE_LINKS_SUPPORTED", "youtube.com,youtu.be"
         )
