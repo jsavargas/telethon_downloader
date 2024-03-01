@@ -14,6 +14,9 @@ class EnvironmentReader:
         self.PUID = os.environ.get("PUID")
         self.PGID = os.environ.get("PGID")
 
+        self.PERMISSIONS_FOLDER = os.environ.get("PERMISSIONS_FOLDER", 777)
+        self.PERMISSIONS_FILE = os.environ.get("PERMISSIONS_FILE", 755)
+
         self.TG_AUTHORIZED_USER_ID = os.environ.get("TG_AUTHORIZED_USER_ID", False)
         self.TG_MAX_PARALLEL = int(os.environ.get("TG_MAX_PARALLEL", 4))
         self.TG_PROGRESS_DOWNLOAD = os.environ.get("TG_PROGRESS_DOWNLOAD", True)

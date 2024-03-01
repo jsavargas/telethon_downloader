@@ -35,9 +35,10 @@ class CommandHandler:
 
     def handle_help(self):
         help_message = "Welcome to the bot!\n\n"
-        help_message += "Available commands:\n"
+        help_message += "Available commands:\n\n"
         help_message += "/id - Shows the user/group ID\n"
         help_message += "/help - Displays the help message\n"
+        help_message += "/rename - Change file name by replying or selecting the file and typing the new name\n"
         help_message += "/telethon - Displays the Telethon version\n"
         help_message += "/version - Displays the bot version"
         return help_message

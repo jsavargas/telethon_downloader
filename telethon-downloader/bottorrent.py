@@ -34,6 +34,7 @@ from file_extractor import FileExtractor
 from download_manager import DownloadPathManager
 from pending_messages_handler import PendingMessagesHandler
 from db_downloads import DownloadFilesDB
+from utils import Utils
 
 
 class TelegramBot:
@@ -42,6 +43,7 @@ class TelegramBot:
         self.TELETHON_VERSION = telethon_version
 
         self.constants = EnvironmentReader()
+        self.utils = Utils()
         self.templatesLanguage = LanguageTemplates(
             language=self.constants.get_variable("LANGUAGE")
         )
@@ -1155,21 +1157,31 @@ class TelegramBot:
                 )
                 found_element = self.downloadFilesDB.get_download_file(reply_to_msg_id)
 
-                time.sleep(10)
                 if found_element:
                     logger.logger.info(
-                        f"renameFilesReply => found_element: {found_element['original_filename']}"
+                        f"renameFilesReply => found_element: {found_element}"
+                    )
+
+                    original_filename = (
+                        found_element["original_filename"]
+                        if not found_element["new_filename"]
+                        else found_element["new_filename"]
                     )
 
                     renameFilesReply = self.newFilenameRename(
-                        found_element["original_filename"], new_name
+                        original_filename, new_name
                     )
+
                     logger.logger.info(
-                        f"renameFilesReply => newFilenameRename: {found_element['original_filename']}, {renameFilesReply}"
+                        f"renameFilesReply => newFilenameRename: {original_filename}, {renameFilesReply}"
                     )
-                    reply = await reply.edit(
-                        f"rename file: {found_element['original_filename']} to: {renameFilesReply}..."
-                    )
+                    if self.utils.rename_file(original_filename, renameFilesReply):
+                        self.downloadFilesDB.update_download_files(
+                            reply_to_msg_id, renameFilesReply
+                        )
+                        reply = await reply.edit(
+                            f"rename file: {original_filename} to: {renameFilesReply}..."
+                        )
 
         except Exception as e:
             logger.logger.exception(f"downloadLinks Exception: {e}")

@@ -6,11 +6,13 @@ import asyncio
 
 import logger
 from constants import EnvironmentReader
+from utils import Utils
 
 
 class YouTubeDownloader:
     def __init__(self):
         self.constants = EnvironmentReader()
+        self.utils = Utils()
         self.ydl_opts = {
             "format": self.constants.get_variable("YOUTUBE_FORMAT_VIDEO"),
             "outtmpl": f'{self.constants.get_variable("PATH_YOUTUBE")}/%(title)s.%(ext)s',
@@ -34,7 +36,7 @@ class YouTubeDownloader:
             file_name = ydl.prepare_filename(info_dict)
             total_downloads = 1
             youtube_path = self.constants.get_variable("PATH_YOUTUBE")
-            self.change_permissions(youtube_path)
+            self.utils.change_permissions(youtube_path)
 
             if "_type" in info_dict and info_dict["_type"] == "playlist":
                 total_downloads = len(info_dict["entries"])
@@ -75,9 +77,9 @@ class YouTubeDownloader:
                 )
                 end_time_short = time.strftime("%H:%M", time.localtime())
                 await message.edit(
-                    f"Downloading finished {total_downloads} video at {end_time_short}\n{youtube_path}"
+                    f"Downloading finished {total_downloads} video at {end_time_short}\n{final_file}"
                 )
-                self.change_permissions(final_file)
+                self.utils.change_permissions(final_file)
             else:
                 logger.logger.info(
                     f"ERROR: ONE OR MORE YOUTUBE VIDEOS NOT DOWNLOADED [{total_downloads}] [{url}] [{youtube_path}]"
@@ -86,15 +88,13 @@ class YouTubeDownloader:
 
     async def downloadAudio(self, url, message):
         logger.logger.info(f"YouTubeDownloader downloadAudio [{url}] [{message}]")
-        os.makedirs(self.constants.get_variable("YOUTUBE_AUDIOS_FOLDER"), exist_ok=True)
+
         YOUTUBE_AUDIOS_FOLDER = os.path.join(
             self.constants.get_variable("YOUTUBE_AUDIOS_FOLDER")
         )
-        self.change_permissions(YOUTUBE_AUDIOS_FOLDER)
+        self.utils.create_folders(YOUTUBE_AUDIOS_FOLDER)
 
         logger.logger.info(f"downloadAudio [{url}] [{message}]")
-
-        # ydl_opts.update(self.ydl_opts)
 
         ydl_opts = {
             "format": self.constants.get_variable("YOUTUBE_FORMAT_AUDIO"),
@@ -134,36 +134,8 @@ class YouTubeDownloader:
                 os.chmod(self.constants.get_variable("YOUTUBE_AUDIOS_FOLDER"), 0o777)
                 end_time_short = time.strftime("%H:%M", time.localtime())
                 await message.edit(
-                    f"Downloading finished {total_downloads} audio at {end_time_short}\n{YOUTUBE_AUDIOS_FOLDER}"
+                    f"Downloading finished {total_downloads} audio at {end_time_short}\n{file_name}"
                 )
-                self.change_permissions(file_name)
+                self.utils.change_permissions(file_name)
                 return file_name
         return None
-
-    def change_permissions(self, path):
-        logger.logger.info(f"change_permissions [{path}]")
-        try:
-            if (
-                hasattr(self.constants, "PUID")
-                and hasattr(self.constants, "PGID")
-                and self.constants.PUID is not None
-                and self.constants.PGID is not None
-            ):
-                PUID = (
-                    int(self.constants.get_variable("PUID"))
-                    if (str(self.constants.get_variable("PUID"))).isdigit()
-                    else None
-                )
-                PGID = (
-                    int(self.constants.get_variable("PGID"))
-                    if (str(self.constants.get_variable("PGID"))).isdigit()
-                    else None
-                )
-                if os.path.exists(path):
-                    os.chown(path, PUID, PGID)
-                    os.chmod(path, 0o755)  # Cambiar permisos a 755 (rwxr-xr-x)
-                    logger.logger.info(
-                        f"Changed permissions for {path} using PUID={self.constants.PUID} and PGID={self.constants.PGID}"
-                    )
-        except FileNotFoundError as e:
-            logger.logger.error(f"File or directory not found: {path} => {e}")
