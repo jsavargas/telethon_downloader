@@ -10,6 +10,8 @@ services:
     environment:
       - PUID=99
       - PGID=100
+      - PERMISSIONS_FOLDER=777
+      - PERMISSIONS_FILE=755
       - TG_AUTHORIZED_USER_ID=    #<telegram chat_id authorized>
       - TG_API_ID=168631
       - TG_API_HASH= 
@@ -25,10 +27,10 @@ services:
       - PROGRESS_STATUS_SHOW=10   # OPTIONAL
       - YOUTUBE_FORMAT_AUDIO=bestaudio/best             # OPTIONAL
       - YOUTUBE_FORMAT_VIDEO=bestvideo+bestaudio/best   # OPTIONAL
-      - YOUTUBE_DEFAULT_DOWNLOAD=VIDEO  # OPTIONAL (AUDIO/VIDEO) 
-      - YOUTUBE_DEFAULT_EXTENSION=MKV   # OPTIONAL (mkv/mp4) 
-      - YOUTUBE_SHOW_OPTION=True        # OPTIONAL (True/False)
-      - YOUTUBE_TIMEOUT_OPTION=3        # OPTIONAL
+      - YOUTUBE_DEFAULT_DOWNLOAD=VIDEO                  # OPTIONAL (AUDIO/VIDEO) 
+      - YOUTUBE_DEFAULT_EXTENSION=MKV                   # OPTIONAL (mkv/mp4) 
+      - YOUTUBE_SHOW_OPTION=True                        # OPTIONAL (True/False)
+      - YOUTUBE_TIMEOUT_OPTION=5                        # OPTIONAL
     volumes:
       - /path/to/config:/config
       - /path/to/download:/download

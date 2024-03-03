@@ -68,6 +68,10 @@ Enjoy an automated and organized downloading experience with telethon_downloader
 
  **PGID** [OPTIONAL]: <Unique identifier for a group of users, used for assigning specific permissions to the group.> 
 
+**PERMISSIONS_FOLDER** [OPTIONAL]: <Folder permissions. (default: 777)>
+
+**PERMISSIONS_FILE** [OPTIONAL]: <File permissions. (default: 755)>
+
  **TZ** [OPTIONAL]: <Sets the system timezone, adjusting it based on the geographical location of the server or user.> 
  >Example: America/Santiago
 
@@ -91,27 +95,27 @@ For example: Creating the template "de_DE.txt" for the German language and addin
 
  >NOTE: DOWNLOADED FILES ARE SAVED AT A TMP DIRECTORY UNTIL THE DOWNLOAD IS COMPLETED TO PROTECT FROM MOVING UNFINISHED FILES
 
- **TG_PROGRESS_DOWNLOAD** [OPTIONAL]: <Muestra el progreso de la descarga (default: True)>
+**TG_PROGRESS_DOWNLOAD** [OPTIONAL]: <Show download progress (default: True)>
 
- **PROGRESS_STATUS_SHOW** [OPTIONAL]: <Muestra el progreso de la descarga cada 10% (default: 10)>
- 
- **YOUTUBE_FORMAT_AUDIO** [OPTIONAL]: <Formato de descarga de audios de youtube (default: bestaudio/best)>
- 
- **YOUTUBE_FORMAT_VIDEO** [OPTIONAL]: <Formato de descarga de videos de youtube (default: bestvideo+bestaudio/best)>
- 
- **YOUTUBE_DEFAULT_DOWNLOAD** [OPTIONAL]: <Preferencia de descarga automatica de youtube AUDIO o VIDEO (default: VIDEO)>
- 
- **YOUTUBE_DEFAULT_EXTENSION** [OPTIONAL]: <Formato de extension de la descarga de videos de youtube (default: MKV)>
- 
- **YOUTUBE_SHOW_OPTION** [OPTIONAL]: <Muestra o no botones para seleccionar descargar Video o Audio de youtube (default: True)>
- 
- **YOUTUBE_TIMEOUT_OPTION** [OPTIONAL]: <Tiempo en el que muestra los botones para descargar Video o Audio de youtube antes de que se descargue la opcion por default "**YOUTUBE_DEFAULT_DOWNLOAD**" (default: 5)>
- 
- **YOUTUBE_AUDIO_FOLDER** [OPTIONAL]: <Carpeta en la cual se descargaran los Audios de youtube (default: /download/youtube)>
-  >NOTE: Para agregar una nueva ruta a estas varias, debe recordar mapearlas en el sector de "volumes" en el docker
+**PROGRESS_STATUS_SHOW** [OPTIONAL]: <Show download progress every 10% (default: 10)>
 
- **YOUTUBE_VIDEO_FOLDER** [OPTIONAL]: <Carpeta en la cual se descargaran los Videos de youtube (default: /download/youtube)>
-  >NOTE: Para agregar una nueva ruta a estas varias, debe recordar mapearlas en el sector de "volumes" en el docker
+**YOUTUBE_FORMAT_AUDIO** [OPTIONAL]: <YouTube audio download format (default: bestaudio/best)>
+
+**YOUTUBE_FORMAT_VIDEO** [OPTIONAL]: <YouTube video download format (default: bestvideo+bestaudio/best)>
+
+**YOUTUBE_DEFAULT_DOWNLOAD** [OPTIONAL]: <Automatic YouTube download preference, AUDIO or VIDEO (default: VIDEO)>
+
+**YOUTUBE_DEFAULT_EXTENSION** [OPTIONAL]: <Extension format for downloading YouTube videos (default: MKV)>
+
+**YOUTUBE_SHOW_OPTION** [OPTIONAL]: <Show or hide buttons to select YouTube Video or Audio download (default: True)>
+
+**YOUTUBE_TIMEOUT_OPTION** [OPTIONAL]: <Time in which buttons are displayed to download YouTube Video or Audio before the default option "**YOUTUBE_DEFAULT_DOWNLOAD**" is chosen (default: 5)>
+ 
+**YOUTUBE_AUDIO_FOLDER** [OPTIONAL]: <Folder where YouTube audios will be downloaded (default: /download/youtube)>
+>NOTE: To add a new path to these variables, remember to map them in the "volumes" section in docker.
+
+**YOUTUBE_VIDEO_FOLDER** [OPTIONAL]: <Folder where YouTube videos will be downloaded (default: /download/youtube)>
+>NOTE: To add a new path to these variables, remember to map them in the "volumes" section in docker.
 
  **YOUTUBE_LINKS_SUPPORTED** [OPTIONAL]: <YouTube links supported for downloading videos (default: youtube.com,youtu.be)>
 >NOTE: NOTE: THIS VARIABLE MUST BE UPDATED IF MORE URL IS REQUIRED TO BE ADDED TO THE YOUTUBE DOWNLOAD SUPPORT
@@ -122,8 +126,49 @@ For example: Creating the template "de_DE.txt" for the German language and addin
  
  **/watch** : folder where torrent files are downloaded where transmission will upload them
 
+# Config File: config.ini
+A config.ini file is created that contains file extensions and paths where these files should be downloaded based on:
 
+## By file extension
 
+```ini
+[DEFAULT_PATH]
+mp4 = /download/mp4
+```
+
+## By forwarded groups
+
+```ini
+[GROUP_PATH]
+-100118xxxxxxxx = /download/games
+```
+
+## By file name
+
+```ini
+[REGEX_PATH]
+/Halo/ = /download/Serie YYYYYY
+```
+
+## Example
+
+```ini
+[DEFAULT]
+pdf = /download/pdf
+cbr = /download/pdf
+
+[DEFAULT_PATH]
+pdf = /download/pdf
+flac = /download/mp3
+jpg = /download/jpg
+mp4 = /download/mp4
+
+[REGEX_PATH]
+/example/i = /download/example
+
+[GROUP_PATH]
+0000000000 = /download/example
+```
 
 # Generating Telegram API keys
 
@@ -154,6 +199,30 @@ Before working with Telegram's API, you need to get your own API ID and hash:
 
    The token is a string along the lines of 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw that is required to authorize the bot and send requests to the Bot API. Keep your token secure and store it safely, it can be used by anyone to control your bot.
 
+
+# Get PUID and PGID in Linux
+If you need to obtain the PUID (User ID) and PGID (Group ID) in Linux, you can easily do so with the following commands:
+
+Make sure to replace <USER> with the username for which you want to obtain the information. These commands will provide you with the corresponding user and group identifiers.
+
+## PUID
+```bash
+id -u <USUARIO>
+```
+## PGID
+```bash
+id -g <USUARIO>
+```
+
+## Example
+
+```bash
+root@Jonas > id -u nobody
+99
+root@Jonas > id -g nobody
+100
+```
+
 # docker-compose
 
 ```dockerfile
@@ -167,6 +236,8 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
+      - PERMISSIONS_FOLDER=777
+      - PERMISSIONS_FILE=755
       - TG_AUTHORIZED_USER_ID=63460,645261 #<telegram chat_id authorized>
       - TG_API_ID=<telegram API key generated at ´Generating Telegram API keys´>
       - TG_API_HASH=<telegram API hash generated at ´Generating Telegram API keys´> 
@@ -198,14 +269,24 @@ services:
 
 # Changelog
 
-## [Unreleased]
+## Backlog (Upcoming Features)
 - **Feature:** Server-to-Telegram forwarding of files (in development).
 - **Feature:** Re-downloading of files (in development).
 - **Feature:** 7Z (in development).
-- **Feature:** RAR file decompression (in development).
-- **Feature:** Renaming files by command, only in the current session (in development).
 - **Feature:** Disable `pending_messages` via `DISABLE_PENDING_MESSAGES` environment variable.
+- **Feature:** Move Files - Implement the ability to move files to new locations.
+- **Feature:** Rename Files - Develop functionality to rename files from the bot.
+- **Feature:** Unzip Files - Add the capability to unzip files directly from the bot.
+- **Feature:** Unrar Files - Add the capability to unrar files directly from the bot.
 
+
+## [Version 4.0.3] - 2024-03-03
+- **Feature:** Added environment variable for YouTube video and audio download path.
+- **Feature:** Implemented file renaming functionality using the /rename command, followed by the new name, using a reply on the file or download message.
+- **Feature:** Added a function to move files to a new folder (under development).
+- **Feature:** Improved creation of new folders, permission changes, and owner changes for files.
+- **Feature:** Added environment variables to set permissions for folders and files.
+- **Feature:** Created the file `/config/download_files.json` to track the last 500 downloaded files, including download dates, original file names, and, if renamed, the new names along with the renaming date.
 
 ## [Version 4.0.2] - 2024-02-19
 - **Feature:** download youtube videos in mkv/mp4.
@@ -226,34 +307,33 @@ services:
 - **Feature:** Added buttons for downloading audio or video from YouTube.
 - **Feature:** Added support for downloading links.
 - **Feature:** Implemented the ability to unzip both zip and rar files.
-- **Feature:** Language templates for multi-language support.
 - **Feature:** Display Telethon version information.
 - **Feature:** Upgrade Telethon version to 1.34.0.
 - **Feature:** Append ".tmp" to downloaded files and rename them after completion.
 
-**v3.1.13 (2024.01.10):**
+## [Version 3.1.13] - 2024.01.10
 - upgrade telethon to version 1.33.1
 
-**v3.1.12 (2023.08.17):**
+## [Version 3.1.12] - 2023.08.17
 - upgrade yt-dlp to version 2023.07.06
 
-**v3.1.11 (2023.03.31):**
+## [Version 3.1.11] - 2023.03.31
 - upgrade python to version 3.11
 
-**v3.1.10 (2023.02.28):**
+## [Version 3.1.10] - 2023.02.28
 - upgrade python to version 3.11
 
-**v3.1.9 (2023.02.01):**
+## [Version 3.1.9] - 2023.02.01
 - upgrade telethon to version 1.26.1
 
-**v3.1.8 (2022.10.10):**
+## [Version 3.1.8] - 2022.10.10
 - change docker building
 
-**v3.1.7 (2022.09.30):**
+## [Version 3.1.7] - 2022.09.30
 - change youtube-dlp to yt-dlp
 - Fixed bugs
 - Added more bugs to fix later (?) xD
 
-**v3.0.1 (2021.10.28):**
+## [Version 3.0.1] - 2021.10.28
 - Added config.ini file in /config
 - Added regex support
