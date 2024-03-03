@@ -20,7 +20,7 @@ class EnvironmentReader:
         self.TG_AUTHORIZED_USER_ID = os.environ.get("TG_AUTHORIZED_USER_ID", False)
         self.TG_MAX_PARALLEL = int(os.environ.get("TG_MAX_PARALLEL", 4))
         self.TG_PROGRESS_DOWNLOAD = os.environ.get("TG_PROGRESS_DOWNLOAD", True)
-        self.PROGRESS_STATUS_SHOW = os.environ.get("PROGRESS_STATUS_SHOW", 50)
+        self.PROGRESS_STATUS_SHOW = os.environ.get("PROGRESS_STATUS_SHOW", 10)
         self.TG_DOWNLOAD_PATH = os.environ.get("TG_DOWNLOAD_PATH", "/download")
         self.TG_DOWNLOAD_PATH_TORRENTS = os.environ.get("TG_DOWNLOAD_PATH_TORRENTS", "/watch")  # fmt: skip
 
