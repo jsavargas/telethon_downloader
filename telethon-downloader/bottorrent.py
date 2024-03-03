@@ -39,7 +39,7 @@ from utils import Utils
 
 class TelegramBot:
     def __init__(self):
-        self.VERSION = "4.0.3"
+        self.VERSION = "4.0.3.100"
         self.TELETHON_VERSION = telethon_version
 
         self.constants = EnvironmentReader()
@@ -211,7 +211,7 @@ class TelegramBot:
         logger.logger.info(f"handle_buttons => url: {url} => {removed_value}")
         logger.logger.info(f"handle_buttons => data: [{url}] => [{data_list[1]}]")
 
-        self.create_directory(self.PATH_YOUTUBE)
+        self.utils.create_folders(self.PATH_YOUTUBE)
         async with self.semaphore:
             if data_list[1] == "V":
                 await event.edit("Downloading video")
@@ -285,10 +285,10 @@ class TelegramBot:
         return self.CONFIG_MANAGER.get_all_sections()
 
     def create_directorys(self):
-        self.create_directory(self.TG_DOWNLOAD_PATH)
-        self.create_directory(self.PATH_TMP)
-        self.create_directory(self.PATH_COMPLETED)
-        self.create_directory(self.PATH_YOUTUBE)
+        self.utils.create_folders(self.TG_DOWNLOAD_PATH)
+        self.utils.create_folders(self.PATH_TMP)
+        self.utils.create_folders(self.PATH_COMPLETED)
+        self.utils.create_folders(self.PATH_YOUTUBE)
 
     def AUTHORIZED_USER(self, message):
         real_id = get_peer_id(message.peer_id)
@@ -539,7 +539,7 @@ class TelegramBot:
 
             megabytes_total = total_size / 1024 / 1024
             download_start_time = time.time()
-            self.create_directory(self.PATH_TMP)
+            self.utils.create_folders(self.PATH_TMP)
 
             message_text = self.templatesLanguage.template("MESSAGE_DOWNLOAD").format(
                 path=self.PATH_TMP
@@ -752,9 +752,9 @@ class TelegramBot:
                     counter += 1
                 final_path = os.path.join(directorio_base, destination_filename)
 
-            self.create_directory(directorio_base)
+            self.utils.create_folders(directorio_base)
             final_path = shutil.move(file_path, final_path)
-            self.change_permissions(final_path)
+            self.utils.change_owner_permissions(final_path)
             logger.logger.info(f"moveFile final_path: {final_path}")
 
             return final_path
@@ -793,20 +793,20 @@ class TelegramBot:
                     f"unCompress endswith rar: [{file_path}] [{file_name_with_extension}] file_name:[{file_name}] file_extension:[{file_extension}]"
                 )
 
-                self.create_directory(directorio_destino)
+                self.utils.create_folders(directorio_destino)
                 fileExtractor = FileExtractor()
                 await fileExtractor.extract_unrar(file_path, directorio_destino)
-                self.change_permissions(directorio_destino)
+                self.utils.change_owner_permissions(directorio_destino)
 
             elif self.ENABLED_UNZIP and file_name_with_extension.endswith(".zip"):
                 logger.logger.info(
                     f"unCompress endswith zip: [{file_path}] [{file_name_with_extension}] file_name:[{file_name}] file_extension:[{file_extension}]"
                 )
 
-                self.create_directory(directorio_destino)
+                self.utils.create_folders(directorio_destino)
                 fileExtractor = FileExtractor()
                 await fileExtractor.extract_unzip(file_path, directorio_destino)
-                self.change_permissions(directorio_destino)
+                self.utils.change_owner_permissions(directorio_destino)
 
             return
 
@@ -876,14 +876,14 @@ class TelegramBot:
                         path=self.PATH_LINKS
                     )
                 )
-                self.create_directory(self.PATH_LINKS)
+                self.utils.create_folders(self.PATH_LINKS)
 
                 with open(file_path, "wb") as file:
                     file.write(response.content)
 
                     file_path = await self.moveFile(file_path)
 
-                    self.change_permissions(file_path)
+                    self.utils.change_owner_permissions(file_path)
                     file_size = len(response.content) / 1024 / 1024
                     download_end_time = time.time()
                     elapsed_time_total = download_end_time - download_start_time
@@ -1057,7 +1057,7 @@ class TelegramBot:
         logger.logger.info(f"progress_callback started {message.id}.")
         return callback
 
-    def create_directory(self, path):
+    def create_directoryTmp(self, path):
         try:
             logger.logger.info(f"create_directory path: {path}")
             os.makedirs(path, exist_ok=True)
@@ -1073,56 +1073,6 @@ class TelegramBot:
                 os.chmod(path, 0o777)
         except Exception as e:
             logger.logger.error(f"create_directory Exception : {path} [{e}]")
-
-    def change_permissions(self, path):
-        try:
-            if os.path.isfile(path):
-                os.chmod(path, 0o755)
-                if (
-                    hasattr(self, "PUID")
-                    and hasattr(self, "PGID")
-                    and self.PUID is not None
-                    and self.PGID is not None
-                ):
-                    os.chown(path, self.PUID, self.PGID)
-                    logger.logger.info(
-                        f"[!] Changed permissions isfile {path} using PUID={self.PUID} and PGID={self.PGID}"
-                    )
-            else:
-                for dirpath, dirnames, filenames in os.walk(path):
-                    os.chmod(dirpath, 0o755)
-                    if (
-                        hasattr(self, "PUID")
-                        and hasattr(self, "PGID")
-                        and self.PUID is not None
-                        and self.PGID is not None
-                    ):
-                        os.chown(dirpath, self.PUID, self.PGID)
-                        logger.logger.info(
-                            f"[!] Changed permissions dirpath {dirpath} using PUID={self.PUID} and PGID={self.PGID}"
-                        )
-
-                    for filename in filenames:
-                        filepath = os.path.join(dirpath, filename)
-                        os.chmod(filepath, 0o755)
-                        if (
-                            hasattr(self, "PUID")
-                            and hasattr(self, "PGID")
-                            and self.PUID is not None
-                            and self.PGID is not None
-                        ):
-                            os.chown(filepath, self.PUID, self.PGID)
-                            logger.logger.info(
-                                f"[!] Changed permissions filepath {filepath} using PUID={self.PUID} and PGID={self.PGID}"
-                            )
-
-            logger.logger.info(
-                f"[!] Changed permissions for {path} using PUID={self.PUID} and PGID={self.PGID}"
-            )
-        except FileNotFoundError:
-            logger.logger.error(
-                f"change_permissions except File or directory not found: {path}"
-            )
 
     def postProcess(self, path):
         try:

@@ -31,24 +31,27 @@ class YouTubeDownloader:
 
     async def downloadVideo(self, url, message):
         logger.logger.info(f"YouTubeDownloader downloadVideo [{url}] [{message}]")
+
+        YOUTUBE_VIDEO_FOLDER = os.path.join(
+            self.constants.get_variable("YOUTUBE_VIDEO_FOLDER")
+        )
+
         with YoutubeDL(self.ydl_opts) as ydl:
             info_dict = ydl.extract_info(url, download=False)
             file_name = ydl.prepare_filename(info_dict)
             total_downloads = 1
-            youtube_path = self.constants.get_variable("PATH_YOUTUBE")
+            youtube_path = YOUTUBE_VIDEO_FOLDER
             self.utils.change_permissions(youtube_path)
 
             if "_type" in info_dict and info_dict["_type"] == "playlist":
                 total_downloads = len(info_dict["entries"])
                 youtube_path = os.path.join(
-                    self.constants.get_variable("PATH_YOUTUBE"),
+                    YOUTUBE_VIDEO_FOLDER,
                     info_dict["uploader"],
                     info_dict["title"],
                 )
             else:
-                youtube_path = os.path.join(
-                    self.constants.get_variable("PATH_YOUTUBE"), info_dict["uploader"]
-                )
+                youtube_path = os.path.join(YOUTUBE_VIDEO_FOLDER, info_dict["uploader"])
 
             ydl_opts = {
                 "format": self.constants.get_variable("YOUTUBE_FORMAT_VIDEO"),

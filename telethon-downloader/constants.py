@@ -11,8 +11,8 @@ class EnvironmentReader:
         self.BOT_TOKEN = os.environ.get("TG_BOT_TOKEN")
         self.SESSION = os.environ.get("TG_SESSION", "bottorrent")
 
-        self.PUID = os.environ.get("PUID")
-        self.PGID = os.environ.get("PGID")
+        self.PUID = os.environ.get("PUID", None)
+        self.PGID = os.environ.get("PGID", None)
 
         self.PERMISSIONS_FOLDER = os.environ.get("PERMISSIONS_FOLDER", 777)
         self.PERMISSIONS_FILE = os.environ.get("PERMISSIONS_FILE", 755)

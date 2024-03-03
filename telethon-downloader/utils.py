@@ -35,40 +35,48 @@ class Utils:
         try:
             if os.path.isfile(file_name):
                 os.chmod(file_name, self.permisos_octal_file)
-                print(
-                    f"Permissions of the file {file_name} changed to {self.PERMISSIONS_FILE}"
+                logger.logger.info(
+                    f"Change permissions of the file {file_name} changed to {self.PERMISSIONS_FILE}"
                 )
             elif os.path.isdir(file_name):
                 os.chmod(file_name, self.permisos_octal_folder)
-                print(
-                    f"Permissions of the file {file_name} changed to {self.PERMISSIONS_FOLDER}"
+                logger.logger.info(
+                    f"Change permissions of the directory {file_name} changed to {self.PERMISSIONS_FOLDER}"
                 )
             else:
-                print(f"{file_name} does not exist or is not a file or directory.")
+                logger.logger.info(
+                    f"{file_name} does not exist or is not a file or directory."
+                )
 
         except FileNotFoundError:
-            print(f"The file {file_name} was not found")
+            logger.logger.exception(f" {file_name} was not found")
+        except Exception as e:
+            logger.logger.exception(f"change_permissions Exception: {file_name}: {e}")
 
     def change_owner(self, file_name):
         try:
             if self.PUID and self.PGID:
                 os.chown(file_name, self.PUID, self.PGID)
-                print(
-                    f"Owner of the file {file_name} changed to {self.PUID} {self.PGID}"
+                logger.logger.info(
+                    f"Change owner: {file_name} changed to {self.PUID}:{self.PGID}"
                 )
         except FileNotFoundError:
-            print(f"The file {file_name} was not found")
+            logger.logger.info(f"The file {file_name} was not found")
+        except Exception as e:
+            logger.logger.info(f"change_owner Exception: {file_name}: {e}")
 
     def create_folder(self, folder_name):
         try:
             os.makedirs(folder_name, exist_ok=True)
             self.change_owner_permissions(folder_name)
-            print(f"Folder {folder_name} created")
         except FileExistsError:
-            print(f"The folder {folder_name} already exists")
+            logger.logger.info(f"The folder {folder_name} already exists")
+        except Exception as e:
+            logger.logger.info(f"create_folder Exception: {folder_name}: {e}")
 
     def create_folders(self, folder_name):
         try:
+            logger.logger.info(f"create_folders path: {folder_name}")
             # Verificar si la folder_name es un archivo
             if os.path.isfile(folder_name):
                 base_directory = os.path.dirname(folder_name)
@@ -82,12 +90,10 @@ class Utils:
                     f"{folder_name} does not exist or is not a file or directory."
                 )
 
-            if self.PUID and self.PGID:
-                self.change_owner(folder_name)
-
-            self.change_permissions(folder_name)
         except FileExistsError:
-            print(f"The folder {folder_name} already exists")
+            logger.logger.info(f"The folder {folder_name} already exists")
+        except Exception as e:
+            logger.logger.info(f"create_folders Exception: {folder_name}: {e}")
 
     def change_owner_permissions(self, folder_name):
         try:
@@ -95,7 +101,9 @@ class Utils:
                 self.change_owner(folder_name)
             self.change_permissions(folder_name)
         except Exception as e:
-            print(f"change_owner_permissions Exception: {folder_name}: {e}")
+            logger.logger.info(
+                f"change_owner_permissions Exception: {folder_name}: {e}"
+            )
 
 
 # Example of usage
