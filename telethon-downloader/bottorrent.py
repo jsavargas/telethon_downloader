@@ -754,6 +754,7 @@ class TelegramBot:
 
             self.utils.create_folders(directorio_base)
             final_path = shutil.move(file_path, final_path)
+            logger.logger.info(f"shutil.move final_path: {final_path}")
             self.utils.change_owner_permissions(final_path)
             logger.logger.info(f"moveFile final_path: {final_path}")
 
