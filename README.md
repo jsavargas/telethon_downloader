@@ -133,9 +133,13 @@ For example: Creating the template "de_DE.txt" for the German language and addin
 
 ## Volumes:
 
- **/download** : folder where files are downloaded
- 
- **/watch** : folder where torrent files are downloaded where transmission will upload them
+- **/config:** Path where configuration files, pending downloads, and recent downloads are stored.
+
+- **/download:** Folder where files are downloaded.
+  
+- **/watch:** Folder where torrent files are downloaded, and transmission will upload them.
+
+
 
 # Config File: config.ini
 A config.ini file is created that contains file extensions and paths where these files should be downloaded based on:
