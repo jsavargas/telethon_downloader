@@ -31,7 +31,19 @@
 
 
 
-Telegram Bot on a [Telethon client](https://github.com/LonamiWebs/Telethon) that auto downloads incoming media files.
+# Telegram Bot with Automatic Download
+
+This Telegram Bot, based on the [Telethon](https://github.com/LonamiWebs/Telethon) client, is designed to automatically download multimedia files sent to it. Additionally, it now has the capability to download videos or audios from YouTube and direct links to files via their URL.
+
+### What's new in this version:
+
+- **File Organization:**
+  - Downloaded files are sorted into folders based on their extension.
+  - Downloaded files can be organized into folders based on their name using regular expressions.
+  - Files forwarded from groups are stored in specific folders identified by the group ID, allowing for more precise and customized organization (configurable in the .ini file).
+
+Enjoy an automated and organized downloading experience with telethon_downloader!
+
 
 ![](https://raw.githubusercontent.com/rodriguezst/telethon_downloader/dev/AB921D1A-4ABF-4E21-8BC1-F934270ED61E.gif)
 
@@ -44,21 +56,62 @@ Telegram Bot on a [Telethon client](https://github.com/LonamiWebs/Telethon) that
  Pull or build the docker image and launch it with the following environment variables:
 
  **TG_AUTHORIZED_USER_ID** : <telegram ´chat_id´ authorized> 
- 
+>NOTE: Unique identification of the user who has permissions to send files to the bot.
+
  **TG_API_ID** : <telegram API key generated at ´Generating Telegram API keys´>
 
  **TG_API_HASH** : <telegram API hash generated at ´Generating Telegram API keys´>
 
  **TG_BOT_TOKEN** : <telegram BOT token generated at ´Creating a Telegram Bot´>
  
- **TZ** : America/Santiago
+ **PUID** [OPTIONAL]: <Unique identification of the user in the system, used for assigning permissions.> 
 
+ **PGID** [OPTIONAL]: <Unique identifier for a group of users, used for assigning specific permissions to the group.> 
+
+ **TZ** [OPTIONAL]: <Sets the system timezone, adjusting it based on the geographical location of the server or user.> 
+ >Example: America/Santiago
+
+ **APP_LANGUAGE** [OPTIONAL]: <bot messages will appear in the language configured in this variable (default: en_EN)>
+>NOTE: Now messages can be in English, Spanish, or any other language by modifying or adding language templates in the "locale" path.
+For example: Creating the template "de_DE.txt" for the German language and adding "de_DE" to the environment variable.
+
+>NOTE: The community is encouraged to generate templates in the languages they use and add them to the "locale" folder of this project.
+
+ **TG_UNZIP_TORRENTS** [OPTIONAL]: <In backlog (default: True)>
+
+ **ENABLED_UNZIP** [OPTIONAL]: <Enables unzip functionality for zip files (default: True)>
+
+ **ENABLED_UNRAR** [OPTIONAL]: <Enables unrar functionality for rar files (default: True)>
+
+ **ENABLED_7Z** [OPTIONAL]: <In backlog (default: True)>
 
  **TG_MAX_PARALLEL** [OPTIONAL]: <maximum number of parallel downloads allowed (default: 4)>
- 
+
  **TG_DL_TIMEOUT** [OPTIONAL]: <maximum time (in seconds) to wait for a download to complete. after this time the download is cancelled and an error is triggered (default: 3600)>
 
  >NOTE: DOWNLOADED FILES ARE SAVED AT A TMP DIRECTORY UNTIL THE DOWNLOAD IS COMPLETED TO PROTECT FROM MOVING UNFINISHED FILES
+
+ **TG_PROGRESS_DOWNLOAD** [OPTIONAL]: <Muestra el progreso de la descarga (default: True)>
+
+ **PROGRESS_STATUS_SHOW** [OPTIONAL]: <Muestra el progreso de la descarga cada 10% (default: 10)>
+ 
+ **YOUTUBE_FORMAT_AUDIO** [OPTIONAL]: <Formato de descarga de audios de youtube (default: bestaudio/best)>
+ 
+ **YOUTUBE_FORMAT_VIDEO** [OPTIONAL]: <Formato de descarga de videos de youtube (default: bestvideo+bestaudio/best)>
+ 
+ **YOUTUBE_DEFAULT_DOWNLOAD** [OPTIONAL]: <Preferencia de descarga automatica de youtube AUDIO o VIDEO (default: VIDEO)>
+ 
+ **YOUTUBE_DEFAULT_EXTENSION** [OPTIONAL]: <Formato de extension de la descarga de videos de youtube (default: MKV)>
+ 
+ **YOUTUBE_SHOW_OPTION** [OPTIONAL]: <Muestra o no botones para seleccionar descargar Video o Audio de youtube (default: True)>
+ 
+ **YOUTUBE_TIMEOUT_OPTION** [OPTIONAL]: <Tiempo en el que muestra los botones para descargar Video o Audio de youtube antes de que se descargue la opcion por default "**YOUTUBE_DEFAULT_DOWNLOAD**" (default: 5)>
+ 
+ **YOUTUBE_AUDIO_FOLDER** [OPTIONAL]: <Carpeta en la cual se descargaran los Audios de youtube (default: /download/youtube)>
+  >NOTE: Para agregar una nueva ruta a estas varias, debe recordar mapearlas en el sector de "volumes" en el docker
+
+ **YOUTUBE_VIDEO_FOLDER** [OPTIONAL]: <Carpeta en la cual se descargaran los Videos de youtube (default: /download/youtube)>
+  >NOTE: Para agregar una nueva ruta a estas varias, debe recordar mapearlas en el sector de "volumes" en el docker
 
  **YOUTUBE_LINKS_SUPPORTED** [OPTIONAL]: <YouTube links supported for downloading videos (default: youtube.com,youtu.be)>
 >NOTE: NOTE: THIS VARIABLE MUST BE UPDATED IF MORE URL IS REQUIRED TO BE ADDED TO THE YOUTUBE DOWNLOAD SUPPORT
