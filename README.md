@@ -42,6 +42,17 @@ This Telegram Bot, based on the [Telethon](https://github.com/LonamiWebs/Teletho
   - Downloaded files can be organized into folders based on their name using regular expressions.
   - Files forwarded from groups are stored in specific folders identified by the group ID, allowing for more precise and customized organization (configurable in the .ini file).
 
+- **Extended Functionality:**
+  - Added the ability to download files via links.
+  - Implemented file renaming, zip, and rar file decompression features.
+  - Introduced the capability to download YouTube videos or audio.
+  - Enabled support for multiple languages in bot messages.
+  - Introduced options to set permissions for downloaded and bot-generated folders and files.
+  - Added functionality to set paths for downloaded YouTube audios and videos.
+
+
+
+
 Enjoy an automated and organized downloading experience with telethon_downloader!
 
 
