@@ -271,12 +271,13 @@ services:
       - YOUTUBE_DEFAULT_EXTENSION=MKV                   # OPTIONAL (mkv/mp4) 
       - YOUTUBE_SHOW_OPTION=True                        # OPTIONAL (True/False)
       - YOUTUBE_TIMEOUT_OPTION=3                        # OPTIONAL
-      - YOUTUBE_AUDIO_FOLDER=/audios/youtube/audio      # OPTIONAL
-      - YOUTUBE_VIDEO_FOLDER=/audios/youtube/video      # OPTIONAL
+      - YOUTUBE_AUDIO_FOLDER=/youtube/audio      # OPTIONAL
+      - YOUTUBE_VIDEO_FOLDER=/youtube/video      # OPTIONAL
     volumes:
       - /path/to/config:/config
       - /path/to/download/torrent/watch:/watch
       - /path/to/download:/download
+      - /path/to/youtube:/youtube
 
 ```
 
