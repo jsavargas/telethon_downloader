@@ -265,14 +265,14 @@ services:
       - TG_DL_TIMEOUT=4600        # OPTIONAL
       - TG_PROGRESS_DOWNLOAD=True # OPTIONAL
       - PROGRESS_STATUS_SHOW=10   # OPTIONAL
-      - YOUTUBE_FORMAT_AUDIO=bestaudio/best             # OPTIONAL
-      - YOUTUBE_FORMAT_VIDEO=bestvideo+bestaudio/best   # OPTIONAL
-      - YOUTUBE_DEFAULT_DOWNLOAD=VIDEO                  # OPTIONAL (AUDIO/VIDEO) 
-      - YOUTUBE_DEFAULT_EXTENSION=MKV                   # OPTIONAL (mkv/mp4) 
-      - YOUTUBE_SHOW_OPTION=True                        # OPTIONAL (True/False)
-      - YOUTUBE_TIMEOUT_OPTION=3                        # OPTIONAL
-      - YOUTUBE_AUDIO_FOLDER=/youtube/audio      # OPTIONAL
-      - YOUTUBE_VIDEO_FOLDER=/youtube/video      # OPTIONAL
+      - YOUTUBE_FORMAT_AUDIO=bestaudio/best              # OPTIONAL
+      - YOUTUBE_FORMAT_VIDEO=bestvideo+bestaudio/best    # OPTIONAL
+      - YOUTUBE_DEFAULT_DOWNLOAD=VIDEO                   # OPTIONAL (AUDIO/VIDEO) 
+      - YOUTUBE_DEFAULT_EXTENSION=MKV                    # OPTIONAL (mkv/mp4) 
+      - YOUTUBE_SHOW_OPTION=True                         # OPTIONAL (True/False)
+      - YOUTUBE_TIMEOUT_OPTION=3                         # OPTIONAL
+      - YOUTUBE_AUDIO_FOLDER=/youtube/audio              # OPTIONAL
+      - YOUTUBE_VIDEO_FOLDER=/youtube/video              # OPTIONAL
     volumes:
       - /path/to/config:/config
       - /path/to/download/torrent/watch:/watch
