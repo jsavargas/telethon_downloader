@@ -55,8 +55,7 @@ This Telegram Bot, based on the [Telethon](https://github.com/LonamiWebs/Teletho
 
 Enjoy an automated and organized downloading experience with telethon_downloader!
 
-
-![](https://raw.githubusercontent.com/rodriguezst/telethon_downloader/dev/AB921D1A-4ABF-4E21-8BC1-F934270ED61E.gif)
+![](images/e8de6c34276cd714552a94f378e77948.gif)
 
 ![](images/download-youtube.png)
 
