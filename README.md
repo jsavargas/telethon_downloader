@@ -295,6 +295,9 @@ services:
 - **Feature:** Unrar Files - Add the capability to unrar files directly from the bot.
 
 
+## [Version 4.0.4] - 2024-03-04
+- **Enhancement:** Re-enabled `MESSAGE_NO_LINKS_DOWNLOAD` feature.
+
 ## [Version 4.0.3] - 2024-03-03
 - **Feature:** Added environment variable for YouTube video and audio download path.
 - **Feature:** Implemented file renaming functionality using the /rename command, followed by the new name, using a reply on the file or download message.

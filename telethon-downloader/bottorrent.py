@@ -39,7 +39,7 @@ from utils import Utils
 
 class TelegramBot:
     def __init__(self):
-        self.VERSION = "4.0.3"
+        self.VERSION = "4.0.4"
         self.TELETHON_VERSION = telethon_version
 
         self.constants = EnvironmentReader()
@@ -691,7 +691,9 @@ class TelegramBot:
                 await asyncio.gather(*tasks)
             else:
                 logger.logger.info(f"downloadLinks => NO ULRS: {urls}")
-                # await message.edit(self.templatesLanguage.template("MESSAGE_NO_LINKS_DOWNLOAD")  )
+                await message.edit(
+                    self.templatesLanguage.template("MESSAGE_NO_LINKS_DOWNLOAD")
+                )
             return {
                 "exception": None,
                 "message": message,
