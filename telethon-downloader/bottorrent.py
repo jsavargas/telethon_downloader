@@ -39,7 +39,7 @@ from utils import Utils
 
 class TelegramBot:
     def __init__(self):
-        self.VERSION = "4.0.4"
+        self.VERSION = "4.0.5.100"
         self.TELETHON_VERSION = telethon_version
 
         self.constants = EnvironmentReader()

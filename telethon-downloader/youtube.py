@@ -41,7 +41,7 @@ class YouTubeDownloader:
             file_name = ydl.prepare_filename(info_dict)
             total_downloads = 1
             youtube_path = YOUTUBE_VIDEO_FOLDER
-            self.utils.change_permissions(youtube_path)
+            self.utils.change_owner_permissions(youtube_path)
 
             if "_type" in info_dict and info_dict["_type"] == "playlist":
                 total_downloads = len(info_dict["entries"])
@@ -82,7 +82,7 @@ class YouTubeDownloader:
                 await message.edit(
                     f"Downloading finished {total_downloads} video at {end_time_short}\n{final_file}"
                 )
-                self.utils.change_permissions(final_file)
+                self.utils.change_owner_permissions(final_file)
             else:
                 logger.logger.info(
                     f"ERROR: ONE OR MORE YOUTUBE VIDEOS NOT DOWNLOADED [{total_downloads}] [{url}] [{youtube_path}]"
@@ -139,6 +139,6 @@ class YouTubeDownloader:
                 await message.edit(
                     f"Downloading finished {total_downloads} audio at {end_time_short}\n{file_name}"
                 )
-                self.utils.change_permissions(file_name)
+                self.utils.change_owner_permissions(file_name)
                 return file_name
         return None
