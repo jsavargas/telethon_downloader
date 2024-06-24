@@ -295,6 +295,11 @@ services:
 - **Feature:** Unrar Files - Add the capability to unrar files directly from the bot.
 
 
+## [Version 4.0.5] - 2024-06-23
+- **Update:** Updated `telethon` to version 1.36.0.
+- **Update:** Updated `yt_dlp` to version 2024.05.27.
+- **Fix:** Corrected the download of YouTube audios in MP3 format.
+
 ## [Version 4.0.4] - 2024-03-04
 - **Enhancement:** Re-enabled `MESSAGE_NO_LINKS_DOWNLOAD` feature.
 

@@ -84,10 +84,17 @@ class Utils:
             elif os.path.isdir(folder_name):
                 self.create_folder(folder_name)
             else:
-                base_directory = os.path.dirname(folder_name)
-                self.create_folder(base_directory)
+                dirname = os.path.dirname(folder_name)
+                base_directory = os.path.basename(folder_name)
+                if "." not in base_directory:
+                    self.create_folder(folder_name)
+                else:
+                    self.create_folder(dirname)
+                    logger.logger.info(
+                        f"{folder_name} does not exist or is not a file or directory."
+                    )
                 logger.logger.info(
-                    f"{folder_name} does not exist or is not a file or directory."
+                    f"create_folders else: [{folder_name}] [{base_directory}] [{dirname}] "
                 )
 
         except FileExistsError:

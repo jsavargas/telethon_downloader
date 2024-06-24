@@ -1,6 +1,7 @@
 WELCOME=Telethon Downloader Iniciado:
 BOT_VERSION=bot version: {msg1}
 TELETHON_VERSION=telethon version: {msg1}
+YTDLP_VERSION=yt-dlp version: {msg1}
 PROGRESS_CALLBACK_PATH=Descarga en {path}
 PROGRESS_CALLBACK_STARTING=inicio: {starting}
 PROGRESS_CALLBACK_PROGRESS=progreso: {percentage:.2f}% / {total:.2f} MB, velocidad {speed:.2f} MB/s

@@ -12,6 +12,7 @@ from telethon.tl.types import (
     PeerChannel,
 )
 from telethon.utils import get_peer_id, resolve_id
+import yt_dlp
 
 import os
 import re
@@ -39,8 +40,9 @@ from utils import Utils
 
 class TelegramBot:
     def __init__(self):
-        self.VERSION = "4.0.5.100"
+        self.BOT_VERSION = "4.0.5"
         self.TELETHON_VERSION = telethon_version
+        self.YTDLP_VERSION = yt_dlp.version.__version__
 
         self.constants = EnvironmentReader()
         self.utils = Utils()
@@ -160,13 +162,19 @@ class TelegramBot:
         self.create_directorys()
 
     async def start(self):
+
+
+
         await self.client.start(bot_token=str(self.BOT_TOKEN))
         msg_txt = self.templatesLanguage.template("WELCOME")
         msg_txt += self.templatesLanguage.template("BOT_VERSION").format(
-            msg1=self.VERSION
+            msg1=self.BOT_VERSION
         )
         msg_txt += self.templatesLanguage.template("TELETHON_VERSION").format(
             msg1=self.TELETHON_VERSION
+        )
+        msg_txt += self.templatesLanguage.template("YTDLP_VERSION").format(
+            msg1=self.YTDLP_VERSION
         )
         await self.client.send_message(int(self.TG_AUTHORIZED_USER_ID[0]), msg_txt)
         logger.logger.info("********** START TELETHON DOWNLOADER **********")
@@ -244,8 +252,9 @@ class TelegramBot:
 
         self.printAttribute("LANGUAGE")
 
-        self.printAttribute("VERSION")
+        self.printAttribute("BOT_VERSION")
         self.printAttribute("TELETHON_VERSION")
+        self.printAttribute("YTDLP_VERSION")
 
     def printAttribute(self, attribute_name):
         if hasattr(self, attribute_name):

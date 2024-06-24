@@ -13,7 +13,7 @@ class YouTubeDownloader:
     def __init__(self):
         self.constants = EnvironmentReader()
         self.utils = Utils()
-        self.ydl_opts = {
+        self.ydl_opts_VIDEO = {
             "format": self.constants.get_variable("YOUTUBE_FORMAT_VIDEO"),
             "outtmpl": f'{self.constants.get_variable("PATH_YOUTUBE")}/%(title)s.%(ext)s',
             "cachedir": "False",
@@ -23,6 +23,21 @@ class YouTubeDownloader:
             ).lower(),
             "progress_hooks": [self.progress_hook],
         }
+        self.ydl_opts_AUDIO = {
+                'extract_audio': True, 
+                'format': self.constants.get_variable('YOUTUBE_FORMAT_AUDIO'),
+                "outtmpl": f'{self.constants.get_variable("YOUTUBE_AUDIO_FOLDER")}/%(title)s.%(ext)s',
+                'cachedir': 'False',
+                'ignoreerrors': True,
+                'retries': 10,
+                'postprocessors': [
+                    {
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': 'mp3',
+                        'preferredquality': '320',
+                    }
+                ],
+            }
 
     def progress_hook(self, data):
         if data["status"] == "downloading":
@@ -36,7 +51,7 @@ class YouTubeDownloader:
             self.constants.get_variable("YOUTUBE_VIDEO_FOLDER")
         )
 
-        with YoutubeDL(self.ydl_opts) as ydl:
+        with YoutubeDL(self.ydl_opts_VIDEO) as ydl:
             info_dict = ydl.extract_info(url, download=False)
             file_name = ydl.prepare_filename(info_dict)
             total_downloads = 1
@@ -54,7 +69,7 @@ class YouTubeDownloader:
                 youtube_path = os.path.join(YOUTUBE_VIDEO_FOLDER, info_dict["uploader"])
 
             ydl_opts = {
-                "format": self.constants.get_variable("YOUTUBE_FORMAT_VIDEO"),
+                "format": self.constants.get_variable("YOUTUBE_FORMAT_AUDIO"),
                 "outtmpl": f"{youtube_path}/%(title)s.%(ext)s",
                 "cachedir": "False",
                 "ignoreerrors": True,
@@ -97,37 +112,57 @@ class YouTubeDownloader:
         )
         self.utils.create_folders(YOUTUBE_AUDIO_FOLDER)
 
+
+        with YoutubeDL(self.ydl_opts_AUDIO) as ydl:
+            info_dict = ydl.extract_info(url, download=False)
+            file_name = ydl.prepare_filename(info_dict)
+            total_downloads = 1
+            youtube_path = YOUTUBE_AUDIO_FOLDER
+            self.utils.change_owner_permissions(youtube_path)
+
+            if "_type" in info_dict and info_dict["_type"] == "playlist":
+                total_downloads = len(info_dict["entries"])
+                youtube_path = os.path.join(
+                    YOUTUBE_AUDIO_FOLDER,
+                    info_dict["uploader"],
+                    info_dict["title"],
+                )
+            else:
+                youtube_path = os.path.join(YOUTUBE_AUDIO_FOLDER, info_dict["uploader"])
+
+            ydl_opts = {
+                'extract_audio': True, 
+                'format': self.constants.get_variable('YOUTUBE_FORMAT_AUDIO'),
+                'outtmpl': f'{youtube_path}/%(title)s.%(ext)s',
+                'cachedir': 'False',
+                'ignoreerrors': True,
+                'retries': 10,
+                'postprocessors': [
+                    {
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': 'mp3',
+                        'preferredquality': '320',
+                    }
+                ],
+            }
+            ydl_opts.update(ydl_opts)
+
+
         logger.logger.info(f"downloadAudio [{url}] [{message}]")
 
-        ydl_opts = {
-            "format": self.constants.get_variable("YOUTUBE_FORMAT_AUDIO"),
-            "postprocessors": [
-                {
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                    "preferredquality": "320",
-                }
-            ],
-            "outtmpl": os.path.join(YOUTUBE_AUDIO_FOLDER, "%(title)s.%(ext)s"),
-            "merge_output_format": "mp3",
-        }
+
 
         with YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(url, download=False)
+            file_name = ydl.prepare_filename(info_dict)
+
+            logger.logger.info(f"DOWNLOADING AUDIO YOUTUBE [{url}] [{file_name}]")
+            
             file_name = (
-                ydl.prepare_filename(info_dict)[:-5] + ".mp3"
-                if ydl.prepare_filename(info_dict).endswith(".webm")
+                ydl.prepare_filename(info_dict)[:-4] + ".mp3"
+                if ydl.prepare_filename(info_dict).endswith(".m4a")
                 else ydl.prepare_filename(info_dict)
             )
-            logger.logger.info(f"DOWNLOADING AUDIO YOUTUBE 1 [{url}] [{file_name}]")
-
-            total_downloads = 1
-            if "_type" in info_dict and info_dict["_type"] == "playlist":
-                total_downloads = len(info_dict["entries"])
-                await message.edit(f"finding {total_downloads} audios...")
-        logger.logger.info(f"downloadAudio total_downloads: [{total_downloads}]")
-
-        with YoutubeDL(ydl_opts) as ydl:
             await message.edit(f"downloading {total_downloads} audios...")
 
             res_youtube = ydl.download([url])

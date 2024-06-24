@@ -17,7 +17,7 @@ jobs:
 
       - name: Set version
         run: |
-          echo "version=$(cat telethon-downloader/bottorrent.py| grep "self.VERSION =" | awk -F'=' '{print $2}' | egrep -o "[0-9.a-z-]{1,}")" >> $GITHUB_ENV
+          echo "version=$(cat telethon-downloader/bottorrent.py| grep "self.BOT_VERSION =" | awk -F'=' '{print $2}' | egrep -o "[0-9.a-z-]{1,}")" >> $GITHUB_ENV
 
       - name: Docker meta
         id: meta
