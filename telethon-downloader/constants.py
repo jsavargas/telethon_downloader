@@ -40,7 +40,7 @@ class EnvironmentReader:
             "YOUTUBE_DEFAULT_DOWNLOAD", "VIDEO"
         )
         self.YOUTUBE_DEFAULT_EXTENSION = os.environ.get(
-            "YOUTUBE_DEFAULT_EXTENSION", "MKV"
+            "YOUTUBE_DEFAULT_EXTENSION", "mkv"
         )
         self.YOUTUBE_FORMAT_AUDIO = os.environ.get(
             "YOUTUBE_FORMAT_AUDIO", "bestaudio/best"

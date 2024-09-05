@@ -69,7 +69,7 @@ class YouTubeDownloader:
                 youtube_path = os.path.join(YOUTUBE_VIDEO_FOLDER, info_dict["uploader"])
 
             ydl_opts = {
-                "format": self.constants.get_variable("YOUTUBE_FORMAT_AUDIO"),
+                "format": self.constants.get_variable("YOUTUBE_FORMAT_VIDEO"),
                 "outtmpl": f"{youtube_path}/%(title)s.%(ext)s",
                 "cachedir": "False",
                 "ignoreerrors": True,

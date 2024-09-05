@@ -13,7 +13,7 @@ services:
       - PERMISSIONS_FOLDER=777
       - PERMISSIONS_FILE=755
       - TG_AUTHORIZED_USER_ID=    #<telegram chat_id authorized>
-      - TG_API_ID=168631
+      - TG_API_ID=
       - TG_API_HASH= 
       - TG_BOT_TOKEN=
       - TZ=America/Santiago
