@@ -40,7 +40,7 @@ from utils import Utils
 
 class TelegramBot:
     def __init__(self):
-        self.BOT_VERSION = "4.0.6"
+        self.BOT_VERSION = "4.0.7"
         self.TELETHON_VERSION = telethon_version
         self.YTDLP_VERSION = yt_dlp.version.__version__
 
@@ -700,9 +700,7 @@ class TelegramBot:
                 await asyncio.gather(*tasks)
             else:
                 logger.logger.info(f"downloadLinks => NO ULRS: {urls}")
-                await message.edit(
-                    self.templatesLanguage.template("MESSAGE_NO_LINKS_DOWNLOAD")
-                )
+                await message.delete()
             return {
                 "exception": None,
                 "message": message,
@@ -873,9 +871,8 @@ class TelegramBot:
             content_type = response.headers.get("content-type", "").lower()
             if "text/html" in content_type:
                 logger.logger.info(f"download_url_file => NO DOWNLOADED LINK: {url}")
-                message = await message.edit(
-                    self.templatesLanguage.template("MESSAGE_NO_LINKS_DOWNLOAD")
-                )
+                await message.delete()
+
                 return
 
             response = requests.get(url, stream=True)
@@ -929,15 +926,12 @@ class TelegramBot:
                 logger.logger.info(
                     f"download_url_file {url}. Status code: {response.status_code}"
                 )
-                message = await message.edit(
-                    self.templatesLanguage.template("MESSAGE_NO_LINKS_DOWNLOAD")
-                )
+                await message.delete()
+
                 return None
         except Exception as e:
             logger.logger.error(f"download_url_file {url}. {e}")
-            message = await message.edit(
-                self.templatesLanguage.template("MESSAGE_NO_LINKS_DOWNLOAD")
-            )
+            await message.delete()
 
     async def commands(self, message):
         try:
