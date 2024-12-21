@@ -182,7 +182,14 @@ async def worker(name):
             ######
             mensaje = 'DOWNLOAD FINISHED %s [%s] => [%s]' % (end_time, file_name, final_path)
             logger.info(mensaje)
-            await message.edit('Downloading finished:\n%s \nIN: %s\nat %s' % (file_name,_path,end_time_short))
+            if (TG_DELETE_ORIGINAL_MESSAGE == True or TG_DELETE_ORIGINAL_MESSAGE == 'True' ):
+                mensaje = 'DELETING ORIGINAL MESSAGE'
+                logger.info(mensaje)
+                await message.respond('Downloading finished:\n%s \nIN: %s\nat %s' % (file_name,_path,end_time_short))
+                await message.delete()
+                await update.delete()
+            else:
+                await message.edit('Downloading finished:\n%s \nIN: %s\nat %s' % (file_name,_path,end_time_short))
         except asyncio.TimeoutError:
             logger.info('[%s] Time exceeded %s' % (file_name, time.strftime('%d/%m/%Y %H:%M:%S', time.localtime())))
             await message.edit('Error!')

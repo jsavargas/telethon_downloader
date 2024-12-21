@@ -14,7 +14,7 @@ def get_env(name, message, cast=str):
 
 
 # Define some variables so the code reads easier
-SESSION = os.environ.get('TG_SESSION', 'bottorrent')
+TG_SESSION = os.environ.get('TG_SESSION', 'bottorrent')
 api_id = get_env('TG_API_ID', 'Enter your API ID: ', int)
 api_hash = get_env('TG_API_HASH', 'Enter your API hash: ')
 bot_token = get_env('TG_BOT_TOKEN', 'Enter your Telegram BOT token: ')
@@ -27,6 +27,9 @@ TG_UNZIP_TORRENTS = get_env('TG_UNZIP_TORRENTS', False)
 TG_PROGRESS_DOWNLOAD = get_env('TG_PROGRESS_DOWNLOAD', False)
 TG_FOLDER_BY_AUTHORIZED = get_env('TG_FOLDER_BY_AUTHORIZED', False)
 
+TG_DELETE_ORIGINAL_MESSAGE = get_env('TG_DELETE_ORIGINAL_MESSAGE', False)
+TG_CONFIG_PATH = get_env('TG_CONFIG_PATH', '/config')
+
 TG_MAX_PARALLEL = int(os.environ.get('TG_MAX_PARALLEL',4))
 TG_DL_TIMEOUT = int(os.environ.get('TG_DL_TIMEOUT',3600))
 YT_DL_TIMEOUT = int(os.environ.get('TG_DL_TIMEOUT',7200))
@@ -35,6 +38,7 @@ PATH_TMP = os.path.join(TG_DOWNLOAD_PATH,'tmp')
 PATH_COMPLETED = os.path.join(TG_DOWNLOAD_PATH,'completed')
 PATH_YOUTUBE = os.path.join(TG_DOWNLOAD_PATH,'youtube')
 
-PATH_CONFIG = '/config/config.ini'
+PATH_CONFIG = os.path.join(TG_CONFIG_PATH, 'config.ini')
+SESSION = os.path.join(TG_CONFIG_PATH, TG_SESSION)
 
 YOUTUBE = 'youtube'
