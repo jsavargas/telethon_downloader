@@ -1,0 +1,28 @@
+WELCOME=Telethon Downloader Iniciado:
+BOT_VERSION=bot version: {msg1}
+TELETHON_VERSION=telethon version: {msg1}
+YTDLP_VERSION=yt-dlp version: {msg1}
+PROGRESS_CALLBACK_PATH=Descarga en {path}
+PROGRESS_CALLBACK_STARTING=inicio: {starting}
+PROGRESS_CALLBACK_PROGRESS=progreso: {percentage:.2f}% / {total:.2f} MB, velocidad {speed:.2f} MB/s
+
+MESSAGE_DOWNLOAD=Descargando en: {path}
+
+MESSAGE_DOWNLOAD_FILE=Archivo descargado en: {downloaded_file}
+MESSAGE_DOWNLOAD_FILE_SIZE=Tamaño del archivo: {file_size:.2f} MB
+MESSAGE_DOWNLOAD_COMPLETED=Descarga completada en: {elapsed_time}
+MESSAGE_DOWNLOAD_SPEED=Velocidad de descarga promedio: {speed:.2f} MB/s
+MESSAGE_DOWNLOAD_AT=a las: {end_time}
+MESSAGE_DOWNLOAD_FROM_ID=desde: {from_id}
+
+MESSAGE_TIMEOUT_EXCEEDED=Excedido el tiempo de espera de la descarga...
+MESSAGE_EXCEPTION=Excepción durante la descarga...
+MESSAGE_NO_LINKS_DOWNLOAD=No hay enlaces para descargar.
+
+HOUR=hora
+MINUTE=minuto
+SECOND=segundo
+
+HOURS=horas
+MINUTES=minutos
+SECONDS=segundos

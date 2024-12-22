@@ -1,171 +1,120 @@
 import os
-import re
-import configparser
-from typing import List, Tuple
+import shutil
 
-from logger import logger
-from env import PATH_COMPLETED, TG_FOLDER_BY_AUTHORIZED, TG_DOWNLOAD_PATH_TORRENTS, \
-	TG_AUTHORIZED_USER_ID, PATH_CONFIG
-
-def splash() -> None:
-	""" Displays splash screen """
-	logger.info('''
-----------------------------------------------
-   _
-  (_)___  __ ___   ____ _ _ __ __ _  __ _ ___
-  | / __|/ _` \ \ / / _` | '__/ _` |/ _` / __|
-  | \__ \ (_| |\ V / (_| | | | (_| | (_| \__ \\
- _/ |___/\__,_| \_/ \__,_|_|  \__, |\__,_|___/
-|__/                          |___/
-
-----------------------------------------------
-    
-----------------------------------------------
- _       _      _   _
-| |_ ___| | ___| |_| |__   ___  _ __
-| __/ _ \ |/ _ \ __| '_ \ / _ \| '_ \\
-| ||  __/ |  __/ |_| | | | (_) | | | |
- \__\___|_|\___|\__|_| |_|\___/|_| |_|
-
-     _                     _                 _
-  __| | _____      ___ __ | | ___   __ _  __| | ___ _ __
- / _` |/ _ \ \ /\ / / '_ \| |/ _ \ / _` |/ _` |/ _ \ '__|
-| (_| | (_) \ V  V /| | | | | (_) | (_| | (_| |  __/ |
- \__,_|\___/ \_/\_/ |_| |_|_|\___/ \__,_|\__,_|\___|_|
+import logger
+from constants import EnvironmentReader
 
 
-----------------------------------------------
-	''')
+class Utils:
+    def __init__(self, constants=[]):
+        self.constants = EnvironmentReader()
+        self.PERMISSIONS_FOLDER = int(self.constants.PERMISSIONS_FOLDER)
+        self.PERMISSIONS_FILE = int(self.constants.PERMISSIONS_FILE)
+        self.permisos_octal_folder = int(str(self.PERMISSIONS_FOLDER), 8)
+        self.permisos_octal_file = int(str(self.PERMISSIONS_FILE), 8)
+        self.PUID = (
+            int(self.constants.PUID) if (str(self.constants.PUID)).isdigit() else None
+        )
+        self.PGID = (
+            int(self.constants.PGID) if (str(self.constants.PGID)).isdigit() else None
+        )
+
+    def rename_file(self, old_path, new_path):
+        try:
+            logger.logger.info(f"rename_file => {old_path}, {new_path}")
+
+            self.create_folders(new_path)
+            shutil.move(old_path, new_path)
+            self.change_owner_permissions(new_path)
+            return True
+        except Exception as e:
+            logger.logger.info(f"rename_file => Exception {e}")
+            return False
+
+    def change_permissions(self, file_name):
+        try:
+            if os.path.isfile(file_name):
+                os.chmod(file_name, self.permisos_octal_file)
+                logger.logger.info(
+                    f"Change permissions of the file {file_name} changed to {self.PERMISSIONS_FILE}"
+                )
+            elif os.path.isdir(file_name):
+                os.chmod(file_name, self.permisos_octal_folder)
+                logger.logger.info(
+                    f"Change permissions of the directory {file_name} changed to {self.PERMISSIONS_FOLDER}"
+                )
+            else:
+                logger.logger.info(
+                    f"{file_name} does not exist or is not a file or directory."
+                )
+
+        except FileNotFoundError:
+            logger.logger.exception(f" {file_name} was not found")
+        except Exception as e:
+            logger.logger.exception(f"change_permissions Exception: {file_name}: {e}")
+
+    def change_owner(self, file_name):
+        try:
+            if self.PUID and self.PGID:
+                os.chown(file_name, self.PUID, self.PGID)
+                logger.logger.info(
+                    f"Change owner: {file_name} changed to {self.PUID}:{self.PGID}"
+                )
+        except FileNotFoundError:
+            logger.logger.info(f"The file {file_name} was not found")
+        except Exception as e:
+            logger.logger.info(f"change_owner Exception: {file_name}: {e}")
+
+    def create_folder(self, folder_name):
+        try:
+            os.makedirs(folder_name, exist_ok=True)
+            self.change_owner_permissions(folder_name)
+        except FileExistsError:
+            logger.logger.info(f"The folder {folder_name} already exists")
+        except Exception as e:
+            logger.logger.info(f"create_folder Exception: {folder_name}: {e}")
+
+    def create_folders(self, folder_name):
+        try:
+            logger.logger.info(f"create_folders path: {folder_name}")
+            # Verificar si la folder_name es un archivo
+            if os.path.isfile(folder_name):
+                base_directory = os.path.dirname(folder_name)
+                self.create_folder(base_directory)
+            elif os.path.isdir(folder_name):
+                self.create_folder(folder_name)
+            else:
+                dirname = os.path.dirname(folder_name)
+                base_directory = os.path.basename(folder_name)
+                if "." not in base_directory:
+                    self.create_folder(folder_name)
+                else:
+                    self.create_folder(dirname)
+                    logger.logger.info(
+                        f"{folder_name} does not exist or is not a file or directory."
+                    )
+                logger.logger.info(
+                    f"create_folders else: [{folder_name}] [{base_directory}] [{dirname}] "
+                )
+
+        except FileExistsError:
+            logger.logger.info(f"The folder {folder_name} already exists")
+        except Exception as e:
+            logger.logger.info(f"create_folders Exception: {folder_name}: {e}")
+
+    def change_owner_permissions(self, folder_name):
+        try:
+            if self.PUID and self.PGID:
+                self.change_owner(folder_name)
+            self.change_permissions(folder_name)
+        except Exception as e:
+            logger.logger.info(
+                f"change_owner_permissions Exception: {folder_name}: {e}"
+            )
 
 
-def create_directory(download_path: str) -> None:
-	try:
-		os.makedirs(download_path, exist_ok=True)
-	except Exception as e:
-		logger.info(f'create_directory Exception : {download_path} [{e}]')
-
-
-
-def getDownloadPath(filename,CID):
-	config = read_config_file()
-
-	download_path = PATH_COMPLETED
-	folderFlag=False
-
-	if (TG_FOLDER_BY_AUTHORIZED==True or TG_FOLDER_BY_AUTHORIZED == 'True' ) and (CID in config['FOLDER_BY_AUTHORIZED']):
-		FOLDER_BY_AUTHORIZED = config['FOLDER_BY_AUTHORIZED']
-		for AUTHORIZED in FOLDER_BY_AUTHORIZED:
-			if AUTHORIZED == CID:
-				download_path = FOLDER_BY_AUTHORIZED[AUTHORIZED]
-				folderFlag=True
-				break
-
-	if not folderFlag:
-		REGEX_PATH = config['REGEX_PATH']
-		for regex in REGEX_PATH:
-			m = re.search('/(.*)/(.*)', regex)
-			if m :
-				if m.group(2) == 'i':
-					result = re.search(m.group(1), filename,re.I)
-					if result :
-						if result.group(0):
-							logger.info(f'REGEX_PATH :::: {regex} 1:[{result.group(0)}] ')
-							download_path = os.path.join(REGEX_PATH[regex])
-							folderFlag=True
-							break
-				else:	
-					result = re.search(m.group(1), filename)
-					if result:
-						if result.group(0):
-							download_path = os.path.join(REGEX_PATH[regex])
-							folderFlag=True
-							break
-	logger.info(f'getDownloadPath : {download_path}')
-
-	if not folderFlag:
-		DEFAULT_PATH = config['DEFAULT_PATH']
-		for ext in DEFAULT_PATH:
-			if filename.endswith(ext):
-				download_path = os.path.join(download_path,ext)
-				download_path = DEFAULT_PATH[ext] #os.path.join(download_path,ext)
-				folderFlag=True
-				break
-
-	if filename.endswith('.torrent'): download_path = TG_DOWNLOAD_PATH_TORRENTS
-
-	complete_path = os.path.join(download_path,filename)
-	#create_directory(download_path)
-	#os.chmod(download_path, 0o777)
-	logger.info(f'getDownloadPath getDownloadPath  : {download_path}')
-
-	return download_path, complete_path
-
-
-def getUsers() -> List[str]:
-	""" Returns a list of inputted strings """
-	inputs = []
-	if TG_AUTHORIZED_USER_ID==False:
-		return False, inputs
-	elif TG_AUTHORIZED_USER_ID.strip() == '':
-		return False, inputs
-	else:		
-		inputs = list(map(int, TG_AUTHORIZED_USER_ID.strip().replace(" ", "").replace('-100', '').split(',')))
-		return True, inputs
-
-
-def split_input(input) -> List[str]:
-	""" Returns a list of inputted strings """
-	inputs = []
-	if TG_AUTHORIZED_USER_ID.strip() == '':
-		return inputs
-	else:		
-		inputs = list(map(str, input.replace(" ", "").split(','))) 
-		return inputs
-
-
-def config_file():
-	config = configparser.ConfigParser()
-	if not os.path.exists(PATH_CONFIG):
-		logger.info(f'CREATE DEFAULT CONFIG FILE : {PATH_CONFIG}')
-	
-		config.read(PATH_CONFIG)
-			
-		config['DEFAULT_PATH'] = {}
-		config['DEFAULT_PATH']['pdf'] = '/download/pdf'
-		config['DEFAULT_PATH']['cbr'] = '/download/pdf'
-		config['DEFAULT_PATH']['mp3'] = '/download/mp3'
-		config['DEFAULT_PATH']['flac'] = '/download/mp3'
-		config['DEFAULT_PATH']['jpg'] = '/download/jpg'
-		config['DEFAULT_PATH']['mp4'] = '/download/mp4'
-
-		config['REGEX_PATH'] = {}
-		config['REGEX_PATH']['/example/i'] = '/download/example'
-
-		config['FOLDER_BY_AUTHORIZED'] = {}
-
-		AUTHORIZED_USER, usuarios = getUsers()
-
-		for usuario in usuarios:
-			config['FOLDER_BY_AUTHORIZED'][f"{usuario}"] = '/download/{}'.format(f"{usuario}")
-
-		with open(PATH_CONFIG, 'w') as configfile:    # save
-			config.write(configfile)
-		return config
-	else:
-		config.read(PATH_CONFIG)
-		if not 'REGEX_PATH' in config:
-			config['REGEX_PATH'] = {}
-			config['REGEX_PATH']['/example.*example/i'] = '/download/example'
-			with open(PATH_CONFIG, 'w') as configfile:    # save
-				config.write(configfile)
-
-		logger.info(f'READ CONFIG FILE : {PATH_CONFIG}')
-
-		return config
-
-
-def read_config_file():
-	config = configparser.ConfigParser()
-	config.read(PATH_CONFIG)
-	return config
-
+# Example of usage
+if __name__ == "__main__":
+    folder_creator = Utils()
+    folder_creator.create_folders("/audios/youtube/A/B/C/D")
+    folder_creator.create_folders("/audios/youtube/A/B/C/D/lala.txt")
