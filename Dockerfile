@@ -10,8 +10,8 @@ WORKDIR /app
 COPY requirements.txt requirements.txt
 
 # Agregar repositorios necesarios y actualizar paquetes
-RUN sed -i 's/ main/ main contrib non-free/g' /etc/apt/sources.list && \
-    apt-get update && apt-get -qy dist-upgrade && \
+RUN sed -i 's/ main/ main contrib non-free/g' /etc/apt/sources.list 
+RUN    apt-get update && apt-get -qy dist-upgrade && \
     apt-get install -qy --no-install-recommends \
     ffmpeg \
     unrar \
