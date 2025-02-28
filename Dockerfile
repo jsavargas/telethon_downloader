@@ -8,10 +8,9 @@ COPY requirements.txt requirements.txt
 RUN    apt-get -q update 
 RUN    apt-get -qy dist-upgrade 
 RUN    apt-get install -qy ffmpeg 
-RUN    apt-get install -qy  \
-    unrar \
-    unzip \
-    python3-pip
+RUN    apt-get install -qy python3-pip 
+RUN    apt-get install -qy unzip 
+RUN    apt-get install -qy unrar 
 RUN    python3 -m pip install --upgrade pip  && \
     pip3 install --upgrade -r requirements.txt && \
     apt-get remove --purge -y build-essential  && \
