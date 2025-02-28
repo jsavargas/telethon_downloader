@@ -18,7 +18,7 @@ RUN    apt-get update && apt-get -qy dist-upgrade && \
 
 # Actualizar pip e instalar dependencias sin caché para reducir tamaño
 RUN python3 -m pip install --no-cache-dir --upgrade pip y
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
 # Segunda etapa para reducir el tamaño de la imagen final
 FROM python:slim
