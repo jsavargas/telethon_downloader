@@ -1,30 +1,43 @@
-FROM python
+# Usa una versión específica de Python compatible con ARM64
+FROM python:slim AS basetelethon
+
+# Evitar buffering en la salida de Python (útil en contenedores)
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
+# Copiar dependencias antes para aprovechar la caché de Docker
 COPY requirements.txt requirements.txt
 
+# Agregar repositorios necesarios y actualizar paquetes
+RUN sed -i 's/ main/ main contrib non-free/g' /etc/apt/sources.list && \
+    apt-get update && apt-get -qy dist-upgrade && \
+    apt-get install -qy --no-install-recommends \
+    ffmpeg \
+    unrar \
+    unzip && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN    apt-get -q update 
-RUN    apt-get -qy dist-upgrade 
-RUN    apt-get install -qy ffmpeg 
-RUN    apt-get install -qy python3-pip 
-RUN    apt-get install -qy unzip 
-RUN    python3 -m pip install --upgrade pip  && \
-    pip3 install --upgrade -r requirements.txt && \
-    apt-get remove --purge -y build-essential  && \
-    apt-get autoclean -y && apt-get autoremove -y  && \
-    rm -rf /default /etc/default /tmp/* /etc/cont-init.d/* /var/lib/apt/lists/* /var/tmp/*
+# Actualizar pip e instalar dependencias sin caché para reducir tamaño
+RUN python3 -m pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
+# Segunda etapa para reducir el tamaño de la imagen final
+FROM python:slim
 
+WORKDIR /app
 
+# Copiar aplicación desde la imagen base
+COPY --from=basetelethon /app /app
 
+# Copiar código fuente
 COPY telethon-downloader /app
-#COPY root/ /
 
-RUN chmod 777 /app/bottorrent.py
+# Asegurar permisos correctos
+RUN chmod +x /app/bottorrent.py
 
-
+# Definir volúmenes
 VOLUME /download /watch /config
 
+# Comando de ejecución
 CMD ["python3", "/app/bottorrent.py"]
