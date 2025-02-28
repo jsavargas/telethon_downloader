@@ -17,6 +17,7 @@ RUN    apt-get update && apt-get -qy dist-upgrade && \
     rm -rf /var/lib/apt/lists/*
 
 # Actualizar pip e instalar dependencias sin caché para reducir tamaño
+RUN python3 -m pip install --no-cache-dir --upgrade pip 
 RUN python3 -m pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
