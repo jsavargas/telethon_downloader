@@ -295,6 +295,10 @@ services:
 - **Feature:** Unrar Files - Add the capability to unrar files directly from the bot.
 
 
+## [Version 4.0.8] - 2025-02-28
+- **Update:** Updated `telethon` to version 1.39.0.
+- **Update:** Updated `yt_dlp` to version 2025.02.19.
+
 ## [Version 4.0.7] - 2024-06-23
 - **Update:** Updated `telethon` to version 1.37.0.
 - **Update:** Updated `yt_dlp` to version 2024.11.04.

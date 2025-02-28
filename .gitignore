@@ -15,3 +15,5 @@ TODO.txt
 *.drawio
 test.py
 telethon-downloader/False/*
+.env
+docker_*.sh
