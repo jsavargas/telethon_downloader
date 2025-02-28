@@ -1,4 +1,4 @@
-FROM python:slim-bullseye AS basetelethon
+FROM python
 
 WORKDIR /app
 
@@ -20,7 +20,6 @@ RUN sed -i -e's/ main/ main contrib non-free/g' /etc/apt/sources.list && \
 
 
 
-FROM basetelethon
 
 COPY telethon-downloader /app
 #COPY root/ /
