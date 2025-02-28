@@ -4,10 +4,10 @@ WORKDIR /app
 
 COPY requirements.txt requirements.txt
 
-RUN sed -i -e's/ main/ main contrib non-free/g' /etc/apt/sources.list && \
-    apt-get -q update && \
-    apt-get -qy dist-upgrade && \
-    apt-get install -qy \
+
+RUN    apt-get -q update 
+RUN    apt-get -qy dist-upgrade 
+RUN    apt-get install -qy \
     ffmpeg \
     unrar \
     unzip \
