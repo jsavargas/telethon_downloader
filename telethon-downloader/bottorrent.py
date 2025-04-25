@@ -40,7 +40,7 @@ from utils import Utils
 
 class TelegramBot:
     def __init__(self):
-        self.BOT_VERSION = "4.0.8"
+        self.BOT_VERSION = "4.0.9"
         self.TELETHON_VERSION = telethon_version
         self.YTDLP_VERSION = yt_dlp.version.__version__
 
