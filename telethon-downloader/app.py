@@ -33,7 +33,7 @@ logger.info(f"Starting Telegram Downloader Bot Started : {datetime.now():%Y/%m/%
 
 class Config:
     def __init__(self):
-        self.BOT_VERSION = "1.0.1-r22"
+        self.BOT_VERSION = "4.1.0-r1"
         self.PYROGRAM_VERSION = pyrogram_version
         self.YT_DLP_VERSION = yt_dlp.version.__version__
 
