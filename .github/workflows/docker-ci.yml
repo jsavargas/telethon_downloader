@@ -3,7 +3,6 @@ name: Docker CI
 on:
   push:
     paths:
-      - 'pyproject.toml'
       - 'Dockerfile'
       - 'telethon-downloader/**'
       - '.github/workflows/**'
@@ -17,20 +16,26 @@ jobs:
 
       - name: Set version
         run: |
-          echo "version=$(cat telethon-downloader/bottorrent.py| grep "self.BOT_VERSION =" | awk -F'=' '{print $2}' | egrep -o "[0-9.a-z-]{1,}")" >> $GITHUB_ENV
+          echo "version=$(cat telethon-downloader/app.py| grep "self.BOT_VERSION =" | awk -F'=' '{print $2}' | egrep -o "[0-9.a-z-]{1,}")" >> $GITHUB_ENV
 
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v4
         with:
-          # list of Docker images to use as base name for tags
           images: ${{ secrets.DOCKERHUB_USERNAME }}/telethon_downloader
-          # generate Docker tags based on the following events/attributes
           tags: |
-            type=raw,value=latest,enable=${{ github.ref_name == 'master' }}
-            type=raw,value=${{ env.version }},enable=${{ github.ref_name == 'master' }}
-            type=raw,value=${{ github.ref_name }},enable=${{ github.ref_name != 'master' }}
-          # type=raw,value=ffmpeg,enable=${{ github.ref_name == 'develop' }}
+            type=raw,value=latest,enable=${{ github.ref_name == 'main' }}
+            type=raw,value=${{ env.version }},enable=${{ github.ref_name == 'main' }}
+            type=raw,value=${{ github.ref_name }},enable=${{ github.ref_name != 'main' }}
+
+      - name: Docker meta for telethon_downloader
+        id: meta-telethon
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/telethon_downloader
+          tags: |
+            type=raw,value=pyrogram,enable=${{ github.ref_name == 'main' }}
+
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
@@ -49,3 +54,13 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+
+      - name: Build and push telethon_downloader (pyrogram)
+        if: github.ref_name == 'main'
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          platforms: linux/amd64, linux/arm/v7, linux/arm64
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta-telethon.outputs.tags }}

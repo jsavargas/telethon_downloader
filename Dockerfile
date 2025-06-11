@@ -10,17 +10,13 @@ RUN apt-get update && apt-get -qy dist-upgrade && \
     unzip && \
     rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip install --no-cache-dir --upgrade pip && \
-    python3 -m pip install -r requirements.txt
+RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools && \
+    pip install --no-cache-dir -r requirements.txt
 
 
-WORKDIR /app
-
-
-COPY telethon-downloader /app
-
-RUN chmod +x /app/bottorrent.py
+COPY telethon-downloader/ .
 
 VOLUME /download /watch /config
 
-CMD ["python3", "/app/bottorrent.py"]
+CMD ["python", "app.py"]
+

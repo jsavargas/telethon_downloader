@@ -1,5 +1,5 @@
+pyrogram
 tgcrypto
-telethon 
-requests
-yt_dlp
-youtube_dl
+python-dotenv
+yt-dlp
+aiohttp
