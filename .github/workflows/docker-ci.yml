@@ -28,13 +28,13 @@ jobs:
             type=raw,value=${{ env.version }},enable=${{ github.ref_name == 'main' }}
             type=raw,value=${{ github.ref_name }},enable=${{ github.ref_name != 'main' }}
 
-      - name: Docker meta for telethon_downloader
-        id: meta-telethon
+      - name: Docker meta for telegram-downloader
+        id: meta-telegram
         uses: docker/metadata-action@v4
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/telethon_downloader
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/telegram-downloader
           tags: |
-            type=raw,value=pyrogram,enable=${{ github.ref_name == 'main' }}
+            type=raw,value=develop,enable=${{ github.ref_name == 'develop' }}
 
 
       - name: Login to Docker Hub
@@ -55,7 +55,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
 
-      - name: Build and push telethon_downloader (pyrogram)
+      - name: Build and push telegram-downloader (pyrogram)
         if: github.ref_name == 'main'
         uses: docker/build-push-action@v4
         with:
@@ -63,4 +63,4 @@ jobs:
           platforms: linux/amd64, linux/arm/v7, linux/arm64
           file: ./Dockerfile
           push: true
-          tags: ${{ steps.meta-telethon.outputs.tags }}
+          tags: ${{ steps.meta-telegram.outputs.tags }}

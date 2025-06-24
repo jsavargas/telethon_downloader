@@ -44,6 +44,8 @@ class CommandHelp:
         /addgrouppath
         /delgrouppath
 
+        proyect: https://github.com/jsavargas/telethon_downloader
+
     ''')
 
     ehelp_text = textwrap.dedent('''
