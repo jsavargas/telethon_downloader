@@ -114,8 +114,8 @@ async def handle_files(client: Client, message: Message):
                     file_name = info_handler.getFileName(message)
                     _FileSize = info_handler.getFileSize(message)
 
-                    download_path = downloadPathManager.getDownloadPath(message, origin_group, file_name)
-                    file_name = downloadPathManager.getDownloadFilename(message, origin_group, file_name)
+                    file_name, download_path = downloadPathManager.getDownloadPath(message, origin_group, file_name)
+                    #file_name = downloadPathManager.getDownloadFilename(message, origin_group, file_name)
 
                     
                     start_time, start_hour = utils.startTime()

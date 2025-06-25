@@ -8,10 +8,11 @@ from enum import Enum
 
 class ConfigKeys(Enum):
     DEFAULT = "DEFAULT"
-    EXTENSIONS = "EXTENSIONS"
-    GROUP_PATH = "GROUP_PATH"
-    RENAME_GROUP = "RENAME_GROUP"
     KEYWORDS = "KEYWORDS"
+    GROUP_PATH = "GROUP_PATH"
+    EXTENSIONS = "EXTENSIONS"
+    REGEX_PATH = "REGEX_PATH"
+    RENAME_GROUP = "RENAME_GROUP"
     REGEX_RENAME = "REGEX_RENAME"
     REMOVE_PATTERNS = "REMOVE_PATTERNS"
     SETTINGS = "SETTINGS"
@@ -20,14 +21,14 @@ class DefaultPath:
     def __init__(self):
         self.env = Env()
         self.default = {'default_path': os.getenv('DEFAULT_PATH', self.env.DOWNLOAD_COMPLETED_PATH)}
-        self.extensions = {'jpg': '/download/images'}
-        self.rename_group = {'-100123456': 'yes'}
         self.keywords = {'tanganana': '/download/tanganana'}
         self.group_paths = {'-100123456': '/download/100123456'}
+        self.extensions = {'jpg': '/download/images'}
+        self.regex_path = {'/example/i': '/download/example'}
+        self.rename_group = {'-100123456': 'yes'}
         self.regex_rename = {'-100123456': '/old_text/new_text/'}
         self.remove_patterns = {'-100123456': '[tif_', 'pattern1': '[tif_', 'pattern2': '[tof_'}
         self.settings = {'chars_to_replace ': '|/'}
-
 
 class ConfigHandler:
     def __init__(self):
@@ -42,10 +43,11 @@ class ConfigHandler:
     def _create_default_config(self, config):
         if not os.path.exists(self.config_file):
             config[ConfigKeys.DEFAULT.value] = self.path.default
-            config[ConfigKeys.EXTENSIONS.value] = self.path.extensions
-            config[ConfigKeys.GROUP_PATH.value] = self.path.group_paths
-            config[ConfigKeys.RENAME_GROUP.value] = self.path.rename_group
             config[ConfigKeys.KEYWORDS.value] = self.path.keywords
+            config[ConfigKeys.GROUP_PATH.value] = self.path.group_paths
+            config[ConfigKeys.EXTENSIONS.value] = self.path.extensions
+            config[ConfigKeys.REGEX_PATH.value] = self.path.regex_path
+            config[ConfigKeys.RENAME_GROUP.value] = self.path.rename_group
             config[ConfigKeys.REGEX_RENAME.value] = self.path.regex_rename
             config[ConfigKeys.REMOVE_PATTERNS.value] = self.path.remove_patterns
             config[ConfigKeys.SETTINGS.value] = self.path.settings
@@ -58,10 +60,11 @@ class ConfigHandler:
         if not config.read(self.config_file):
             config = self._create_default_config(config)
 
-        config = self.createNewSection(config, ConfigKeys.EXTENSIONS.value, self.path.extensions)        
-        config = self.createNewSection(config, ConfigKeys.GROUP_PATH.value, self.path.group_paths)        
-        config = self.createNewSection(config, ConfigKeys.RENAME_GROUP.value, self.path.rename_group)        
         config = self.createNewSection(config, ConfigKeys.KEYWORDS.value, self.path.keywords)        
+        config = self.createNewSection(config, ConfigKeys.GROUP_PATH.value, self.path.group_paths)        
+        config = self.createNewSection(config, ConfigKeys.EXTENSIONS.value, self.path.extensions)        
+        config = self.createNewSection(config, ConfigKeys.REGEX_PATH.value, self.path.regex_path)        
+        config = self.createNewSection(config, ConfigKeys.RENAME_GROUP.value, self.path.rename_group)        
         config = self.createNewSection(config, ConfigKeys.REGEX_RENAME.value, self.path.regex_rename)        
         config = self.createNewSection(config, ConfigKeys.REMOVE_PATTERNS.value, self.path.remove_patterns)        
         config = self.createNewSection(config, ConfigKeys.SETTINGS.value, self.path.settings)        
@@ -117,10 +120,13 @@ class ConfigHandler:
             return False
 
     def get_value(self, section, key):
+        self.config.clear()  
         self.config.read(self.config_file)
         return self.config[section].get(str(key), None)
 
     def get_values(self, section, key):
+        self.config.clear()  
+        self.config.read(self.config_file)
         if section in self.config:
             keywords = {key: value for key, value in self.config.items(section) if key not in self.config.defaults()}
             return keywords

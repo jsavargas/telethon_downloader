@@ -27,6 +27,7 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref_name == 'main' }}
             type=raw,value=${{ env.version }},enable=${{ github.ref_name == 'main' }}
             type=raw,value=${{ github.ref_name }},enable=${{ github.ref_name != 'main' }}
+            type=raw,value=pyrogram,enable=${{ github.ref_name == 'develop' }}
 
       - name: Docker meta for telegram-downloader
         id: meta-telegram
@@ -56,7 +57,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
 
       - name: Build and push telegram-downloader (pyrogram)
-        if: github.ref_name == 'main'
+        if: github.ref_name == 'develop'
         uses: docker/build-push-action@v4
         with:
           context: .
