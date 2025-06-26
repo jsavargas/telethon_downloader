@@ -48,14 +48,14 @@ class DownloadPathManager:
 
 
     def getDownloadPath(self, message, origin_group, file_name):
-        #origin_group = self.info_handler.get_originGroup_test(message)
+        origin_group = self.info_handler.get_originGroup_test(message)
         if not file_name:
             file_name = self.info_handler.getFileName(message)
 
         extension = file_name.split('.')[-1]
         textName = file_name # message.caption if message.caption else file_name
         
-        if extension == 'torrent': return self.env.DOWNLOAD_PATH_TORRENTS
+        if extension == 'torrent': return textName, self.env.DOWNLOAD_PATH_TORRENTS
 
         file_name = self.clearFilename(message, origin_group, textName)
 
