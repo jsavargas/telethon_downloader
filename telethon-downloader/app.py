@@ -31,7 +31,7 @@ logger.info(f"Starting Telegram Downloader Bot Started : {datetime.now():%Y/%m/%
 
 class Config:
     def __init__(self):
-        self.BOT_VERSION = "5.0.0-r3"
+        self.BOT_VERSION = "5.0.0-r4"
         self.PYROGRAM_VERSION = pyrogram_version
         self.YT_DLP_VERSION = yt_dlp.version.__version__
 
@@ -84,14 +84,19 @@ while True:
 
 
 def message2file(message: Message) -> str:
-
     if not env.MESSAGE_FILE:
         return False
-    logger.info(f"message2file [{env.MESSAGE_FILE}]")
-    logger.info(f"message2file [{os.path.join(env.CONFIG_PATH, "messages.txt")}]")
+    logger.info(f"message2file [{env.MESSAGE_FILE}][{os.path.join(env.CONFIG_PATH, "messages.txt")}]")
     message_str = str(message)
     with open(os.path.join(env.CONFIG_PATH, "messages.txt"), "a") as file:
         file.write(f"MESSAGE_FILE:: {datetime.now():%Y/%m/%d %H:%M:%S}\n{message_str}\n\n\n\n")
+
+def checkPermissions(id):
+    try:
+        normalizados = [s.replace('-100', '-', 1) if s.startswith('-100') else s for s in map(str, env.AUTHORIZED_USER_ID)]
+        return str(id) in normalizados
+    except Exception as e:
+        logger.error(f"checkPermissions Exception: {e} ")
 
 @app.on_message(filters.document | filters.photo | filters.video | filters.audio | filters.animation)
 async def handle_files(client: Client, message: Message):
@@ -108,15 +113,17 @@ async def handle_files(client: Client, message: Message):
                 user_id = info_handler.get_userId(message)
                 origin_group = info_handler.get_originGroup(message) 
 
-                if user_id and str(user_id) in env.AUTHORIZED_USER_ID:
+                logger.info(f"[****] message: [{message}]")
+                logger.info(f"[****] user_id: [{user_id}] origin_group: [{origin_group}] AUTHORIZED_USER_ID: [{env.AUTHORIZED_USER_ID}]")
+
+
+                if checkPermissions(user_id):
                     start_msg = await message.reply_text(f"Pendiente de descarga: ", reply_to_message_id=message.id)
                     
                     file_name = info_handler.getFileName(message)
                     _FileSize = info_handler.getFileSize(message)
 
                     file_name, download_path = downloadPathManager.getDownloadPath(message, origin_group, file_name)
-                    #file_name = downloadPathManager.getDownloadFilename(message, origin_group, file_name)
-
                     
                     start_time, start_hour = utils.startTime()
 
@@ -285,18 +292,15 @@ def progress_callback(message, summary):
     last_percentage = -1
     return callback
 
-
 @app.on_message(filters.media)
 async def download(client: Client, message: Message):
     logger.info(f"No soportado : {message}")
-
 
 @app.on_message(filters.command(command_handler.command_keys))
 async def handle_commands(client: Client, message: Message):
     logger.info(f"handle_commands : {message}")
     message2file(message)
     await command_handler.process_command(client, message)
-
 
 @app.on_message(filters.text)
 async def handle_text_messages(client, message: Message):
@@ -308,7 +312,6 @@ async def handle_text_messages(client, message: Message):
         if urls:
             for url in urls:
                 await url_downloader.download_from_url(client, message, url)  # Use the class method
-
 
 @app.on_callback_query(filters.regex(r'^ytdown_.*'))
 async def handle_callback_query(client, callback_query: CallbackQuery):

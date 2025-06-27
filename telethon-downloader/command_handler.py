@@ -94,8 +94,12 @@ class CommandHandler:
 
     async def handle_id(self, client: Client, message: Message):
         user_id = message.from_user.id if message.from_user else None
-        await message.reply_text(f"id: {str(user_id)}")
-
+        chat_id = message.chat.id
+        if user_id == chat_id:
+            await message.reply_text(f"id: {str(user_id)}")
+        else:
+            await message.reply_text(f"id: {str(user_id)} \nchat: {str(chat_id)}")
+    
     async def handle_version(self, client: Client, message: Message):
         await message.reply_text(f"version: {str(self.bot_version)}")
 

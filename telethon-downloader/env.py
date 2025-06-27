@@ -23,9 +23,9 @@ class Env:
         self.MAX_RETRIES = int(os.getenv('MAX_RETRIES', '4'))
         self.PROGRESS_STATUS_SHOW = int(os.getenv('PROGRESS_STATUS_SHOW', '10'))
 
-        self.IS_DELETE = os.getenv('IS_DELETE', False)
-        self.IS_DELETE = bool(self.IS_DELETE) if isinstance(self.IS_DELETE, str) and self.IS_DELETE.lower() in ["true", "1"] else self.IS_DELETE
-        self.MESSAGE_FILE = os.getenv('MESSAGE_FILE', 'False').lower() in ('true', '1')
+        self.IS_DELETE = str(os.getenv('IS_DELETE', 'False')).lower() in ('true', '1')
+        self.MESSAGE_FILE = str(os.getenv('MESSAGE_FILE', 'False')).lower() in ('true', '1')
+        
         self.PROGRESS_DOWNLOAD = os.getenv('PROGRESS_DOWNLOAD', 'True').strip().lower() in ('true', '1')
 
         self.CONFIG_PATH = os.environ.get("CONFIG_PATH", "/config")
@@ -39,6 +39,3 @@ class Env:
         
         self.WELCOME="WELCOME"
 
-
-
-    

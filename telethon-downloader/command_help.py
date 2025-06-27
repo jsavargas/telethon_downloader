@@ -54,7 +54,6 @@ class CommandHelp:
         Available commands:
 
         
-
         /addextensionpath <extension> <NewDirectory> - Crea una regla de ruta de descargad e archivo segun extension
             - Uso: Responde a un mensaje que contenga un archivo con /addextensionpath seguido del nuevo nombre que deseas para la carpeta. Si no agregas una ruta
             - Ejemplo: Si recibes un documento y quieres crear una regla para que esos archivos vayan a una carpeta "MiCarpeta", responde al mensaje con /addextensionpath MiCarpeta, luego puedes escribir /move para mover el archivo a la nueva ruta creada con /addextensionpath

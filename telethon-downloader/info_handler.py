@@ -10,6 +10,11 @@ class InfoMessages:
 
     def get_userId(self, message: Message):
         try:
+            logger.info(f"get_userId: chat [{message.from_user.id}] [{message.chat.id}] [{message.chat.type}]")
+
+            if message.chat:
+                return message.chat.id
+            
             return message.from_user.id if message.from_user else None
         except Exception as e:
             logger.error(f"get_userId Exception: {e} ")

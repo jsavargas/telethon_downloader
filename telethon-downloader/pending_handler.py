@@ -2,6 +2,7 @@ import json
 import asyncio
 
 from env import Env
+from logger_config import logger, get_last_error_log
 
 
 class PendingMessagesHandler:
@@ -12,6 +13,7 @@ class PendingMessagesHandler:
         self.load_from_json()
 
     def add_pending_message(self, user_id, message):
+        logger.info(f"add_pending_message user_id: [{user_id}]")
 
         try:
             self.pending_messages[user_id] = {
