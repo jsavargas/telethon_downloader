@@ -103,7 +103,7 @@ class DownloadPathManager:
         file_name = self.removePatterns(origin_group, filename)
         return re.sub(r'\s+(?=\.[^.]+$)', '', file_name)
 
-    def getDownloadFilename(self, message, origin_group, file_name):
+    def getDownloadFilename(self, message, origin_group=None, file_name=None):
 
         if not origin_group: origin_group = self.info_handler.get_originGroup_test(message)
         if not file_name: file_name = self.info_handler.getFileName(message)

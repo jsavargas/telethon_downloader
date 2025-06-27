@@ -58,10 +58,11 @@ class CommandController:
                     from downloadPathManager import DownloadPathManager
                     manager = DownloadPathManager()
 
-                    download_path = manager.getDownloadPath(message, None, None)
+                    file_name, download_path = manager.getDownloadPath(message, None, None)
                     file_name = manager.getDownloadFilename(message.reply_to_message, None, None)
                     new_filename = os.path.join(download_path, file_name)
 
+                    logger.info(f"/rename: [{file_name}], [{download_path}], [{new_filename}]")
 
                     if not os.path.exists(download_path):
                         os.makedirs(download_path)
@@ -76,8 +77,6 @@ class CommandController:
                     logger.info(f"[!] renameFiles download_path   : {download_path}")
                     logger.info(f"[!] renameFiles file_name   : {file_name}")
                     logger.info(f"[!] renameFiles new_filename   : {new_filename}")
-
-
 
                 elif file_info is None and len(message.command) > 1:
 
@@ -116,6 +115,8 @@ class CommandController:
                         "new_filename": new_filename,
                     }
                     reply = await message.reply_text(f"New file name {new_filename}.")
+            else:
+                await message.reply_text(f"Reply to a message with /rename or /move that contains a file followed by the new name or path")
 
         except Exception as e:
             logger.error(f"renameFiles Exception [{e}]")
