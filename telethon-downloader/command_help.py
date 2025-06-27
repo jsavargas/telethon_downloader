@@ -44,7 +44,7 @@ class CommandHelp:
         /addgrouppath
         /delgrouppath
 
-        proyect: https://github.com/jsavargas/telethon_downloader
+        GitHub project page: https://github.com/jsavargas/telethon_downloader
 
     ''')
 
@@ -112,7 +112,8 @@ class CommandHelp:
         Asegúrate de que el bot tenga los permisos necesarios para acceder a mensajes y archivos en los chats grupales.
     
     
-    
+        GitHub project page: https://github.com/jsavargas/telethon_downloader
+
     ''')
 
     @classmethod
