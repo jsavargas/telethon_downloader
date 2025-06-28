@@ -272,7 +272,7 @@ class URLDownloader:
             logger.error(f"download_youtube_content Exception: {message}: {e}")
             await message.edit(f"{download_type.capitalize()} downloaded for URL: {url}\n{e}")
 
-    async def handle_callback_query(self, client: Client, callback_query: CallbackQuery):
+    async def handle_callback(self, client: Client, callback_query: CallbackQuery):
         data = callback_query.data
         _, download_type, message_id = data.split('_', 2)
         

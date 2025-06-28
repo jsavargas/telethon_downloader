@@ -8,6 +8,8 @@ from info_handler import InfoMessages
 import os
 import shutil
 
+from folder_navigator import FolderNavigator  
+
 
 class CommandController:
     def __init__(self):
@@ -17,6 +19,7 @@ class CommandController:
         self.utils = Utils()
         self.info_handler = InfoMessages()
         self.tempFilename = {}
+        self.navigator = FolderNavigator()
 
     def is_reply(self, message):
         return message.reply_to_message is not None
@@ -120,7 +123,17 @@ class CommandController:
 
         except Exception as e:
             logger.error(f"renameFiles Exception [{e}]")
-   
+
+    async def move(self, client, message):
+
+        if not self.is_reply(message):
+            #await message.reply("⚠️ You must reply to a file message with /move.")
+            #return
+            pass
+        
+        await self.navigator.start_navigation(client, message)
+
+
     def getTempFilename(self, client, message):
         try:
             origin_group = self.info_handler.get_originGroup_test(message)
@@ -271,3 +284,12 @@ class CommandController:
 
     def get_chars_to_replace(self):
         return self.config_handler.get_value(ConfigKeys.SETTINGS.value, "chars_to_replace")
+
+
+    async def handle_callback(self, client, callback_query):
+        logger.info(f"[!] CommandController handle_callback CallbackQuery")
+        await self.navigator.handle_callback(client, callback_query)
+
+    async def handle_text(self, client, message):
+        logger.info(f"[!] CommandController handle_text")
+        await self.navigator.handle_text(client, message)

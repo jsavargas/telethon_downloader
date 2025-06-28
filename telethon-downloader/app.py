@@ -22,6 +22,7 @@ from print_handler import PartialPrinter
 from data_handler import FileDataHandler
 from downloadPathManager import DownloadPathManager
 from command_handler import CommandHandler
+from command_controller import CommandController
 from url_downloader import URLDownloader
 from pending_handler import PendingMessagesHandler
 from info_handler import InfoMessages
@@ -44,6 +45,7 @@ print_handler = PartialPrinter()
 downloadFilesDB = FileDataHandler()
 downloadPathManager = DownloadPathManager()
 command_handler = CommandHandler(config)
+command_controller = CommandController()
 url_downloader = URLDownloader()
 pendingMessagesHandler = PendingMessagesHandler()
 info_handler = InfoMessages()
@@ -305,6 +307,15 @@ async def handle_commands(client: Client, message: Message):
 @app.on_message(filters.text)
 async def handle_text_messages(client, message: Message):
     logger.info(f"handle_text_messages : {message}")
+
+    user_id = message.from_user.id
+    _data = command_controller.navigator.user_state_manager.get(user_id)
+    logger.info(f"handle_text_messages _data: {_data}")
+
+    if _data and _data.get("awaiting_folder_name"):
+        await command_controller.handle_text(client, message)
+        return
+
     # Regex to detect URLs in a message
     URL_REGEX = re.compile(r'https?://\S+')
     async with semaphore:
@@ -313,10 +324,12 @@ async def handle_text_messages(client, message: Message):
             for url in urls:
                 await url_downloader.download_from_url(client, message, url)  # Use the class method
 
-@app.on_callback_query(filters.regex(r'^ytdown_.*'))
-async def handle_callback_query(client, callback_query: CallbackQuery):
-    await url_downloader.handle_callback_query(client, callback_query)
-
+@app.on_callback_query()
+async def handle_callback(client, callback_query: CallbackQuery):
+    if re.match(r"^ytdown_.*", callback_query.data):
+        await url_downloader.handle_callback(client, callback_query)
+        return
+    await command_controller.handle_callback(client, callback_query)
 
 if __name__ == "__main__":
 
