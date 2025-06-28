@@ -127,12 +127,9 @@ class CommandController:
     async def move(self, client, message):
 
         if not self.is_reply(message):
-            #await message.reply("⚠️ You must reply to a file message with /move.")
-            #return
-            pass
-        
+            await message.reply("⚠️ You must reply to a file message with /move.")
+            return
         await self.navigator.start_navigation(client, message)
-
 
     def getTempFilename(self, client, message):
         try:
@@ -288,8 +285,10 @@ class CommandController:
 
     async def handle_callback(self, client, callback_query):
         logger.info(f"[!] CommandController handle_callback CallbackQuery")
-        await self.navigator.handle_callback(client, callback_query)
+        rest = await self.navigator.handle_callback(client, callback_query) or None
+        logger.info(f"[!] handle_callback rest [{rest}]")
+        return rest
 
     async def handle_text(self, client, message):
         logger.info(f"[!] CommandController handle_text")
-        await self.navigator.handle_text(client, message)
+        return await self.navigator.handle_text(client, message) or None

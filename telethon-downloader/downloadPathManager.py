@@ -66,8 +66,8 @@ class DownloadPathManager:
 
         if (path := self.getKeywordPath(textName)): return file_name,path
         if (path := self.getGroupPath(origin_group)): return file_name,path
-        if (path := self.getExtensionPath(extension)): return file_name,path
         if (path := self.getRegexPath(textName)): return file_name,path
+        if (path := self.getExtensionPath(extension)): return file_name,path
         if (path := self.default_path()): return file_name,path
     
     def getKeywordPath(self, textName):
@@ -125,14 +125,10 @@ if __name__ == "__main__":
 
     message = SimpleNamespace(caption="Este es un caption dinámico")
 
-    getDownloadPath = download_path_manager.getDownloadPath(message, -1001234577, "nombre de tanganna [tof_archivo [tif_ .flac")
+    getDownloadPath = download_path_manager.getDownloadPath(message, -1001234577, "10 - FP1 MotoGP - #Assen (Paises Bajos) 2025 ES.mp4")
     print(f"getDownloadPath: {getDownloadPath}\n")
     
-    getDownloadPath = download_path_manager.getDownloadPath(message, -1001234577, "nombre de example [tof_archivo [tif_ .lac")
-    print(f"getDownloadPath: {getDownloadPath}\n")
-    
-    getDownloadPath = download_path_manager.getDownloadPath(message, -1001234577, "nombre de Example [tof_archivo [tif_ .lac")
-    print(f"getDownloadPath: {getDownloadPath}\n")
+
     
     
 

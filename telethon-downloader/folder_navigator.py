@@ -126,7 +126,7 @@ class FolderNavigator:
                 await state["on_select"](state["path"])
             await callback_query.message.edit_text(f"✅ Selected: `{state['path']}`", reply_markup=None)
             self.user_state_manager.delete(user_id)
-            return
+            return {"select":state['path']}
 
         elif data == "cancel":
             await callback_query.message.edit_text("❌ Cancelled.", reply_markup=None)

@@ -139,9 +139,15 @@ For example: Creating the template "de_DE.txt" for the German language and addin
 - **/watch:** Folder where torrent files are downloaded, and transmission will upload them.
 
 
-
 # Config File: config.ini
 A config.ini file is created that contains file extensions and paths where these files should be downloaded based on:
+
+**Download order by rules:**
+
+- KEYWORDS
+- GROUP_PATH
+- REGEX_PATH
+- EXTENSIONS
 
 ## By file extension
 
@@ -161,7 +167,7 @@ mp4 = /download/mp4
 
 ```ini
 [REGEX_PATH]
-/Halo/ = /download/Serie YYYYYY
+/Halo/i = /download/Serie YYYYYY
 ```
 
 ## Example
@@ -183,6 +189,25 @@ mp4 = /download/mp4
 [GROUP_PATH]
 0000000000 = /download/example
 ```
+
+# Available Commands
+
+- help                   
+- pyrogram               
+- ytdlp                  
+- version                
+- id                     
+- rename                 
+- move                   
+- addextensionpath       
+- delextensionpath       
+- addgrouppath           
+- delgrouppath           
+- addkeywordpath         
+- delkeywordpath         
+- addrenamegroup         
+- delrenamegroup         
+
 
 # Generating Telegram API keys
 
@@ -285,15 +310,15 @@ services:
 # Changelog
 
 ## Backlog (Upcoming Features)
-- **Feature:** Server-to-Telegram forwarding of files (in development).
-- **Feature:** Re-downloading of files (in development).
-- **Feature:** 7Z (in development).
-- **Feature:** Disable `pending_messages` via `DISABLE_PENDING_MESSAGES` environment variable.
 - **Feature:** Move Files - Implement the ability to move files to new locations.
 - **Feature:** Rename Files - Develop functionality to rename files from the bot.
 - **Feature:** Unzip Files - Add the capability to unzip files directly from the bot.
 - **Feature:** Unrar Files - Add the capability to unrar files directly from the bot.
 
+
+## [Version 5.0.0] - 2025-06-28
+- **Update:** Updated `pyrogram` to version 2.0.106.
+- **Update:** Updated `yt_dlp` to version 2025.06.25.
 
 ## [Version 4.0.8] - 2025-02-28
 - **Update:** Updated `telethon` to version 1.39.0.
