@@ -12,10 +12,10 @@ services:
       - PGID=100
       - PERMISSIONS_FOLDER=777
       - PERMISSIONS_FILE=755
-      - TG_AUTHORIZED_USER_ID=    #<telegram chat_id authorized>
-      - TG_API_ID=
-      - TG_API_HASH= 
-      - TG_BOT_TOKEN=
+      - AUTHORIZED_USER_ID=    #<telegram chat_id authorized>
+      - API_ID=
+      - API_HASH= 
+      - BOT_TOKEN=
       - TZ=America/Santiago
       - APP_LANGUAGE=en_EN                              # OPTIONAL
       - TG_UNZIP_TORRENTS=True                          # OPTIONAL (True/False)

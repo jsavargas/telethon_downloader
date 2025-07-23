@@ -1,5 +1,1 @@
 pyrogram
-tgcrypto
-python-dotenv
-yt-dlp
-aiohttp
