@@ -23,19 +23,25 @@ class TelethonDownloaderBot:
         self.DOWNLOAD_DIR = "downloads"
         os.makedirs(self.DOWNLOAD_DIR, exist_ok=True)
 
+        self.download_semaphore = asyncio.Semaphore(3)
+
         self._add_handlers()
 
     def _add_handlers(self):
-        @self.bot.on(events.NewMessage(incoming=True, func=lambda e: (e.message.document or e.message.photo) and e.sender_id in self.AUTHORIZED_USER_IDS))
-        async def download_media(event):
-            message = event.message
-            file_info = "media"
-            if message.document:
-                file_info = message.document.attributes[0].file_name if message.document.attributes else 'unknown_document'
-            elif message.photo:
-                file_info = f"photo_{message.id}.jpg" # Telethon will generate a name, but we can use this for display
+        self.bot.add_event_handler(self.download_media, events.NewMessage(incoming=True, func=lambda e: (e.message.document or e.message.photo) and e.sender_id in self.AUTHORIZED_USER_IDS))
+        self.bot.add_event_handler(self.start_command, events.NewMessage(pattern='/start', incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS))
 
-            initial_message = await message.reply(f"Downloading {file_info}...")
+    async def download_media(self, event):
+        message = event.message
+        file_info = "media"
+        if message.document:
+            file_name_attr = next((attr for attr in message.document.attributes if hasattr(attr, 'file_name')), None)
+            file_info = file_name_attr.file_name if file_name_attr else 'unknown_document'
+        elif message.photo:
+            file_info = f"photo_{message.id}.jpg" # Telethon will generate a name, but we can use this for display
+
+        initial_message = await message.reply(f"Downloading {file_info}...")
+        async with self.download_semaphore:
             try:
                 file_path = await self.bot.download_media(message, file=self.DOWNLOAD_DIR)
                 await initial_message.edit(f"Downloaded {file_info} to {file_path}")
@@ -43,9 +49,8 @@ class TelethonDownloaderBot:
                 self.logger.error(f"Error downloading {file_info}: {e}")
                 await initial_message.edit(f"Error downloading {file_info}: {e}")
 
-        @self.bot.on(events.NewMessage(pattern='/start', incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS))
-        async def start_command(event):
-            await event.reply("Hello! Send me a document and I will download it.")
+    async def start_command(self, event):
+        await event.reply("Hello! Send me a document and I will download it.")
 
     async def run(self):
         await self.bot.start(bot_token=self.BOT_TOKEN)
