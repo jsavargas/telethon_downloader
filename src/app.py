@@ -26,18 +26,22 @@ class TelethonDownloaderBot:
         self._add_handlers()
 
     def _add_handlers(self):
-        @self.bot.on(events.NewMessage(incoming=True, func=lambda e: e.message.document and e.sender_id in self.AUTHORIZED_USER_IDS))
-        async def download_document(event):
+        @self.bot.on(events.NewMessage(incoming=True, func=lambda e: (e.message.document or e.message.photo) and e.sender_id in self.AUTHORIZED_USER_IDS))
+        async def download_media(event):
             message = event.message
+            file_info = "media"
             if message.document:
-                file_name = message.document.attributes[0].file_name if message.document.attributes else 'unknown_file'
-                await message.reply(f"Downloading {file_name}...")
-                try:
-                    file_path = await self.bot.download_media(message, file=os.path.join(self.DOWNLOAD_DIR, file_name))
-                    await message.reply(f"Downloaded {file_name} to {file_path}")
-                except Exception as e:
-                    self.logger.error(f"Error downloading {file_name}: {e}")
-                    await message.reply(f"Error downloading {file_name}: {e}")
+                file_info = message.document.attributes[0].file_name if message.document.attributes else 'unknown_document'
+            elif message.photo:
+                file_info = f"photo_{message.id}.jpg" # Telethon will generate a name, but we can use this for display
+
+            initial_message = await message.reply(f"Downloading {file_info}...")
+            try:
+                file_path = await self.bot.download_media(message, file=self.DOWNLOAD_DIR)
+                await initial_message.edit(f"Downloaded {file_info} to {file_path}")
+            except Exception as e:
+                self.logger.error(f"Error downloading {file_info}: {e}")
+                await initial_message.edit(f"Error downloading {file_info}: {e}")
 
         @self.bot.on(events.NewMessage(pattern='/start', incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS))
         async def start_command(event):
