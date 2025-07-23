@@ -1,57 +1,57 @@
-
-from pyrogram import Client, filters
-from pyrogram.types import Message
+from telethon import TelegramClient, events
 import os
-import logging
+import asyncio
+from logger_config import LoggerConfig
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+class TelethonDownloaderBot:
+    def __init__(self):
+        self.logger = LoggerConfig(__name__).get_logger()
 
-# Replace with your actual API ID and API HASH
-# Get them from my.telegram.org
-API_ID = os.environ.get("API_ID")
-API_HASH = os.environ.get("API_HASH")
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+        self.API_ID = os.environ.get("API_ID")
+        self.API_HASH = os.environ.get("API_HASH")
+        self.BOT_TOKEN = os.environ.get("BOT_TOKEN")
+        self.AUTHORIZED_USER_ID = os.environ.get("AUTHORIZED_USER_ID")
 
-AUTHORIZED_USER_ID = os.environ.get("AUTHORIZED_USER_ID")
+        if not self.API_ID or not self.API_HASH or not self.BOT_TOKEN or not self.AUTHORIZED_USER_ID:
+            self.logger.error("Please set the environment variables API_ID, API_HASH, BOT_TOKEN, and AUTHORIZED_USER_ID.")
+            exit(1)
 
-if not API_ID or not API_HASH or not BOT_TOKEN or not AUTHORIZED_USER_ID:
-    logger.error("Please set the environment variables API_ID, API_HASH, BOT_TOKEN, and AUTHORIZED_USER_ID.")
-    exit(1)
+        self.AUTHORIZED_USER_IDS = [int(uid.strip()) for uid in self.AUTHORIZED_USER_ID.split(',')]
 
-AUTHORIZED_USER_IDS = [int(uid.strip()) for uid in AUTHORIZED_USER_ID.split(',')]
+        self.bot = TelegramClient('bot', self.API_ID, self.API_HASH)
 
+        self.DOWNLOAD_DIR = "downloads"
+        os.makedirs(self.DOWNLOAD_DIR, exist_ok=True)
 
-app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+        self._add_handlers()
 
-DOWNLOAD_DIR = "downloads"
-os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+    def _add_handlers(self):
+        @self.bot.on(events.NewMessage(incoming=True, func=lambda e: e.message.document and e.sender_id in self.AUTHORIZED_USER_IDS))
+        async def download_document(event):
+            message = event.message
+            if message.document:
+                file_name = message.document.attributes[0].file_name if message.document.attributes else 'unknown_file'
+                await message.reply(f"Downloading {file_name}...")
+                try:
+                    file_path = await self.bot.download_media(message, file=os.path.join(self.DOWNLOAD_DIR, file_name))
+                    await message.reply(f"Downloaded {file_name} to {file_path}")
+                except Exception as e:
+                    self.logger.error(f"Error downloading {file_name}: {e}")
+                    await message.reply(f"Error downloading {file_name}: {e}")
 
-@app.on_message(filters.document & filters.user(AUTHORIZED_USER_IDS))
-async def download_document(client: Client, message: Message):
-    if message.document:
-        file_name = message.document.file_name
-        await message.reply_text(f"Downloading {file_name}...")
+        @self.bot.on(events.NewMessage(pattern='/start', incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS))
+        async def start_command(event):
+            await event.reply("Hello! Send me a document and I will download it.")
+
+    async def run(self):
+        await self.bot.start(bot_token=self.BOT_TOKEN)
+        self.logger.info("Bot started.")
         try:
-            file_path = await client.download_media(message, file_name=os.path.join(DOWNLOAD_DIR, file_name))
-            await message.reply_text(f"Downloaded {file_name} to {file_path}")
+            await self.bot.send_message(self.AUTHORIZED_USER_IDS[0], "Bot has started!")
         except Exception as e:
-            logger.error(f"Error downloading {file_name}: {e}")
-            await message.reply_text(f"Error downloading {file_name}: {e}")
-
-@app.on_message(filters.command("start") & filters.private & filters.user(AUTHORIZED_USER_IDS))
-async def start_command(client: Client, message: Message):
-    await message.reply_text("Hello! Send me a document and I will download it.")
-
-async def main():
-    await app.start()
-    logger.info("Bot started.")
-    try:
-        await app.send_message(AUTHORIZED_USER_IDS[0], "Bot has started!")
-    except Exception as e:
-        logger.error(f"Error sending start message to authorized user: {e}")
-    await asyncio.Event().wait()
+            self.logger.error(f"Error sending start message to authorized user: {e}")
+        await self.bot.run_until_disconnected()
 
 if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    bot_instance = TelethonDownloaderBot()
+    asyncio.run(bot_instance.run())
