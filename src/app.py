@@ -33,7 +33,7 @@ class TelethonDownloaderBot:
 
         self.config_manager = ConfigManager(self.env_config.PATH_CONFIG, self.logger, self.env_config.PUID, self.env_config.PGID)
         self.download_manager = DownloadManager(self.env_config.BASE_DOWNLOAD_PATH, self.config_manager, self.logger, self.env_config.PUID, self.env_config.PGID)
-        self.download_semaphore = asyncio.Semaphore(3)
+        self.download_semaphore = asyncio.Semaphore(int(self.env_config.MAX_CONCURRENT_TASKS))
         self.welcome_message_generator = WelcomeMessage(BotVersions(VERSION, telethon_version), self.env_config, self.logger, self.download_manager)
 
         self._add_handlers()
@@ -73,7 +73,7 @@ class TelethonDownloaderBot:
 
         progress_bar = None
         if self.env_config.PROGRESS_DOWNLOAD.lower() == 'true':
-            progress_bar = ProgressBar(initial_message, file_info, self.logger, final_destination_dir, file_size, start_time, origin_group)
+            progress_bar = ProgressBar(initial_message, file_info, self.logger, final_destination_dir, file_size, start_time, origin_group, int(self.env_config.PROGRESS_STATUS_SHOW))
 
         self.logger.info(f"Starting download of {file_info} from chat ID {origin_group}")
         async with self.download_semaphore:
