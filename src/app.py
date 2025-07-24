@@ -1,7 +1,10 @@
 from telethon import TelegramClient, events
 import os
 import asyncio
+import time
 from logger_config import LoggerConfig
+from progress_bar import ProgressBar
+from download_summary import DownloadSummary
 
 class TelethonDownloaderBot:
     def __init__(self):
@@ -41,10 +44,35 @@ class TelethonDownloaderBot:
             file_info = f"photo_{message.id}.jpg" # Telethon will generate a name, but we can use this for display
 
         initial_message = await message.reply(f"Downloading {file_info}...")
+        start_time = time.time()
+
+        file_size = 0
+        if message.document:
+            file_size = message.document.size
+        elif message.photo:
+            file_size = message.photo.sizes[-1].size # Get the largest photo size
+
+        origin_group = "Unknown"
+        if message.peer_id:
+            if hasattr(message.peer_id, 'channel_id') and message.peer_id.channel_id:
+                origin_group = message.peer_id.channel_id
+            elif hasattr(message.peer_id, 'user_id') and message.peer_id.user_id:
+                origin_group = message.peer_id.user_id
+
+        progress_bar = ProgressBar(initial_message, file_info, self.logger, self.DOWNLOAD_DIR, file_size, start_time, origin_group)
+        self.logger.info(f"Starting download of {file_info} from chat ID {origin_group}")
         async with self.download_semaphore:
             try:
-                file_path = await self.bot.download_media(message, file=self.DOWNLOAD_DIR)
-                await initial_message.edit(f"Downloaded {file_info} to {file_path}")
+                file_path = await self.bot.download_media(message, file=self.DOWNLOAD_DIR, progress_callback=progress_bar.progress_callback)
+                end_time = time.time()
+                self.logger.info(f"Finished download of {file_info} to {file_path}")
+                
+                # Add a small delay to ensure the last progress update is sent
+                await asyncio.sleep(0.5)
+
+                summary = DownloadSummary(message, file_info, self.DOWNLOAD_DIR, start_time, end_time, file_size, origin_group)
+                summary_text = summary.generate_summary()
+                await initial_message.edit(summary_text)
             except Exception as e:
                 self.logger.error(f"Error downloading {file_info}: {e}")
                 await initial_message.edit(f"Error downloading {file_info}: {e}")
