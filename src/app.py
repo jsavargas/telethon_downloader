@@ -206,6 +206,7 @@ class TelethonDownloaderBot:
                 row.append(KeyboardButtonCallback(current_page_dirs[i], data=f"dir_{message_id}_{current_page_dirs[i]}".encode('utf-8')))
                 if i + 1 < len(current_page_dirs):
                     row.append(KeyboardButtonCallback(current_page_dirs[i+1], data=f"dir_{message_id}_{current_page_dirs[i+1]}".encode('utf-8')))
+                buttons.append(row)
 
             nav_buttons = []
             if current_dir != self.env_config.BASE_DOWNLOAD_PATH:
