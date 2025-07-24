@@ -2,9 +2,12 @@ import configparser
 import os
 
 class ConfigManager:
-    def __init__(self, config_path):
+    def __init__(self, config_path, logger, puid=None, pgid=None):
         self.config_path = config_path
         self.config = configparser.ConfigParser()
+        self.logger = logger
+        self.puid = puid
+        self.pgid = pgid
         self._load_config()
 
     def _load_config(self):
@@ -26,6 +29,19 @@ class ConfigManager:
         os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
         with open(self.config_path, 'w') as configfile:
             self.config.write(configfile)
+        
+        # Set permissions and ownership for config.ini
+        if self.puid is not None and self.pgid is not None:
+            try:
+                os.chown(self.config_path, int(self.puid), int(self.pgid))
+                self.logger.info(f"Changed ownership of {self.config_path} to {int(self.puid)}:{int(self.pgid)}")
+            except Exception as e:
+                self.logger.error(f"Error changing ownership of {self.config_path}: {e}")
+        try:
+            os.chmod(self.config_path, 0o644) # Set permissions for config.ini
+            self.logger.info(f"Changed permissions of {self.config_path} to 0o644")
+        except Exception as e:
+            self.logger.error(f"Error changing permissions of {self.config_path}: {e}")
 
     def get_download_path(self, extension):
         self._load_config() # Re-read config.ini to pick up new paths
