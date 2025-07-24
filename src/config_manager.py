@@ -15,7 +15,7 @@ class ConfigManager:
             self._create_default_config()
 
     def _create_default_config(self):
-        self.config['DEFAULT_PATH'] = {
+        self.config['EXTENSIONS'] = {
             'pdf': '/download/pdf',
             'cbr': '/download/pdf',
             'mp3': '/download/mp3',
@@ -29,4 +29,4 @@ class ConfigManager:
 
     def get_download_path(self, extension):
         self._load_config() # Re-read config.ini to pick up new paths
-        return self.config.get('DEFAULT_PATH', extension.lower(), fallback=None)
+        return self.config.get('EXTENSIONS', extension.lower(), fallback=None)
