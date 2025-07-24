@@ -62,7 +62,11 @@ class TelethonDownloaderBot:
         if message.document:
             file_size = message.document.size
         elif message.photo:
-            file_size = message.photo.sizes[-1].size # Get the largest photo size
+            largest_size = 0
+            for s in message.photo.sizes:
+                if hasattr(s, 'size') and s.size > largest_size:
+                    largest_size = s.size
+            file_size = largest_size
 
         origin_group = "Unknown"
         if message.peer_id:
