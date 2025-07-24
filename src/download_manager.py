@@ -11,12 +11,29 @@ class DownloadManager:
         # Default incompleted and completed directories
         self.default_incompleted_dir = os.path.join(self.base_download_path, "incompleted")
         self.default_completed_dir = os.path.join(self.base_download_path, "completed")
+        
         os.makedirs(self.default_incompleted_dir, exist_ok=True)
+        self._apply_permissions_and_ownership(self.default_incompleted_dir)
         os.makedirs(self.default_completed_dir, exist_ok=True)
+        self._apply_permissions_and_ownership(self.default_completed_dir)
 
         # Temporary directory for in-progress downloads when a specific final path is given
         self.temp_incompleted_dir = os.path.join(self.base_download_path, "temp_incompleted")
         os.makedirs(self.temp_incompleted_dir, exist_ok=True)
+        self._apply_permissions_and_ownership(self.temp_incompleted_dir)
+
+    def _apply_permissions_and_ownership(self, path):
+        if self.puid is not None and self.pgid is not None:
+            try:
+                os.chown(path, int(self.puid), int(self.pgid))
+                self.logger.info(f"Changed ownership of directory {path} to {int(self.puid)}:{int(self.pgid)}")
+            except Exception as e:
+                self.logger.error(f"Error changing ownership of directory {path}: {e}")
+        try:
+            os.chmod(path, 0o755) # Set permissions for directories
+            self.logger.info(f"Changed permissions of directory {path} to 0o755")
+        except Exception as e:
+            self.logger.error(f"Error changing permissions of directory {path}: {e}")
 
     def get_download_dirs(self, extension):
         configured_path = self.config_manager.get_download_path(extension)
@@ -25,7 +42,12 @@ class DownloadManager:
             # and use a temporary incompleted directory
             target_incompleted_dir = self.temp_incompleted_dir
             target_completed_dir = configured_path
-            os.makedirs(target_completed_dir, exist_ok=True)
+            
+            # Only create and apply permissions if the directory doesn't exist
+            if not os.path.exists(target_completed_dir):
+                os.makedirs(target_completed_dir, exist_ok=True)
+                self._apply_permissions_and_ownership(target_completed_dir)
+
             return target_incompleted_dir, target_completed_dir
         else:
             # Otherwise, use the default incompleted/completed structure
@@ -38,11 +60,15 @@ class DownloadManager:
         # Set permissions and ownership
         if self.puid is not None and self.pgid is not None:
             try:
+                os.chown(target_completed_dir, int(self.puid), int(self.pgid))
                 os.chown(final_file_path, int(self.puid), int(self.pgid))
+                self.logger.info(f"Changed ownership of file {target_completed_dir} to {int(self.puid)}:{int(self.pgid)}")
+                self.logger.info(f"Changed ownership of file {final_file_path} to {int(self.puid)}:{int(self.pgid)}")
             except Exception as e:
                 self.logger.error(f"Error changing ownership of {final_file_path}: {e}")
         try:
             os.chmod(final_file_path, 0o644) # Set read/write for owner, read-only for others
+            self.logger.info(f"Changed permissions of file {final_file_path} to 0o644")
         except Exception as e:
             self.logger.error(f"Error changing permissions of {final_file_path}: {e}")
 
