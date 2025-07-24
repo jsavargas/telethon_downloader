@@ -68,8 +68,9 @@ class TelethonDownloaderBot:
             log_message_chat_id = f"Channel ID: {channel_id}"
         else:
             log_message_chat_id = f"User ID: {origin_group}"
-        self.logger.info(f"Starting download of {file_info} from {log_message_chat_id}")
+        self.logger.info(f"Downloading of {file_info} from {log_message_chat_id}")
         async with self.download_semaphore:
+            self.logger.info(f"Starting download of {file_info} from {log_message_chat_id}")
             try:
                 if progress_bar:
                     downloaded_file_path = await self.bot.download_media(message, file=target_download_dir, progress_callback=progress_bar.progress_callback)

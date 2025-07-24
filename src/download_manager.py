@@ -47,10 +47,12 @@ class DownloadManager:
         if group_path:
             target_incompleted_dir = self.temp_incompleted_dir
             target_completed_dir = group_path
-            os.makedirs(target_incompleted_dir, exist_ok=True)
-            self._apply_permissions_and_ownership(target_incompleted_dir)
-            os.makedirs(target_completed_dir, exist_ok=True)
-            self._apply_permissions_and_ownership(target_completed_dir)
+            
+            # Only create and apply permissions if the directory doesn't exist
+            if not os.path.exists(target_completed_dir):
+                os.makedirs(target_completed_dir, exist_ok=True)
+                self._apply_permissions_and_ownership(target_completed_dir)
+
             return target_incompleted_dir, target_completed_dir
 
         # Handle torrents
