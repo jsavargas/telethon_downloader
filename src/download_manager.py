@@ -1,12 +1,13 @@
 import os
 
 class DownloadManager:
-    def __init__(self, base_download_path, config_manager, logger, puid=None, pgid=None):
+    def __init__(self, base_download_path, config_manager, logger, puid=None, pgid=None, torrent_path=None):
         self.base_download_path = base_download_path
         self.config_manager = config_manager
         self.logger = logger
         self.puid = puid
         self.pgid = pgid
+        self.torrent_path = torrent_path
 
         # Default incompleted and completed directories
         self.default_incompleted_dir = os.path.join(self.base_download_path, "incompleted")
@@ -36,6 +37,11 @@ class DownloadManager:
             self.logger.error(f"Error changing permissions of directory {path}: {e}")
 
     def get_download_dirs(self, extension):
+        if extension.lower() == 'torrent' and self.torrent_path:
+            os.makedirs(self.torrent_path, exist_ok=True)
+            self._apply_permissions_and_ownership(self.torrent_path)
+            return self.torrent_path, self.torrent_path # Download and complete in the same torrent path
+
         configured_path = self.config_manager.get_download_path(extension)
         if configured_path:
             # If a specific path is configured, use it as the final destination
@@ -60,9 +66,7 @@ class DownloadManager:
         # Set permissions and ownership
         if self.puid is not None and self.pgid is not None:
             try:
-                os.chown(target_completed_dir, int(self.puid), int(self.pgid))
                 os.chown(final_file_path, int(self.puid), int(self.pgid))
-                self.logger.info(f"Changed ownership of file {target_completed_dir} to {int(self.puid)}:{int(self.pgid)}")
                 self.logger.info(f"Changed ownership of file {final_file_path} to {int(self.puid)}:{int(self.pgid)}")
             except Exception as e:
                 self.logger.error(f"Error changing ownership of {final_file_path}: {e}")

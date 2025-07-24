@@ -1,4 +1,5 @@
 download/
+watch
 __pycache__/
 docker-compose.dev.yml
 *.sh

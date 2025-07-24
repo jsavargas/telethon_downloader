@@ -20,6 +20,7 @@ class WelcomeMessage:
         self.logger.info(f"DOWNLOAD_DIR                  : {self.env_config.BASE_DOWNLOAD_PATH}")
         self.logger.info(f"DOWNLOAD_INCOMPLETED_PATH     : {self.download_manager.default_incompleted_dir}")
         self.logger.info(f"DOWNLOAD_COMPLETED_PATH       : {self.download_manager.default_completed_dir}")
+        self.logger.info(f"DOWNLOAD_PATH_TORRENTS        : {self.download_manager.torrent_path}")
         # Assuming DOWNLOAD_PATH_TORRENTS is not directly from env_config, if it is, add it to env_config
         # self.logger.info(f"DOWNLOAD_PATH_TORRENTS        : {self.env_config.DOWNLOAD_PATH_TORRENTS}")
         self.logger.info(f"PROGRESS_DOWNLOAD             : {self.env_config.PROGRESS_DOWNLOAD}")

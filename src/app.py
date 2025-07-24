@@ -33,7 +33,7 @@ class TelethonDownloaderBot:
         self.bot = TelegramClient('bot', self.API_ID, self.API_HASH)
 
         self.config_manager = ConfigManager(self.env_config.PATH_CONFIG, self.logger, self.env_config.PUID, self.env_config.PGID)
-        self.download_manager = DownloadManager(self.env_config.BASE_DOWNLOAD_PATH, self.config_manager, self.logger, self.env_config.PUID, self.env_config.PGID)
+        self.download_manager = DownloadManager(self.env_config.BASE_DOWNLOAD_PATH, self.config_manager, self.logger, self.env_config.PUID, self.env_config.PGID, self.env_config.DOWNLOAD_PATH_TORRENTS)
         self.download_semaphore = asyncio.Semaphore(int(self.env_config.MAX_CONCURRENT_TASKS))
         self.welcome_message_generator = WelcomeMessage(BotVersions(VERSION, telethon_version), self.env_config, self.logger, self.download_manager)
 
