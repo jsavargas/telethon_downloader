@@ -5,21 +5,22 @@ import time
 from logger_config import LoggerConfig
 from progress_bar import ProgressBar
 from download_summary import DownloadSummary
+from env_config import EnvConfig
 
 class TelethonDownloaderBot:
     def __init__(self):
         self.logger = LoggerConfig(__name__).get_logger()
 
-        self.API_ID = os.environ.get("API_ID")
-        self.API_HASH = os.environ.get("API_HASH")
-        self.BOT_TOKEN = os.environ.get("BOT_TOKEN")
-        self.AUTHORIZED_USER_ID = os.environ.get("AUTHORIZED_USER_ID")
+        self.env_config = EnvConfig()
 
-        if not self.API_ID or not self.API_HASH or not self.BOT_TOKEN or not self.AUTHORIZED_USER_ID:
+        if not self.env_config.validate_env():
             self.logger.error("Please set the environment variables API_ID, API_HASH, BOT_TOKEN, and AUTHORIZED_USER_ID.")
             exit(1)
 
-        self.AUTHORIZED_USER_IDS = [int(uid.strip()) for uid in self.AUTHORIZED_USER_ID.split(',')]
+        self.API_ID = self.env_config.API_ID
+        self.API_HASH = self.env_config.API_HASH
+        self.BOT_TOKEN = self.env_config.BOT_TOKEN
+        self.AUTHORIZED_USER_IDS = [int(uid.strip()) for uid in self.env_config.AUTHORIZED_USER_ID.split(',')]
 
         self.bot = TelegramClient('bot', self.API_ID, self.API_HASH)
 
