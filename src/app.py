@@ -6,6 +6,7 @@ from logger_config import LoggerConfig
 from progress_bar import ProgressBar
 from download_summary import DownloadSummary
 from env_config import EnvConfig
+from download_manager import DownloadManager
 
 class TelethonDownloaderBot:
     def __init__(self):
@@ -24,12 +25,9 @@ class TelethonDownloaderBot:
 
         self.bot = TelegramClient('bot', self.API_ID, self.API_HASH)
 
-        self.BASE_DOWNLOAD_PATH = self.env_config.BASE_DOWNLOAD_PATH
-        self.INCOMPLETED_DIR = os.path.join(self.BASE_DOWNLOAD_PATH, "incompleted")
-        self.COMPLETED_DIR = os.path.join(self.BASE_DOWNLOAD_PATH, "completed")
-
-        os.makedirs(self.INCOMPLETED_DIR, exist_ok=True)
-        os.makedirs(self.COMPLETED_DIR, exist_ok=True)
+        self.download_manager = DownloadManager(self.env_config.BASE_DOWNLOAD_PATH)
+        self.INCOMPLETED_DIR = self.download_manager.get_incompleted_dir()
+        self.COMPLETED_DIR = self.download_manager.get_completed_dir()
 
         self.download_semaphore = asyncio.Semaphore(3)
 
@@ -72,8 +70,7 @@ class TelethonDownloaderBot:
                 end_time = time.time()
                 
                 # Move file to completed directory
-                final_file_path = os.path.join(self.COMPLETED_DIR, os.path.basename(downloaded_file_path))
-                os.rename(downloaded_file_path, final_file_path)
+                final_file_path = self.download_manager.move_to_completed(downloaded_file_path)
 
                 self.logger.info(f"Finished download of {file_info} to {final_file_path}")
                 
