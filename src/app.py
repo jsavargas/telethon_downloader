@@ -199,8 +199,9 @@ class TelethonDownloaderBot:
             elif action == 'new':
                 if message_id in self.downloaded_files:
                     self.downloaded_files[message_id]['waiting_for_folder_name'] = True
-                    self.downloaded_files[message_id]['browser_message_id'] = event.message_id # Store the message ID of the browser
-                    await event.edit("Please send the name for the new folder.")
+                    self.downloaded_files[message_id]['browser_message_id'] = event.message_id
+                    summary_text = self.downloaded_files[message_id].get('summary_text', "")
+                    await event.edit(f"{summary_text}\n\nPlease send the name for the new folder.")
                 else:
                     await event.answer("File information not found.")
             elif action == 'dir':
@@ -295,17 +296,15 @@ class TelethonDownloaderBot:
             new_file_path = self.download_manager.move_file(file_path, new_folder_path)
 
             if new_file_path:
-                await event.reply(f"Folder '{new_folder_name}' created and file moved successfully to {new_file_path}")
+                summary_text = self.downloaded_files[target_message_id].get('summary_text', "")
+                await self.bot.edit_message(browser_chat_id, browser_message_id, f"{summary_text}\n\nFolder '{new_folder_name}' created and file moved successfully to {new_file_path}", buttons=None)
                 del self.downloaded_files[target_message_id]
             else:
                 await event.reply(f"Folder '{new_folder_name}' created, but there was an error moving the file.")
 
             # Refresh the directory browser
             if browser_message_id and browser_chat_id:
-                text, buttons = await self.keyboard_manager.send_directory_browser(target_message_id, current_dir)
-                await self.bot.edit_message(browser_chat_id, browser_message_id, text, buttons=buttons)
-            else:
-                self.logger.warning(f"No browser_message_id or browser_chat_id found for message {target_message_id}. Cannot refresh directory browser.")
+                self.logger.info(f"Refreshing browser for message {target_message_id}")
         except Exception as e:
             self.logger.error(f"Error creating new folder: {e}")
             await event.reply(f"Error creating folder: {e}")
