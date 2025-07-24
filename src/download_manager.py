@@ -111,14 +111,27 @@ class DownloadManager:
             self.logger.error(f"Error in move_to_completed for {downloaded_file_path}: {e}")
             return downloaded_file_path # Return original path if move fails
 
-    async def move_file_and_update_message(self, event, message_id, file_path, destination_dir):
+    def move_file(self, file_path, destination_dir):
         try:
             file_name = os.path.basename(file_path)
             new_file_path = os.path.join(destination_dir, file_name)
             os.rename(file_path, new_file_path)
-            await event.edit(f"File moved successfully to {new_file_path}")
-            return True
+            
+            # Set permissions and ownership
+            if self.puid is not None and self.pgid is not None:
+                try:
+                    os.chown(new_file_path, int(self.puid), int(self.pgid))
+                    self.logger.info(f"Changed ownership of file {new_file_path} to {int(self.puid)}:{int(self.pgid)}")
+                except Exception as e:
+                    self.logger.error(f"Error changing ownership of {new_file_path}: {e}")
+            try:
+                os.chmod(new_file_path, 0o644) # Set read/write for owner, read-only for others
+                self.logger.info(f"Changed permissions of file {new_file_path} to 0o644")
+            except Exception as e:
+                self.logger.error(f"Error changing permissions of {new_file_path}: {e}")
+
+            self.logger.info(f"File moved successfully to {new_file_path}")
+            return new_file_path
         except Exception as e:
             self.logger.error(f"Error moving file: {e}")
-            await event.answer(f"Error moving file: {e}")
-            return False
+            return None

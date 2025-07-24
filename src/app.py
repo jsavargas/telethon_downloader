@@ -85,6 +85,7 @@ class TelethonDownloaderBot:
             self.bot.add_event_handler(self.download_media, events.NewMessage(incoming=True, func=lambda e: (e.message.document or e.message.photo) and e.sender_id in self.AUTHORIZED_USER_IDS))
             self.bot.add_event_handler(self.start_command, events.NewMessage(pattern='/start', incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS))
             self.bot.add_event_handler(self.handle_callback_query, events.CallbackQuery)
+            self.bot.add_event_handler(self.handle_new_folder_name, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and any(self.downloaded_files[msg_id].get('waiting_for_folder_name', False) for msg_id in self.downloaded_files)))
         except Exception as e:
             self.logger.error(f"Error adding event handlers: {e}")
 
@@ -174,14 +175,24 @@ class TelethonDownloaderBot:
             if action == 'move':
                 if message_id in self.downloaded_files:
                     file_info = self.downloaded_files[message_id]
+                    self.downloaded_files[message_id]['browser_chat_id'] = event.chat_id
+                    self.downloaded_files[message_id]['browser_message_id'] = event.message_id # This is the message with the buttons
                     if self.keyboard_manager:
-                        await self.keyboard_manager.send_directory_browser(event, message_id, file_info['current_dir'])
+                        text, buttons = await self.keyboard_manager.send_directory_browser(message_id, file_info['current_dir'])
+                        await event.edit(text, buttons=buttons)
                     else:
                         await event.answer("Keyboard manager not initialized.")
             elif action == 'cancel':
                 if message_id in self.downloaded_files:
                     del self.downloaded_files[message_id]
                     await event.edit("Download operation cancelled.")
+                else:
+                    await event.answer("File information not found.")
+            elif action == 'new':
+                if message_id in self.downloaded_files:
+                    self.downloaded_files[message_id]['waiting_for_folder_name'] = True
+                    self.downloaded_files[message_id]['browser_message_id'] = event.message_id # Store the message ID of the browser
+                    await event.edit("Please send the name for the new folder.")
                 else:
                     await event.answer("File information not found.")
             elif action == 'dir':
@@ -192,7 +203,8 @@ class TelethonDownloaderBot:
                     new_full_path = os.path.join(current_base_dir, selected_dir_name)
                     self.downloaded_files[message_id]['current_dir'] = new_full_path # Update stored current_dir
                     if self.keyboard_manager:
-                        await self.keyboard_manager.send_directory_browser(event, message_id, new_full_path, page=0)
+                        text, buttons = await self.keyboard_manager.send_directory_browser(message_id, new_full_path, page=0)
+                        await event.edit(text, buttons=buttons)
                     else:
                         await event.answer("Keyboard manager not initialized.")
             elif action == 'nav':
@@ -222,7 +234,11 @@ class TelethonDownloaderBot:
                         return
                     
                     # Use the updated current_dir from state for sending the browser
-                    await self.keyboard_manager.send_directory_browser(event, message_id, self.downloaded_files[message_id]['current_dir'], page)
+                    if self.keyboard_manager:
+                        text, buttons = await self.keyboard_manager.send_directory_browser(message_id, self.downloaded_files[message_id]['current_dir'], page)
+                        await event.edit(text, buttons=buttons)
+                    else:
+                        await event.answer("Keyboard manager not initialized.")
                 else:
                     await event.answer("File information not found.")
 
@@ -230,6 +246,62 @@ class TelethonDownloaderBot:
         except Exception as e:
             self.logger.error(f"Unhandled exception in handle_callback_query: {e}")
             await event.answer(f"Error processing callback: {e}")
+
+    async def _move_file(self, event, message_id, file_path, destination_dir):
+        try:
+            file_name = os.path.basename(file_path)
+            new_file_path = os.path.join(destination_dir, file_name)
+            os.rename(file_path, new_file_path)
+            await event.edit(f"File moved successfully to {new_file_path}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error moving file: {e}")
+            await event.answer(f"Error moving file: {e}")
+            return False
+
+    async def handle_new_folder_name(self, event):
+        try:
+            # Find the message ID that is waiting for a folder name
+            target_message_id = None
+            for msg_id, file_info in self.downloaded_files.items():
+                if file_info.get('waiting_for_folder_name', False):
+                    target_message_id = msg_id
+                    break
+
+            if target_message_id is None:
+                return # Not waiting for a folder name
+
+            new_folder_name = event.message.text
+            current_dir = self.downloaded_files[target_message_id]['current_dir']
+            new_folder_path = os.path.join(current_dir, new_folder_name)
+            browser_message_id = self.downloaded_files[target_message_id].get('browser_message_id', None)
+            browser_chat_id = self.downloaded_files[target_message_id].get('browser_chat_id', None)
+
+            os.makedirs(new_folder_path, exist_ok=True)
+            self.download_manager._apply_permissions_and_ownership(new_folder_path)
+            self.downloaded_files[target_message_id]['waiting_for_folder_name'] = False
+            await event.reply(f"Folder '{new_folder_name}' created successfully in {current_dir}.")
+
+            # Move the file to the new folder
+            file_info = self.downloaded_files[target_message_id]
+            file_path = file_info['file_path']
+            new_file_path = self.download_manager.move_file(file_path, new_folder_path)
+
+            if new_file_path:
+                await event.reply(f"File moved successfully to {new_file_path}")
+                del self.downloaded_files[target_message_id]
+            else:
+                await event.reply("Error moving file.")
+
+            # Refresh the directory browser
+            if browser_message_id and browser_chat_id:
+                text, buttons = await self.keyboard_manager.send_directory_browser(target_message_id, current_dir)
+                await self.bot.edit_message(browser_chat_id, browser_message_id, text, buttons=buttons)
+            else:
+                self.logger.warning(f"No browser_message_id or browser_chat_id found for message {target_message_id}. Cannot refresh directory browser.")
+        except Exception as e:
+            self.logger.error(f"Error creating new folder: {e}")
+            await event.reply(f"Error creating folder: {e}")
 
     async def start_command(self, event):
         try:
