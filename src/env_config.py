@@ -11,11 +11,9 @@ class EnvConfig:
         self.PUID = os.environ.get('PUID')
         self.PGID = os.environ.get('PGID')
         self.YTDLP_VERSION = os.environ.get('YTDLP_VERSION', 'N/A')
-        self.PROGRESS_DOWNLOAD = os.environ.get('PROGRESS_DOWNLOAD', 'True')
+        self.PROGRESS_DOWNLOAD = os.environ.get('PROGRESS_DOWNLOAD', 'true')
         self.PROGRESS_STATUS_SHOW = os.environ.get('PROGRESS_STATUS_SHOW', '10')
         self.MAX_CONCURRENT_TASKS = os.environ.get('MAX_CONCURRENT_TASKS', '4')
-        self.WORKERS = os.environ.get('WORKERS', '4')
-        self.MAX_CONCURRENT_TRANSMISSIONS = os.environ.get('MAX_CONCURRENT_TRANSMISSIONS', '4')
 
     def validate_env(self):
         if not self.API_ID or not self.API_HASH or not self.BOT_TOKEN or not self.AUTHORIZED_USER_ID:

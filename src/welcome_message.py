@@ -25,8 +25,6 @@ class WelcomeMessage:
         self.logger.info(f"PROGRESS_DOWNLOAD             : {self.env_config.PROGRESS_DOWNLOAD}")
         self.logger.info(f"PROGRESS_STATUS_SHOW          : {self.env_config.PROGRESS_STATUS_SHOW}")
         self.logger.info(f"MAX_CONCURRENT_TASKS          : {self.env_config.MAX_CONCURRENT_TASKS}")
-        self.logger.info(f"WORKERS                       : {self.env_config.WORKERS}")
-        self.logger.info(f"MAX_CONCURRENT_TRANSMISSIONS  : {self.env_config.MAX_CONCURRENT_TRANSMISSIONS}")
 
     def get_message(self):
         return (

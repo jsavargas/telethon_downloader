@@ -71,11 +71,17 @@ class TelethonDownloaderBot:
             elif hasattr(message.peer_id, 'user_id') and message.peer_id.user_id:
                 origin_group = message.peer_id.user_id
 
-        progress_bar = ProgressBar(initial_message, file_info, self.logger, final_destination_dir, file_size, start_time, origin_group)
+        progress_bar = None
+        if self.env_config.PROGRESS_DOWNLOAD.lower() == 'true':
+            progress_bar = ProgressBar(initial_message, file_info, self.logger, final_destination_dir, file_size, start_time, origin_group)
+
         self.logger.info(f"Starting download of {file_info} from chat ID {origin_group}")
         async with self.download_semaphore:
             try:
-                downloaded_file_path = await self.bot.download_media(message, file=target_download_dir, progress_callback=progress_bar.progress_callback)
+                if progress_bar:
+                    downloaded_file_path = await self.bot.download_media(message, file=target_download_dir, progress_callback=progress_bar.progress_callback)
+                else:
+                    downloaded_file_path = await self.bot.download_media(message, file=target_download_dir)
                 end_time = time.time()
                 
                 # Move file to completed directory
