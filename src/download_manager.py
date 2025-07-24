@@ -36,7 +36,19 @@ class DownloadManager:
         except Exception as e:
             self.logger.error(f"Error changing permissions of directory {path}: {e}")
 
-    def get_download_dirs(self, extension):
+    def get_download_dirs(self, extension, origin_group_id):
+        # Check for group-specific path first
+        group_path = self.config_manager.get_group_path(origin_group_id)
+        if group_path:
+            target_incompleted_dir = os.path.join(group_path, "incompleted")
+            target_completed_dir = os.path.join(group_path, "completed")
+            os.makedirs(target_incompleted_dir, exist_ok=True)
+            self._apply_permissions_and_ownership(target_incompleted_dir)
+            os.makedirs(target_completed_dir, exist_ok=True)
+            self._apply_permissions_and_ownership(target_completed_dir)
+            return target_incompleted_dir, target_completed_dir
+
+        # Handle torrents
         if extension.lower() == 'torrent' and self.torrent_path:
             os.makedirs(self.torrent_path, exist_ok=True)
             self._apply_permissions_and_ownership(self.torrent_path)

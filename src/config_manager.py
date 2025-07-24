@@ -26,6 +26,9 @@ class ConfigManager:
             'jpg': '/download/jpg',
             'mp4': '/download/mp4',
         }
+        self.config['GROUP_PATH'] = {
+            '-10012345789': '/download/1001234577',
+        }
         os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
         with open(self.config_path, 'w') as configfile:
             self.config.write(configfile)
@@ -46,3 +49,7 @@ class ConfigManager:
     def get_download_path(self, extension):
         self._load_config() # Re-read config.ini to pick up new paths
         return self.config.get('EXTENSIONS', extension.lower(), fallback=None)
+
+    def get_group_path(self, group_id):
+        self._load_config() # Re-read config.ini to pick up new paths
+        return self.config.get('GROUP_PATH', str(group_id), fallback=None)

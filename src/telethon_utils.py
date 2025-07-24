@@ -12,6 +12,14 @@ class TelethonUtils:
         return origin_group
 
     @staticmethod
+    def get_channel_id(message):
+        if message.peer_id and hasattr(message.peer_id, 'channel_id'):
+            return message.peer_id.channel_id
+        elif message.fwd_from and hasattr(message.fwd_from, 'from_id') and hasattr(message.fwd_from.from_id, 'channel_id'):
+            return message.fwd_from.from_id.channel_id
+        return None
+
+    @staticmethod
     def get_file_size(message):
         file_size = 0
         if message.document:

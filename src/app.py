@@ -45,23 +45,30 @@ class TelethonDownloaderBot:
 
     async def download_media(self, event):
         message = event.message
+
+        self.logger.info(f"message:::: {message}")
+
         file_info = TelethonUtils.get_file_info(message)
         file_extension = TelethonUtils.get_file_extension(message)
+        origin_group = TelethonUtils.get_origin_group(message)
+        channel_id = TelethonUtils.get_channel_id(message)
 
-        target_download_dir, final_destination_dir = self.download_manager.get_download_dirs(file_extension)
+        target_download_dir, final_destination_dir = self.download_manager.get_download_dirs(file_extension, origin_group)
 
         initial_message = await message.reply(f"Downloading {file_info}...")
         start_time = time.time()
 
         file_size = TelethonUtils.get_file_size(message)
 
-        origin_group = TelethonUtils.get_origin_group(message)
-
         progress_bar = None
         if self.env_config.PROGRESS_DOWNLOAD.lower() == 'true':
-            progress_bar = ProgressBar(initial_message, file_info, self.logger, final_destination_dir, file_size, start_time, origin_group, int(self.env_config.PROGRESS_STATUS_SHOW))
+            progress_bar = ProgressBar(initial_message, file_info, self.logger, final_destination_dir, file_size, start_time, origin_group, int(self.env_config.PROGRESS_STATUS_SHOW), channel_id)
 
-        self.logger.info(f"Starting download of {file_info} from chat ID {origin_group}")
+        if channel_id:
+            log_message_chat_id = f"Channel ID: {channel_id}"
+        else:
+            log_message_chat_id = f"User ID: {origin_group}"
+        self.logger.info(f"Starting download of {file_info} from {log_message_chat_id}")
         async with self.download_semaphore:
             try:
                 if progress_bar:
@@ -78,7 +85,7 @@ class TelethonDownloaderBot:
                 # Add a small delay to ensure the last progress update is sent
                 await asyncio.sleep(0.5)
 
-                summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group)
+                summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, channel_id)
                 summary_text = summary.generate_summary()
                 await initial_message.edit(summary_text)
             except Exception as e:
