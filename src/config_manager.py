@@ -13,22 +13,30 @@ class ConfigManager:
     def _load_config(self):
         if os.path.exists(self.config_path):
             self.config.read(self.config_path)
+            # Check if GROUP_PATH section exists, if not, add it
+            if 'GROUP_PATH' not in self.config:
+                self.config['GROUP_PATH'] = {
+                    '-10012345789': '/download/1001234577',
+                }
+                self._write_config()
+                self.logger.info(f"Added [GROUP_PATH] section to {self.config_path}")
+            # Check if EXTENSIONS section exists, if not, add it
+            if 'EXTENSIONS' not in self.config:
+                self.config['EXTENSIONS'] = {
+                    'pdf': '/download/pdf',
+                    'cbr': '/download/pdf',
+                    'mp3': '/download/mp3',
+                    'flac': '/download/mp3',
+                    'jpg': '/download/jpg',
+                    'mp4': '/download/mp4',
+                }
+                self._write_config()
+                self.logger.info(f"Added [EXTENSIONS] section to {self.config_path}")
         else:
             # Create a default config if it doesn't exist
             self._create_default_config()
 
-    def _create_default_config(self):
-        self.config['EXTENSIONS'] = {
-            'pdf': '/download/pdf',
-            'cbr': '/download/pdf',
-            'mp3': '/download/mp3',
-            'flac': '/download/mp3',
-            'jpg': '/download/jpg',
-            'mp4': '/download/mp4',
-        }
-        self.config['GROUP_PATH'] = {
-            '-10012345789': '/download/1001234577',
-        }
+    def _write_config(self):
         os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
         with open(self.config_path, 'w') as configfile:
             self.config.write(configfile)
@@ -46,10 +54,24 @@ class ConfigManager:
         except Exception as e:
             self.logger.error(f"Error changing permissions of {self.config_path}: {e}")
 
+    def _create_default_config(self):
+        self.config['EXTENSIONS'] = {
+            'pdf': '/download/pdf',
+            'cbr': '/download/pdf',
+            'mp3': '/download/mp3',
+            'flac': '/download/mp3',
+            'jpg': '/download/jpg',
+            'mp4': '/download/mp4',
+        }
+        self.config['GROUP_PATH'] = {
+            '-10012345789': '/download/1001234577',
+        }
+        self._write_config()
+
     def get_download_path(self, extension):
         self._load_config() # Re-read config.ini to pick up new paths
         return self.config.get('EXTENSIONS', extension.lower(), fallback=None)
 
-    def get_group_path(self, group_id):
+    def get_group_path(self, channel_id):
         self._load_config() # Re-read config.ini to pick up new paths
-        return self.config.get('GROUP_PATH', str(group_id), fallback=None)
+        return self.config.get('GROUP_PATH', str(channel_id), fallback=None)

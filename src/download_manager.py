@@ -36,12 +36,17 @@ class DownloadManager:
         except Exception as e:
             self.logger.error(f"Error changing permissions of directory {path}: {e}")
 
-    def get_download_dirs(self, extension, origin_group_id):
+    def get_download_dirs(self, extension, origin_group_id, channel_id):
         # Check for group-specific path first
-        group_path = self.config_manager.get_group_path(origin_group_id)
+        group_path = None
+        if channel_id:
+            group_path = self.config_manager.get_group_path(channel_id)
+        elif origin_group_id:
+            group_path = self.config_manager.get_group_path(origin_group_id)
+
         if group_path:
-            target_incompleted_dir = os.path.join(group_path, "incompleted")
-            target_completed_dir = os.path.join(group_path, "completed")
+            target_incompleted_dir = self.temp_incompleted_dir
+            target_completed_dir = group_path
             os.makedirs(target_incompleted_dir, exist_ok=True)
             self._apply_permissions_and_ownership(target_incompleted_dir)
             os.makedirs(target_completed_dir, exist_ok=True)

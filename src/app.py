@@ -53,7 +53,7 @@ class TelethonDownloaderBot:
         origin_group = TelethonUtils.get_origin_group(message)
         channel_id = TelethonUtils.get_channel_id(message)
 
-        target_download_dir, final_destination_dir = self.download_manager.get_download_dirs(file_extension, origin_group)
+        target_download_dir, final_destination_dir = self.download_manager.get_download_dirs(file_extension, origin_group, channel_id)
 
         initial_message = await message.reply(f"Downloading {file_info}...")
         start_time = time.time()
