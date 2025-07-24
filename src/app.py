@@ -24,8 +24,12 @@ class TelethonDownloaderBot:
 
         self.bot = TelegramClient('bot', self.API_ID, self.API_HASH)
 
-        self.DOWNLOAD_DIR = "downloads"
-        os.makedirs(self.DOWNLOAD_DIR, exist_ok=True)
+        self.BASE_DOWNLOAD_PATH = self.env_config.BASE_DOWNLOAD_PATH
+        self.INCOMPLETED_DIR = os.path.join(self.BASE_DOWNLOAD_PATH, "incompleted")
+        self.COMPLETED_DIR = os.path.join(self.BASE_DOWNLOAD_PATH, "completed")
+
+        os.makedirs(self.INCOMPLETED_DIR, exist_ok=True)
+        os.makedirs(self.COMPLETED_DIR, exist_ok=True)
 
         self.download_semaphore = asyncio.Semaphore(3)
 
@@ -60,18 +64,23 @@ class TelethonDownloaderBot:
             elif hasattr(message.peer_id, 'user_id') and message.peer_id.user_id:
                 origin_group = message.peer_id.user_id
 
-        progress_bar = ProgressBar(initial_message, file_info, self.logger, self.DOWNLOAD_DIR, file_size, start_time, origin_group)
+        progress_bar = ProgressBar(initial_message, file_info, self.logger, self.INCOMPLETED_DIR, file_size, start_time, origin_group)
         self.logger.info(f"Starting download of {file_info} from chat ID {origin_group}")
         async with self.download_semaphore:
             try:
-                file_path = await self.bot.download_media(message, file=self.DOWNLOAD_DIR, progress_callback=progress_bar.progress_callback)
+                downloaded_file_path = await self.bot.download_media(message, file=self.INCOMPLETED_DIR, progress_callback=progress_bar.progress_callback)
                 end_time = time.time()
-                self.logger.info(f"Finished download of {file_info} to {file_path}")
+                
+                # Move file to completed directory
+                final_file_path = os.path.join(self.COMPLETED_DIR, os.path.basename(downloaded_file_path))
+                os.rename(downloaded_file_path, final_file_path)
+
+                self.logger.info(f"Finished download of {file_info} to {final_file_path}")
                 
                 # Add a small delay to ensure the last progress update is sent
                 await asyncio.sleep(0.5)
 
-                summary = DownloadSummary(message, file_info, self.DOWNLOAD_DIR, start_time, end_time, file_size, origin_group)
+                summary = DownloadSummary(message, file_info, self.COMPLETED_DIR, start_time, end_time, file_size, origin_group)
                 summary_text = summary.generate_summary()
                 await initial_message.edit(summary_text)
             except Exception as e:
