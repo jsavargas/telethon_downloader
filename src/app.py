@@ -8,6 +8,11 @@ from download_summary import DownloadSummary
 from env_config import EnvConfig
 from download_manager import DownloadManager
 from config_manager import ConfigManager
+from welcome_message import WelcomeMessage
+from bot_versions import BotVersions
+from telethon import __version__ as telethon_version
+
+VERSION = "5.0.0-r5"
 
 class TelethonDownloaderBot:
     def __init__(self):
@@ -29,6 +34,7 @@ class TelethonDownloaderBot:
         self.config_manager = ConfigManager(self.env_config.PATH_CONFIG, self.logger, self.env_config.PUID, self.env_config.PGID)
         self.download_manager = DownloadManager(self.env_config.BASE_DOWNLOAD_PATH, self.config_manager, self.logger, self.env_config.PUID, self.env_config.PGID)
         self.download_semaphore = asyncio.Semaphore(3)
+        self.welcome_message_generator = WelcomeMessage(BotVersions(VERSION, telethon_version), self.env_config, self.logger, self.download_manager)
 
         self._add_handlers()
 
@@ -92,9 +98,9 @@ class TelethonDownloaderBot:
 
     async def run(self):
         await self.bot.start(bot_token=self.BOT_TOKEN)
-        self.logger.info("Bot started.")
+        self.welcome_message_generator.log_welcome_message()
         try:
-            await self.bot.send_message(self.AUTHORIZED_USER_IDS[0], "Bot has started!")
+            await self.bot.send_message(self.AUTHORIZED_USER_IDS[0], self.welcome_message_generator.get_message())
         except Exception as e:
             self.logger.error(f"Error sending start message to authorized user: {e}")
         await self.bot.run_until_disconnected()
