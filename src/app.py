@@ -185,7 +185,8 @@ class TelethonDownloaderBot:
                     self.downloaded_files[message_id]['browser_chat_id'] = event.chat_id
                     self.downloaded_files[message_id]['browser_message_id'] = event.message_id # This is the message with the buttons
                     if self.keyboard_manager:
-                        text, buttons = await self.keyboard_manager.send_directory_browser(message_id, file_info['current_dir'])
+                        summary_text = file_info.get('summary_text', "")
+                        text, buttons = await self.keyboard_manager.send_directory_browser(message_id, file_info['current_dir'], summary_text=summary_text)
                         await event.edit(text, buttons=buttons)
                     else:
                         await event.answer("Keyboard manager not initialized.")

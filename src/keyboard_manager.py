@@ -7,7 +7,7 @@ class KeyboardManager:
         self.logger = logger
         self.base_download_path = base_download_path
 
-    async def send_directory_browser(self, message_id, current_dir, page=0):
+    async def send_directory_browser(self, message_id, current_dir, page=0, summary_text=""):
         all_items = os.listdir(current_dir)
         self.logger.info(f"Items in {current_dir}: {all_items}")
         dirs = [d for d in all_items if os.path.isdir(os.path.join(current_dir, d))]
@@ -42,6 +42,12 @@ class KeyboardManager:
         buttons.append([KeyboardButtonCallback("New Folder", data=f"new_{message_id}".encode('utf-8'))])
         buttons.append([KeyboardButtonCallback("Cancel", data=f"cancel_{message_id}".encode('utf-8'))])
 
-        text = f"""Current Directory: {current_dir}
+        browser_text = f"""Current Directory: {current_dir}
 Page: {page + 1}/{total_pages if total_pages > 0 else 1}"""
+        
+        if summary_text:
+            text = f"{summary_text}\n\n{browser_text}"
+        else:
+            text = browser_text
+            
         return text, buttons
