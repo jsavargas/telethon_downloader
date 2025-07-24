@@ -103,10 +103,22 @@ class DownloadManager:
             try:
                 os.chmod(final_file_path, 0o644) # Set read/write for owner, read-only for others
                 self.logger.info(f"Changed permissions of file {final_file_path} to 0o644")
+                return final_file_path
             except Exception as e:
                 self.logger.error(f"Error changing permissions of {final_file_path}: {e}")
-
-            return final_file_path
+                return final_file_path # Return path even if permissions fail
         except Exception as e:
-            self.logger.error(f"Error moving file {downloaded_file_path} to {target_completed_dir}: {e}")
+            self.logger.error(f"Error in move_to_completed for {downloaded_file_path}: {e}")
             return downloaded_file_path # Return original path if move fails
+
+    async def move_file_and_update_message(self, event, message_id, file_path, destination_dir):
+        try:
+            file_name = os.path.basename(file_path)
+            new_file_path = os.path.join(destination_dir, file_name)
+            os.rename(file_path, new_file_path)
+            await event.edit(f"File moved successfully to {new_file_path}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error moving file: {e}")
+            await event.answer(f"Error moving file: {e}")
+            return False
