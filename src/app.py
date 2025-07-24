@@ -234,7 +234,7 @@ Page: {page + 1}/{total_pages if total_pages > 0 else 1}"""
             new_file_path = os.path.join(destination_dir, file_name)
             os.rename(file_path, new_file_path)
             del self.downloaded_files[message_id]
-            await event.edit_message(f"File moved successfully to {new_file_path}")
+            await event.edit(f"File moved successfully to {new_file_path}")
         except Exception as e:
             self.logger.error(f"Error moving file: {e}")
             await event.answer(f"Error moving file: {e}")
