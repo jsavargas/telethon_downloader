@@ -29,4 +29,8 @@ class WelcomeMessage:
         self.logger.info(f"MAX_CONCURRENT_TRANSMISSIONS  : {self.env_config.MAX_CONCURRENT_TRANSMISSIONS}")
 
     def get_message(self):
-        return f"Bot has started! Version: {self.versions.bot_version}"
+        return (
+            f"Telegram Downloader Bot Started\n\n"
+            f"bot version: {self.versions.bot_version}\n"
+            f"teleton version: {self.versions.telethon_version}"
+        )
