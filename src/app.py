@@ -151,6 +151,13 @@ class TelethonDownloaderBot:
 
                     summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, channel_id)
                     summary_text = summary.generate_summary()
+
+                    self.downloaded_files[message.id] = {
+                        'file_path': final_file_path,
+                        'current_dir': self.env_config.BASE_DOWNLOAD_PATH, # Start navigation from base download path
+                        'summary_text': summary_text
+                    }
+
                     buttons = summary.get_buttons()
                     try:
                         await initial_message.edit(summary_text, buttons=buttons.rows)
@@ -184,8 +191,9 @@ class TelethonDownloaderBot:
                         await event.answer("Keyboard manager not initialized.")
             elif action == 'cancel':
                 if message_id in self.downloaded_files:
+                    summary_text = self.downloaded_files[message_id].get('summary_text', "Download operation cancelled.")
                     del self.downloaded_files[message_id]
-                    await event.edit("Download operation cancelled.")
+                    await event.edit(summary_text, buttons=None)
                 else:
                     await event.answer("File information not found.")
             elif action == 'new':
