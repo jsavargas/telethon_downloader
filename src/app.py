@@ -238,9 +238,14 @@ class TelethonDownloaderBot:
                     elif nav_action == 'this':
                         file_info = self.downloaded_files[message_id]
                         file_path = file_info['file_path']
-                        destination_dir = current_dir_from_state # Use current_dir from state
-                        if await self.download_manager.move_file_and_update_message(event, message_id, file_path, destination_dir):
+                        destination_dir = current_dir_from_state
+                        summary_text = file_info.get('summary_text', "")
+                        new_file_path = self.download_manager.move_file(file_path, destination_dir)
+                        if new_file_path:
+                            await event.edit(f"{summary_text}\n\nFile moved successfully to {new_file_path}", buttons=None)
                             del self.downloaded_files[message_id]
+                        else:
+                            await event.edit(f"{summary_text}\n\nError moving file.", buttons=None)
                         return
                     
                     # Use the updated current_dir from state for sending the browser
@@ -257,17 +262,7 @@ class TelethonDownloaderBot:
             self.logger.error(f"Unhandled exception in handle_callback_query: {e}")
             await event.answer(f"Error processing callback: {e}")
 
-    async def _move_file(self, event, message_id, file_path, destination_dir):
-        try:
-            file_name = os.path.basename(file_path)
-            new_file_path = os.path.join(destination_dir, file_name)
-            os.rename(file_path, new_file_path)
-            await event.edit(f"File moved successfully to {new_file_path}")
-            return True
-        except Exception as e:
-            self.logger.error(f"Error moving file: {e}")
-            await event.answer(f"Error moving file: {e}")
-            return False
+    
 
     async def handle_new_folder_name(self, event):
         try:
