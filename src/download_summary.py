@@ -46,3 +46,17 @@ class DownloadSummary:
         except Exception as e:
             self.logger.error(f"Error getting buttons for download summary: {e}")
             return None
+
+    def to_dict(self):
+        return {
+            'message_id': self.message.id,
+            'file_info': self.file_info,
+            'download_dir': self.download_dir,
+            'start_time': self.start_time,
+            'end_time': self.end_time,
+            'file_size': self.file_size,
+            'origin_group': self.origin_group,
+            'channel_id': self.channel_id,
+            'summary_text': self.generate_summary(),
+            'status': 'completed' # Initial status
+        }

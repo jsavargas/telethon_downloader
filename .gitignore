@@ -9,3 +9,4 @@ docker-compose.dev.yml
 *.session-journal
 *.example
 config.ini
+download_history.json

@@ -2,8 +2,9 @@ import configparser
 import os
 
 class ConfigManager:
-    def __init__(self, config_path, logger, puid=None, pgid=None):
-        self.config_path = config_path
+    def __init__(self, config_dir, logger, puid=None, pgid=None):
+        self.config_dir = config_dir
+        self.config_path = os.path.join(config_dir, 'config.ini')
         self.config = configparser.ConfigParser()
         self.logger = logger
         self.puid = puid
