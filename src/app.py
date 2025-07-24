@@ -11,6 +11,7 @@ from config_manager import ConfigManager
 from welcome_message import WelcomeMessage
 from bot_versions import BotVersions
 from telethon import __version__ as telethon_version
+from telethon_utils import TelethonUtils
 
 VERSION = "5.0.0-r5"
 
@@ -44,36 +45,17 @@ class TelethonDownloaderBot:
 
     async def download_media(self, event):
         message = event.message
-        file_extension = ""
-        if message.document:
-            file_name_attr = next((attr for attr in message.document.attributes if hasattr(attr, 'file_name')), None)
-            file_info = file_name_attr.file_name if file_name_attr else 'unknown_document'
-            file_extension = os.path.splitext(file_info)[1].lstrip('.')
-        elif message.photo:
-            file_info = f"photo_{message.id}.jpg" # Telethon will generate a name, but we can use this for display
-            file_extension = "jpg"
+        file_info = TelethonUtils.get_file_info(message)
+        file_extension = TelethonUtils.get_file_extension(message)
 
         target_download_dir, final_destination_dir = self.download_manager.get_download_dirs(file_extension)
 
         initial_message = await message.reply(f"Downloading {file_info}...")
         start_time = time.time()
 
-        file_size = 0
-        if message.document:
-            file_size = message.document.size
-        elif message.photo:
-            largest_size = 0
-            for s in message.photo.sizes:
-                if hasattr(s, 'size') and s.size > largest_size:
-                    largest_size = s.size
-            file_size = largest_size
+        file_size = TelethonUtils.get_file_size(message)
 
-        origin_group = "Unknown"
-        if message.peer_id:
-            if hasattr(message.peer_id, 'channel_id') and message.peer_id.channel_id:
-                origin_group = message.peer_id.channel_id
-            elif hasattr(message.peer_id, 'user_id') and message.peer_id.user_id:
-                origin_group = message.peer_id.user_id
+        origin_group = TelethonUtils.get_origin_group(message)
 
         progress_bar = None
         if self.env_config.PROGRESS_DOWNLOAD.lower() == 'true':
