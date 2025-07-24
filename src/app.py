@@ -280,7 +280,6 @@ class TelethonDownloaderBot:
             os.makedirs(new_folder_path, exist_ok=True)
             self.download_manager._apply_permissions_and_ownership(new_folder_path)
             self.downloaded_files[target_message_id]['waiting_for_folder_name'] = False
-            await event.reply(f"Folder '{new_folder_name}' created successfully in {current_dir}.")
 
             # Move the file to the new folder
             file_info = self.downloaded_files[target_message_id]
@@ -288,10 +287,10 @@ class TelethonDownloaderBot:
             new_file_path = self.download_manager.move_file(file_path, new_folder_path)
 
             if new_file_path:
-                await event.reply(f"File moved successfully to {new_file_path}")
+                await event.reply(f"Folder '{new_folder_name}' created and file moved successfully to {new_file_path}")
                 del self.downloaded_files[target_message_id]
             else:
-                await event.reply("Error moving file.")
+                await event.reply(f"Folder '{new_folder_name}' created, but there was an error moving the file.")
 
             # Refresh the directory browser
             if browser_message_id and browser_chat_id:
