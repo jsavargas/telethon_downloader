@@ -203,17 +203,17 @@ class TelethonDownloaderBot:
             buttons = []
             for i in range(0, len(current_page_dirs), 2):
                 row = []
-                row.append(KeyboardButtonCallback(current_page_dirs[i], data=f"dir_{message_id}_{current_page_dirs[i]}".encode('utf-8')))
+                row.append(KeyboardButtonCallback(current_page_dirs[i], data=f"dir_{message_id}_{current_page_dirs[i]}_{page}".encode('utf-8')))
                 if i + 1 < len(current_page_dirs):
-                    row.append(KeyboardButtonCallback(current_page_dirs[i+1], data=f"dir_{message_id}_{current_page_dirs[i+1]}".encode('utf-8')))
+                    row.append(KeyboardButtonCallback(current_page_dirs[i+1], data=f"dir_{message_id}_{current_page_dirs[i+1]}_{page}".encode('utf-8')))
                 buttons.append(row)
 
             nav_buttons = []
             if current_dir != self.env_config.BASE_DOWNLOAD_PATH:
-                nav_buttons.append(KeyboardButtonCallback("Up", data=f"nav_{message_id}_up_{os.path.dirname(current_dir)}".encode('utf-8')))
+                nav_buttons.append(KeyboardButtonCallback("Up", data=f"nav_{message_id}_up_{os.path.dirname(current_dir)}_{page}".encode('utf-8')))
             if page > 0:
                 nav_buttons.append(KeyboardButtonCallback("Back", data=f"nav_{message_id}_back_{current_dir}_{page}".encode('utf-8')))
-            nav_buttons.append(KeyboardButtonCallback("This", data=f"nav_{message_id}_this_{current_dir}".encode('utf-8')))
+            nav_buttons.append(KeyboardButtonCallback("This", data=f"nav_{message_id}_this_{current_dir}_{page}".encode('utf-8')))
             if page < total_pages - 1:
                 nav_buttons.append(KeyboardButtonCallback("Next", data=f"nav_{message_id}_next_{current_dir}_{page}".encode('utf-8')))
             buttons.append(nav_buttons)
