@@ -15,6 +15,7 @@ from telethon.tl.types import KeyboardButtonCallback, ReplyInlineMarkup
 from telethon_utils import TelethonUtils
 from urllib.parse import quote, unquote
 from keyboard_manager import KeyboardManager
+from download_history_manager import DownloadHistoryManager
 
 VERSION = "5.0.0-r5"
 
@@ -56,6 +57,10 @@ class TelethonDownloaderBot:
             self.config_manager = ConfigManager(self.env_config.PATH_CONFIG, self.logger, self.env_config.PUID, self.env_config.PGID)
             self.logger.info("ConfigManager initialized.")
 
+            # Ensure the config directory exists
+            os.makedirs(self.env_config.PATH_CONFIG, exist_ok=True)
+            self.logger.info(f"Ensured config directory exists: {self.env_config.PATH_CONFIG}")
+
             self.download_manager = DownloadManager(self.env_config.BASE_DOWNLOAD_PATH, self.config_manager, self.logger, self.env_config.PUID, self.env_config.PGID, self.env_config.DOWNLOAD_PATH_TORRENTS)
             self.logger.info("DownloadManager initialized.")
 
@@ -73,6 +78,10 @@ class TelethonDownloaderBot:
 
             self.keyboard_manager = KeyboardManager(self.logger, self.env_config.BASE_DOWNLOAD_PATH)
             self.logger.info("KeyboardManager initialized.")
+
+            self.HISTORY_FILE_PATH = os.path.join(self.env_config.PATH_CONFIG, 'download_history.json')
+            self.download_history_manager = DownloadHistoryManager(self.HISTORY_FILE_PATH)
+            self.logger.info("DownloadHistoryManager initialized.")
 
             self._add_handlers()
             self.logger.info("Event handlers added.")
@@ -106,6 +115,10 @@ class TelethonDownloaderBot:
             start_time = time.time()
 
             file_size = self.telethon_utils.get_file_size(message)
+
+            # Add to history with 'downloading' status
+            download_summary_downloading = DownloadSummary(message, file_info, final_destination_dir, start_time, 0, file_size, origin_group, channel_id, status='downloading')
+            self.download_history_manager.add_or_update_entry(download_summary_downloading.to_dict())
 
             progress_bar = None
             if self.env_config.PROGRESS_DOWNLOAD.lower() == 'true':
@@ -149,8 +162,9 @@ class TelethonDownloaderBot:
                     # Add a small delay to ensure the last progress update is sent
                     await asyncio.sleep(0.5)
 
-                    summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, channel_id)
+                    summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, channel_id, status='completed')
                     summary_text = summary.generate_summary()
+                    self.download_history_manager.add_or_update_entry(summary.to_dict())
 
                     self.downloaded_files[message.id] = {
                         'file_path': final_file_path,

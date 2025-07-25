@@ -2,7 +2,7 @@ import time
 import logging
 
 class DownloadSummary:
-    def __init__(self, message, file_info, download_dir, start_time, end_time, file_size, origin_group, channel_id=None, logger=None):
+    def __init__(self, message, file_info, download_dir, start_time, end_time, file_size, origin_group, channel_id=None, logger=None, status='downloading'):
         self.message = message
         self.file_info = file_info
         self.download_dir = download_dir
@@ -12,6 +12,7 @@ class DownloadSummary:
         self.origin_group = origin_group
         self.channel_id = channel_id
         self.logger = logger if logger else logging.getLogger(__name__)
+        self.status = status
 
     def generate_summary(self):
         try:
@@ -52,11 +53,12 @@ class DownloadSummary:
             'message_id': self.message.id,
             'file_info': self.file_info,
             'download_dir': self.download_dir,
-            'start_time': self.start_time,
-            'end_time': self.end_time,
+            'start_time': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.start_time)),
+            'end_time': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.end_time)),
             'file_size': self.file_size,
             'origin_group': self.origin_group,
             'channel_id': self.channel_id,
             'summary_text': self.generate_summary(),
-            'status': 'completed' # Initial status
+            'status': self.status,
+            'download_date': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.start_time))
         }
