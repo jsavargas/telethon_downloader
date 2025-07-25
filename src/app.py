@@ -172,9 +172,15 @@ class TelethonDownloaderBot:
                         'summary_text': summary_text
                     }
 
-                    buttons = summary.get_buttons()
+                    buttons = None
+                    if file_extension.lower() != 'torrent':
+                        buttons = summary.get_buttons()
+
                     try:
-                        await initial_message.edit(summary_text, buttons=buttons.rows)
+                        if buttons:
+                            await initial_message.edit(summary_text, buttons=buttons.rows)
+                        else:
+                            await initial_message.edit(summary_text)
                     except Exception as edit_error:
                         self.logger.error(f"Error editing message with buttons for {file_info}: {edit_error}")
                         await initial_message.edit(f"Download completed, but error displaying buttons: {edit_error}")

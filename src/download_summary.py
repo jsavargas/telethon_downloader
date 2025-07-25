@@ -22,14 +22,14 @@ class DownloadSummary:
 
             summary_text = (
                 f"Download completed\n\n"
-                f"File Name: {self.file_info}\n"
-                f"Download Folder: {self.download_dir}\n"
-                f"File Size: {self.file_size / (1024*1024):.2f} MB\n"
-                f"Start Time: {time.strftime('%H:%M:%S', time.localtime(self.start_time))}\n"
-                f"End Time: {time.strftime('%H:%M:%S', time.localtime(self.end_time))}\n"
-                f"Download Time: {download_time:.2f} seconds\n"
-                f"Download Speed: {download_speed / 1024:.2f} KB/s\n"
-                f"Origin Group: {self.origin_group}"
+                f"**File Name:** {self.file_info}\n"
+                f"**Download Folder:** {self.download_dir}\n"
+                f"**File Size:** {self.file_size / (1024*1024):.2f} MB\n"
+                f"**Start Time:** {time.strftime('%H:%M:%S', time.localtime(self.start_time))}\n"
+                f"**End Time:** {time.strftime('%H:%M:%S', time.localtime(self.end_time))}\n"
+                f"**Download Time:** {download_time:.2f} seconds\n"
+                f"**Download Speed:** {download_speed / 1024:.2f} KB/s\n"
+                f"**Origin Group:** {self.origin_group}"
             )
 
             if self.channel_id:
