@@ -30,14 +30,14 @@ class ProgressBar:
 
                 progress_text = (
                     f"Downloading {self.file_info}\n\n"
-                    f"File Name: {self.file_info}\n"
-                    f"Download Folder: {self.download_dir}\n"
-                    f"File Size: {self.total_file_size / (1024*1024):.2f} MB\n"
-                    f"Start Time: {time.strftime('%H:%M:%S', time.localtime(self.start_time))}\n"
-                    f"Progress: {current / (1024*1024):.2f}MB / {total / (1024*1024):.2f}MB ({percentage:.2f}%)\n"
-                    f"Speed: {speed / (1024*1024):.2f}MB/s\n"
-                    f"ETA: {eta:.0f}s\n"
-                    f"Origin Group: {self.origin_group}"
+                    f"**File Name:** {self.file_info}\n"
+                    f"**Download Folder:** {self.download_dir}\n"
+                    f"**File Size:** {self.total_file_size / (1024*1024):.2f} MB\n"
+                    f"**Start Time:** {time.strftime('%H:%M:%S', time.localtime(self.start_time))}\n"
+                    f"**Progress:** {current / (1024*1024):.2f}MB / {total / (1024*1024):.2f}MB ({percentage:.2f}%)\n"
+                    f"**Speed:** {speed / (1024*1024):.2f}MB/s\n"
+                    f"**ETA:** {eta:.0f}s\n"
+                    f"**Origin Group:** {self.origin_group}"
                 )
 
                 if self.channel_id:
