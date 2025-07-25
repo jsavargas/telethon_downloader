@@ -84,7 +84,7 @@ class TelethonDownloaderBot:
             self.download_history_manager = DownloadHistoryManager(self.HISTORY_FILE_PATH)
             self.logger.info("DownloadHistoryManager initialized.")
 
-            self.commands_manager = Commands(self.welcome_message_generator, self.logger)
+            self.commands_manager = Commands(VERSION, self.welcome_message_generator, self.logger)
             self.logger.info("Commands manager initialized.")
 
             self._add_handlers()

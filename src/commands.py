@@ -1,14 +1,20 @@
 import logging
 
 class Commands:
-    def __init__(self, welcome_message_generator, logger=None):
+    def __init__(self, bot_version, welcome_message_generator, logger=None):
         self.logger = logger if logger else logging.getLogger(__name__)
+        self.bot_version = bot_version
         self.welcome_message_generator = welcome_message_generator
         self.command_dict = {
-            "/version": self._handle_version,
+            "/version": self.version,
+            "/start": self.start,
         }
 
-    async def _handle_version(self, event):
+    async def version(self, event):
+        version_message = f"Bot Version: {self.bot_version}"
+        await event.reply(version_message)
+
+    async def start(self, event):
         version_message = self.welcome_message_generator.get_message()
         await event.reply(version_message)
 
