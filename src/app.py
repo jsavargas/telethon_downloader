@@ -96,7 +96,6 @@ class TelethonDownloaderBot:
     def _add_handlers(self):
         try:
             self.bot.add_event_handler(self.download_media, events.NewMessage(incoming=True, func=lambda e: (e.message.document or e.message.photo) and e.sender_id in self.AUTHORIZED_USER_IDS))
-            self.bot.add_event_handler(self.start_command, events.NewMessage(pattern='/start', incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS))
             self.bot.add_event_handler(self.handle_callback_query, events.CallbackQuery)
             self.bot.add_event_handler(self.handle_new_folder_name, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and any(self.downloaded_files[msg_id].get('waiting_for_folder_name', False) for msg_id in self.downloaded_files)))
             self.bot.add_event_handler(self.handle_text_commands, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and e.message.text.startswith('/')))
@@ -329,12 +328,6 @@ class TelethonDownloaderBot:
         except Exception as e:
             self.logger.error(f"Error creating new folder: {e}")
             await event.reply(f"Error creating folder: {e}")
-
-    async def start_command(self, event):
-        try:
-            await event.reply("Hello! Send me a document and I will download it.")
-        except Exception as e:
-            self.logger.error(f"Error in start_command: {e}")
 
     async def handle_text_commands(self, event):
         message_text = event.message.text
