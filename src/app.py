@@ -16,6 +16,7 @@ from telethon_utils import TelethonUtils
 from urllib.parse import quote, unquote
 from keyboard_manager import KeyboardManager
 from download_history_manager import DownloadHistoryManager
+from commands import Commands
 
 VERSION = "5.0.0-r5"
 
@@ -83,6 +84,9 @@ class TelethonDownloaderBot:
             self.download_history_manager = DownloadHistoryManager(self.HISTORY_FILE_PATH)
             self.logger.info("DownloadHistoryManager initialized.")
 
+            self.commands_manager = Commands(self.welcome_message_generator, self.logger)
+            self.logger.info("Commands manager initialized.")
+
             self._add_handlers()
             self.logger.info("Event handlers added.")
         except Exception as e:
@@ -95,6 +99,7 @@ class TelethonDownloaderBot:
             self.bot.add_event_handler(self.start_command, events.NewMessage(pattern='/start', incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS))
             self.bot.add_event_handler(self.handle_callback_query, events.CallbackQuery)
             self.bot.add_event_handler(self.handle_new_folder_name, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and any(self.downloaded_files[msg_id].get('waiting_for_folder_name', False) for msg_id in self.downloaded_files)))
+            self.bot.add_event_handler(self.handle_text_commands, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and e.message.text.startswith('/')))
         except Exception as e:
             self.logger.error(f"Error adding event handlers: {e}")
 
@@ -330,6 +335,12 @@ class TelethonDownloaderBot:
             await event.reply("Hello! Send me a document and I will download it.")
         except Exception as e:
             self.logger.error(f"Error in start_command: {e}")
+
+    async def handle_text_commands(self, event):
+        message_text = event.message.text
+        if message_text.startswith('/'):
+            command_name = message_text.split(' ')[0]
+            await self.commands_manager.execute_command(command_name, event)
 
     async def run(self):
         try:
