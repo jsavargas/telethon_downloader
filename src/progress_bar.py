@@ -17,7 +17,8 @@ class ProgressBar:
         try:
             percentage = (current / total) * 100
             elapsed_time = time.time() - self.start_time
-            
+            self.logger.info(f"progress_callback percentage: {percentage}")
+
             if percentage - self.last_percentage_sent >= self.progress_status_show or percentage == 100:
                 self.last_percentage_sent = percentage
 

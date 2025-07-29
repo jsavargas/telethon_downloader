@@ -115,7 +115,7 @@ class TelethonDownloaderBot:
 
             target_download_dir, final_destination_dir = self.download_manager.get_download_dirs(file_extension, origin_group, channel_id)
 
-            initial_message = await message.reply(f"Downloading {file_info}...")
+            initial_message = await message.reply(f"Added to queued {file_info}...")
             start_time = time.time()
 
             file_size = self.telethon_utils.get_file_size(message)
@@ -125,15 +125,17 @@ class TelethonDownloaderBot:
             self.download_history_manager.add_or_update_entry(download_summary_downloading.to_dict())
 
             progress_bar = None
-            if self.env_config.PROGRESS_DOWNLOAD.lower() == 'true':
-                progress_bar = ProgressBar(initial_message, file_info, self.logger, final_destination_dir, file_size, start_time, origin_group, int(self.env_config.PROGRESS_STATUS_SHOW), channel_id)
 
             if channel_id:
                 log_message_chat_id = f"Channel ID: {channel_id}"
             else:
                 log_message_chat_id = f"User ID: {origin_group}"
-            self.logger.info(f"Downloading of {file_info} from {log_message_chat_id}")
+            self.logger.info(f"Added to queued {file_info} from {log_message_chat_id}")
+
             async with self.download_semaphore:
+                start_time = time.time()
+                await initial_message.edit(f"Starting download of {file_info} from {log_message_chat_id}")
+
                 self.logger.info(f"Starting download of {file_info} from {log_message_chat_id}")
                 try:
                     media_to_download = None
@@ -143,7 +145,8 @@ class TelethonDownloaderBot:
                         media_to_download = message.photo
 
                     if media_to_download:
-                        if progress_bar:
+                        if self.env_config.PROGRESS_DOWNLOAD.lower() == 'true':
+                            progress_bar = ProgressBar(initial_message, file_info, self.logger, final_destination_dir, file_size, start_time, origin_group, int(self.env_config.PROGRESS_STATUS_SHOW), channel_id)
                             downloaded_file_path = await self.bot.download_media(media_to_download, file=target_download_dir, progress_callback=progress_bar.progress_callback)
                         else:
                             downloaded_file_path = await self.bot.download_media(media_to_download, file=target_download_dir)
