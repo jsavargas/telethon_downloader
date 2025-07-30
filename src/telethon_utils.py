@@ -71,7 +71,7 @@ class TelethonUtils:
                 file_name_attr = next((attr for attr in message.document.attributes if hasattr(attr, 'file_name')), None)
                 file_info = file_name_attr.file_name if file_name_attr else 'unknown_document'
             elif message.photo:
-                file_info = f"photo_{message.id}.jpg"
+                file_info = f"photo_{message.photo.id}.jpg"
             return file_info
         except Exception as e:
             self.logger.error(f"Error in get_file_info: {e}")
