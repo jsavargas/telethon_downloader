@@ -75,6 +75,8 @@ class TelethonDownloaderBot:
             self.logger.info("WelcomeMessageGenerator initialized.")
 
             self.downloaded_files = {}
+            self.download_cancellation_flags = {}
+            self.active_downloads = {}
             self.logger.info("Downloaded files dictionary initialized.")
 
             self.telethon_utils = TelethonUtils(self.logger)
@@ -115,9 +117,11 @@ class TelethonDownloaderBot:
             self.logger.error(f"Error adding event handlers: {e}")
 
     async def download_media(self, event):
+        self.logger.info(f"download_media triggered for message ID: {event.message.id}")
         await self.process_download(event.message.id, event.chat_id)
 
     async def process_download(self, message_id, user_id):
+        self.logger.info(f"process_download called for message ID: {message_id}")
         try:
             message = await self.bot.get_messages(user_id, ids=message_id)
 
@@ -135,6 +139,9 @@ class TelethonDownloaderBot:
             initial_message = await message.reply(f"Added to queued {file_info}...")
             start_time = time.time()
 
+            self.download_cancellation_flags[initial_message.id] = asyncio.Event()
+            self.logger.info(f"Populating download_cancellation_flags with message ID: {initial_message.id}")
+
             file_size = self.telethon_utils.get_file_size(message)
 
             original_filename = os.path.join(target_download_dir, file_info)
@@ -144,7 +151,7 @@ class TelethonDownloaderBot:
                     from_id_value = message.from_id.channel_id
                 elif hasattr(message.from_id, 'user_id'):
                     from_id_value = message.from_id.user_id
-            self.download_tracker.add_download(message.grouped_id, message.id, original_filename, message.media, from_id_value, user_id, file_info)
+            self.download_tracker.add_download(message.grouped_id, initial_message.id, original_filename, message.media, from_id_value, user_id, file_info)
 
             download_summary_downloading = DownloadSummary(message, file_info, final_destination_dir, start_time, 0, file_size, origin_group, channel_id, status='downloading')
             self.download_history_manager.add_or_update_entry(download_summary_downloading.to_dict())
@@ -170,11 +177,14 @@ class TelethonDownloaderBot:
                         media_to_download = message.photo
 
                     if media_to_download:
+                        download_path_with_filename = os.path.join(target_download_dir, file_info)
                         if self.env_config.PROGRESS_DOWNLOAD.lower() == 'true':
-                            progress_bar = ProgressBar(initial_message, file_info, self.logger, final_destination_dir, file_size, start_time, origin_group, int(self.env_config.PROGRESS_STATUS_SHOW), channel_id)
-                            downloaded_file_path = await self.bot.download_media(media_to_download, file=os.path.join(target_download_dir, file_info), progress_callback=progress_bar.progress_callback)
+                            progress_bar = ProgressBar(initial_message, file_info, self.logger, final_destination_dir, file_size, start_time, origin_group, int(self.env_config.PROGRESS_STATUS_SHOW), channel_id, self.download_cancellation_flags.get(initial_message.id))
+                            download_task = asyncio.create_task(self.bot.download_media(media_to_download, file=download_path_with_filename, progress_callback=progress_bar.progress_callback))
                         else:
-                            downloaded_file_path = await self.bot.download_media(media_to_download, file=os.path.join(target_download_dir, file_info))
+                            download_task = asyncio.create_task(self.bot.download_media(media_to_download, file=download_path_with_filename))
+                        self.active_downloads[initial_message.id] = download_task
+                        downloaded_file_path = await download_task
                     else:
                         self.logger.error(f"No downloadable media found in message {message.id}")
                         await initial_message.edit(f"Error: No downloadable media found in message.")
@@ -184,7 +194,7 @@ class TelethonDownloaderBot:
                     # Move file to completed directory
                     final_file_path = self.download_manager.move_to_completed(downloaded_file_path, final_destination_dir)
 
-                    self.downloaded_files[message.id] = {
+                    self.downloaded_files[initial_message.id] = {
                         'file_path': final_file_path,
                         'current_dir': self.env_config.BASE_DOWNLOAD_PATH # Start navigation from base download path
                     }
@@ -194,13 +204,13 @@ class TelethonDownloaderBot:
                     # Add a small delay to ensure the last progress update is sent
                     await asyncio.sleep(0.5)
 
-                    self.download_tracker.update_status(message.id, 'completed', final_file_path)
+                    self.download_tracker.update_status(initial_message.id, 'completed', os.path.basename(final_file_path))
 
                     summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, channel_id, status='completed')
                     summary_text = summary.generate_summary()
                     self.download_history_manager.add_or_update_entry(summary.to_dict())
 
-                    self.downloaded_files[message.id] = {
+                    self.downloaded_files[initial_message.id] = {
                         'file_path': final_file_path,
                         'current_dir': self.env_config.BASE_DOWNLOAD_PATH, # Start navigation from base download path
                         'summary_text': summary_text
@@ -218,6 +228,14 @@ class TelethonDownloaderBot:
                     except Exception as edit_error:
                         self.logger.error(f"Error editing message with buttons for {file_info}: {edit_error}")
                         await initial_message.edit(f"Download completed, but error displaying buttons: {edit_error}")
+                except asyncio.CancelledError:
+                    self.logger.info(f"Caught asyncio.CancelledError for download of {file_info} (message ID: {initial_message.id}).")
+                    self.download_tracker.update_status(initial_message.id, 'cancelled')
+                    self.download_tracker.remove_download(initial_message.id)
+                    if os.path.exists(download_path_with_filename):
+                        os.remove(download_path_with_filename)
+                        self.logger.info(f"Deleted partially downloaded file: {download_path_with_filename}")
+                    await initial_message.edit(f"Download of {file_info} cancelled.", buttons=None)
                 except Exception as e:
                     self.logger.error(f"Error downloading {file_info}: {e}")
                     await initial_message.edit(f"Error downloading {file_info}: {e}")
@@ -231,7 +249,24 @@ class TelethonDownloaderBot:
             parts = data.split('_')
             self.logger.info(f"Callback parts: {parts}")
             action_parts = data.split('_')
-            action = '_'.join(action_parts[:2]) if action_parts[0] == 'resume' else action_parts[0]
+            action = '_'.join(action_parts[:2]) if action_parts[0] == 'resume' or (action_parts[0] == 'cancel' and action_parts[1] == 'download') else action_parts[0]            
+            
+            if data.startswith('cancel_download'):
+                message_id = int(parts[2])
+                self.logger.info(f"Cancelling download for message ID: {message_id}")
+                await event.edit("Download cancelled.", buttons=None)
+                if message_id in self.download_cancellation_flags:
+                    self.download_cancellation_flags[message_id].set()
+                    self.logger.info(f"Cancellation flag set for message ID: {message_id}")
+                if message_id in self.active_downloads:
+                    self.active_downloads[message_id].cancel()
+                    self.logger.info(f"Download task cancelled for message ID: {message_id}")
+                    del self.active_downloads[message_id]
+                    del self.download_cancellation_flags[message_id]
+                else:
+                    await event.answer("Could not find download to cancel.")
+                return
+
             self.logger.info(f"Action: {action}")
 
             if action.startswith('resume'):

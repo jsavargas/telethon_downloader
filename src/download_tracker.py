@@ -75,6 +75,16 @@ class DownloadTracker:
                 return entry
         return None
 
+    def remove_download(self, message_id):
+        data = self._read_data()
+        initial_len = len(data)
+        data = [entry for entry in data if entry.get('message_id') != message_id]
+        if len(data) < initial_len:
+            self._write_data(data)
+            self.logger.info(f"Removed download with message_id {message_id} from tracker.")
+        else:
+            self.logger.warning(f"Could not find download with message_id {message_id} to remove.")
+
     def clear_pending_downloads(self):
         data = self._read_data()
         cleared_data = [d for d in data if d.get('status') != 'downloading']
