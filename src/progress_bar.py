@@ -17,11 +17,11 @@ class ProgressBar:
         try:
             percentage = (current / total) * 100
             elapsed_time = time.time() - self.start_time
-            self.logger.info(f"progress_callback percentage: {percentage}")
 
-            if percentage - self.last_percentage_sent >= self.progress_status_show or percentage == 100:
+            if percentage - self.last_percentage_sent >= self.progress_status_show or percentage == 100 or self.last_percentage_sent == -1:
                 self.last_percentage_sent = percentage
 
+                self.logger.info(f"progress_callback percentage: {self.file_info} {percentage}")
                 if elapsed_time > 0:
                     speed = current / elapsed_time
                     eta = (total - current) / speed if speed > 0 else 0
@@ -30,7 +30,7 @@ class ProgressBar:
                     eta = 0
 
                 progress_text = (
-                    f"Downloading {self.file_info}\n\n"
+                    f"Downloading \n\n"
                     f"**File Name:** {self.file_info}\n"
                     f"**Download Folder:** {self.download_dir}\n"
                     f"**File Size:** {self.total_file_size / (1024*1024):.2f} MB\n"
