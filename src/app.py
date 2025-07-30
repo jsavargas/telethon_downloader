@@ -145,15 +145,10 @@ class TelethonDownloaderBot:
             file_size = self.telethon_utils.get_file_size(message)
 
             original_filename = os.path.join(target_download_dir, file_info)
-            from_id_value = None
-            if message.from_id:
-                if hasattr(message.from_id, 'channel_id'):
-                    from_id_value = message.from_id.channel_id
-                elif hasattr(message.from_id, 'user_id'):
-                    from_id_value = message.from_id.user_id
-            self.download_tracker.add_download(message.grouped_id, initial_message.id, original_filename, message.media, from_id_value, user_id, file_info)
+            
+            self.download_tracker.add_download(message.grouped_id, initial_message.id, original_filename, message.media, origin_group, user_id, file_info)
 
-            download_summary_downloading = DownloadSummary(message, file_info, final_destination_dir, start_time, 0, file_size, origin_group, channel_id, status='downloading')
+            download_summary_downloading = DownloadSummary(message, file_info, final_destination_dir, start_time, 0, file_size, origin_group, user_id, channel_id, status='downloading')
             self.download_history_manager.add_or_update_entry(download_summary_downloading.to_dict())
 
             progress_bar = None
@@ -168,7 +163,7 @@ class TelethonDownloaderBot:
                 start_time = time.time()
                 await initial_message.edit(f"Starting download of {file_info} from {log_message_chat_id}")
 
-                self.logger.info(f"Starting download of {file_info} from {log_message_chat_id}")
+                self.logger.info(f"Starting download of {file_info} user_id {user_id} from {log_message_chat_id}")
                 try:
                     media_to_download = None
                     if message.document:
@@ -179,7 +174,7 @@ class TelethonDownloaderBot:
                     if media_to_download:
                         download_path_with_filename = os.path.join(target_download_dir, file_info)
                         if self.env_config.PROGRESS_DOWNLOAD.lower() == 'true':
-                            progress_bar = ProgressBar(initial_message, file_info, self.logger, final_destination_dir, file_size, start_time, origin_group, int(self.env_config.PROGRESS_STATUS_SHOW), channel_id, self.download_cancellation_flags.get(initial_message.id))
+                            progress_bar = ProgressBar(initial_message, file_info, self.logger, final_destination_dir, file_size, start_time, origin_group, user_id, int(self.env_config.PROGRESS_STATUS_SHOW), channel_id, self.download_cancellation_flags.get(initial_message.id))
                             download_task = asyncio.create_task(self.bot.download_media(media_to_download, file=download_path_with_filename, progress_callback=progress_bar.progress_callback))
                         else:
                             download_task = asyncio.create_task(self.bot.download_media(media_to_download, file=download_path_with_filename))
@@ -206,7 +201,7 @@ class TelethonDownloaderBot:
 
                     self.download_tracker.update_status(initial_message.id, 'completed', os.path.basename(final_file_path))
 
-                    summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, channel_id, status='completed')
+                    summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, status='completed')
                     summary_text = summary.generate_summary()
                     self.download_history_manager.add_or_update_entry(summary.to_dict())
 

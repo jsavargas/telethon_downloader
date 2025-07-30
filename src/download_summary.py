@@ -2,7 +2,7 @@ import time
 import logging
 
 class DownloadSummary:
-    def __init__(self, message, file_info, download_dir, start_time, end_time, file_size, origin_group, channel_id=None, logger=None, status='downloading'):
+    def __init__(self, message, file_info, download_dir, start_time, end_time, file_size, origin_group, user_id=None, channel_id=None, status='downloading'):
         self.message = message
         self.file_info = file_info
         self.download_dir = download_dir
@@ -10,8 +10,9 @@ class DownloadSummary:
         self.end_time = end_time
         self.file_size = file_size
         self.origin_group = origin_group
+        self.user_id = user_id
         self.channel_id = channel_id
-        self.logger = logger if logger else logging.getLogger(__name__)
+        self.logger = logging.getLogger(__name__)
         self.status = status
 
     def generate_summary(self):
@@ -29,6 +30,7 @@ class DownloadSummary:
                 f"**End Time:** {time.strftime('%H:%M:%S', time.localtime(self.end_time))}\n"
                 f"**Download Time:** {download_time:.2f} seconds\n"
                 f"**Download Speed:** {download_speed / 1024:.2f} KB/s\n"
+                f"**User Id:** {self.user_id}\n"
                 f"**Origin Group:** {self.origin_group}"
             )
 

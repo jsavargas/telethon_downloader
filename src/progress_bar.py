@@ -2,7 +2,7 @@ import time
 from telethon.tl.types import KeyboardButtonCallback, ReplyInlineMarkup
 
 class ProgressBar:
-    def __init__(self, initial_message, file_info, logger, download_dir, file_size, start_time, origin_group, progress_status_show, channel_id=None, cancellation_flag=None):
+    def __init__(self, initial_message, file_info, logger, download_dir, file_size, start_time, origin_group, user_id, progress_status_show, channel_id=None, cancellation_flag=None):
         self.initial_message = initial_message
         self.file_info = file_info
         self.logger = logger
@@ -10,6 +10,7 @@ class ProgressBar:
         self.total_file_size = file_size
         self.start_time = start_time
         self.origin_group = origin_group
+        self.user_id = user_id
         self.progress_status_show = progress_status_show
         self.channel_id = channel_id
         self.last_percentage_sent = -1
@@ -44,6 +45,7 @@ class ProgressBar:
                     f"**Progress:** {current / (1024*1024):.2f}MB / {total / (1024*1024):.2f}MB ({percentage:.2f}%)\n"
                     f"**Speed:** {speed / (1024*1024):.2f}MB/s\n"
                     f"**ETA:** {eta:.0f}s\n"
+                    f"**User Id:** {self.user_id}\n"
                     f"**Origin Group:** {self.origin_group}"
                 )
 
