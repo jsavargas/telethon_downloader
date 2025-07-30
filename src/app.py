@@ -18,7 +18,7 @@ from keyboard_manager import KeyboardManager
 from download_history_manager import DownloadHistoryManager
 from commands import Commands
 
-VERSION = "5.0.0-r5"
+VERSION = "4.0.10-r6"
 
 class TelethonDownloaderBot:
     def __init__(self):
@@ -120,7 +120,6 @@ class TelethonDownloaderBot:
 
             file_size = self.telethon_utils.get_file_size(message)
 
-            # Add to history with 'downloading' status
             download_summary_downloading = DownloadSummary(message, file_info, final_destination_dir, start_time, 0, file_size, origin_group, channel_id, status='downloading')
             self.download_history_manager.add_or_update_entry(download_summary_downloading.to_dict())
 
@@ -181,7 +180,7 @@ class TelethonDownloaderBot:
 
                     buttons = None
                     if file_extension.lower() != 'torrent':
-                        buttons = summary.get_buttons()
+                        buttons = summary.get_buttons(self.keyboard_manager)
 
                     try:
                         if buttons:
@@ -217,7 +216,7 @@ class TelethonDownloaderBot:
                         await event.edit(text, buttons=buttons)
                     else:
                         await event.answer("Keyboard manager not initialized.")
-            elif action == 'ok':
+            elif action == 'ok' or action == 'cancel':
                 if message_id in self.downloaded_files:
                     summary_text = self.downloaded_files[message_id].get('summary_text', "Download operation ok.")
                     del self.downloaded_files[message_id]

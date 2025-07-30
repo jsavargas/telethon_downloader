@@ -40,10 +40,9 @@ class DownloadSummary:
             self.logger.error(f"Error generating download summary: {e}")
             return "Error generating download summary."
 
-    def get_buttons(self):
+    def get_buttons(self, keyboard_manager):
         try:
-            from button_generator import ButtonGenerator # Import here to avoid circular dependency
-            return ButtonGenerator(self.logger).get_download_buttons(self.message.id)
+            return keyboard_manager.get_download_buttons(self.message.id)
         except Exception as e:
             self.logger.error(f"Error getting buttons for download summary: {e}")
             return None
