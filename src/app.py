@@ -21,7 +21,7 @@ from download_tracker import DownloadTracker
 from resume_manager import ResumeManager
 from pending_downloads_manager import PendingDownloadsManager
 
-VERSION = "4.0.10-r6"
+VERSION = "4.0.10-r7"
 
 class TelethonDownloaderBot:
     def __init__(self):

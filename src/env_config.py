@@ -16,7 +16,7 @@ class EnvConfig:
             self.YTDLP_VERSION = os.environ.get('YTDLP_VERSION', 'N/A')
             self.PROGRESS_DOWNLOAD = os.environ.get('PROGRESS_DOWNLOAD', 'True')
             self.PROGRESS_STATUS_SHOW = os.environ.get('PROGRESS_STATUS_SHOW', '10')
-            self.MAX_CONCURRENT_TASKS = os.environ.get('MAX_CONCURRENT_TASKS', '4')
+            self.MAX_CONCURRENT_TASKS = os.environ.get("TG_MAX_PARALLEL") or os.environ.get('MAX_CONCURRENT_TASKS', '4')
             self.DOWNLOAD_PATH_TORRENTS = os.environ.get('DOWNLOAD_PATH_TORRENTS', '/watch')
         except Exception as e:
             self.logger.error(f"Error initializing EnvConfig: {e}")
