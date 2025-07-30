@@ -1,0 +1,58 @@
+import json
+import os
+from datetime import datetime
+
+class DownloadTracker:
+    def __init__(self, config_path, logger):
+        self.file_path = os.path.join(config_path, 'download-files.json')
+        self.logger = logger
+        self._ensure_file_exists()
+
+    def _ensure_file_exists(self):
+        if not os.path.exists(self.file_path):
+            with open(self.file_path, 'w') as f:
+                json.dump([], f)
+
+    def _read_data(self):
+        try:
+            with open(self.file_path, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            return []
+
+    def _write_data(self, data):
+        with open(self.file_path, 'w') as f:
+            json.dump(data, f, indent=2)
+
+    def add_download(self, user_id, origin_group, media_group_id, message_id, original_filename, media):
+        new_entry = {
+            "user_id": user_id,
+            "origin_group": origin_group,
+            "media_group_id": media_group_id,
+            "message_id": message_id,
+            "original_filename": original_filename,
+            "download_date": datetime.now().isoformat(),
+            "new_filename": None,
+            "update_date": None,
+            "media": str(media),
+            "status": "downloading"
+        }
+        
+        data = self._read_data()
+        data.append(new_entry)
+        self._write_data(data)
+        self.logger.info(f"Added new download to tracker: {message_id}")
+
+    def update_status(self, message_id, new_status, new_filename=None):
+        data = self._read_data()
+        for entry in data:
+            if entry['message_id'] == message_id:
+                entry['status'] = new_status
+                if new_status == 'completed':
+                    entry['download_date'] = datetime.now().isoformat()
+                if new_filename:
+                    entry['original_filename'] = new_filename
+                self._write_data(data)
+                self.logger.info(f"Updated download status for {message_id} to {new_status}")
+                return
+        self.logger.warning(f"Could not find download with message_id {message_id} to update status.")

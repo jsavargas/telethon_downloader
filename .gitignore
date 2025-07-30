@@ -1,5 +1,6 @@
+config/
 download/
-watch
+watch/
 __pycache__/
 docker-compose.dev.yml
 *.sh
@@ -8,6 +9,5 @@ docker-compose.dev.yml
 *.session
 *.session-journal
 *.example
-config.ini
 download_history.json
 *.ruls

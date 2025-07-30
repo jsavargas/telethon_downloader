@@ -20,7 +20,7 @@ class DownloadManager:
             self._apply_permissions_and_ownership(self.default_completed_dir)
 
             # Temporary directory for in-progress downloads when a specific final path is given
-            self.temp_incompleted_dir = os.path.join(self.base_download_path, "temp_incompleted")
+            self.temp_incompleted_dir = self.default_incompleted_dir
             os.makedirs(self.temp_incompleted_dir, exist_ok=True)
             self._apply_permissions_and_ownership(self.temp_incompleted_dir)
         except Exception as e:

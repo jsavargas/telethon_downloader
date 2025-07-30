@@ -17,6 +17,7 @@ from urllib.parse import quote, unquote
 from keyboard_manager import KeyboardManager
 from download_history_manager import DownloadHistoryManager
 from commands import Commands
+from download_tracker import DownloadTracker
 
 VERSION = "4.0.10-r6"
 
@@ -87,6 +88,9 @@ class TelethonDownloaderBot:
             self.commands_manager = Commands(VERSION, self.welcome_message_generator, self.logger)
             self.logger.info("Commands manager initialized.")
 
+            self.download_tracker = DownloadTracker(self.env_config.PATH_CONFIG, self.logger)
+            self.logger.info("DownloadTracker initialized.")
+
             self._add_handlers()
             self.logger.info("Event handlers added.")
         except Exception as e:
@@ -119,6 +123,9 @@ class TelethonDownloaderBot:
             start_time = time.time()
 
             file_size = self.telethon_utils.get_file_size(message)
+
+            original_filename = os.path.join(target_download_dir, file_info)
+            self.download_tracker.add_download(message.sender_id, origin_group, message.grouped_id, message.id, original_filename, message.media)
 
             download_summary_downloading = DownloadSummary(message, file_info, final_destination_dir, start_time, 0, file_size, origin_group, channel_id, status='downloading')
             self.download_history_manager.add_or_update_entry(download_summary_downloading.to_dict())
@@ -167,6 +174,8 @@ class TelethonDownloaderBot:
                     
                     # Add a small delay to ensure the last progress update is sent
                     await asyncio.sleep(0.5)
+
+                    self.download_tracker.update_status(message.id, 'completed', final_file_path)
 
                     summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, channel_id, status='completed')
                     summary_text = summary.generate_summary()
@@ -268,6 +277,7 @@ class TelethonDownloaderBot:
                         summary_text = file_info.get('summary_text', "")
                         new_file_path = self.download_manager.move_file(file_path, destination_dir)
                         if new_file_path:
+                            self.download_tracker.update_status(message_id, 'completed', new_file_path)
                             await event.edit(f"{summary_text}\n\nFile moved successfully to {new_file_path}", buttons=None)
                             del self.downloaded_files[message_id]
                         else:
@@ -318,6 +328,7 @@ class TelethonDownloaderBot:
             new_file_path = self.download_manager.move_file(file_path, new_folder_path)
 
             if new_file_path:
+                self.download_tracker.update_status(target_message_id, 'completed', new_file_path)
                 summary_text = self.downloaded_files[target_message_id].get('summary_text', "")
                 await self.bot.edit_message(browser_chat_id, browser_message_id, f"{summary_text}\n\nFolder '{new_folder_name}' created and file moved successfully to {new_file_path}", buttons=None)
                 del self.downloaded_files[target_message_id]
