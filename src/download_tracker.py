@@ -22,12 +22,13 @@ class DownloadTracker:
 
     def _write_data(self, data):
         with open(self.file_path, 'w') as f:
-            json.dump(data, f, indent=2)
+            # Keep only the last 500 entries
+            json.dump(data[-500:], f, indent=2)
 
-    def add_download(self, user_id, origin_group, media_group_id, message_id, original_filename, media):
+    def add_download(self, user_id, media_group_id, message_id, original_filename, media, channel_id):
         new_entry = {
             "user_id": user_id,
-            "origin_group": origin_group,
+            "channel_id": channel_id,
             "media_group_id": media_group_id,
             "message_id": message_id,
             "original_filename": original_filename,

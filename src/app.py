@@ -117,6 +117,8 @@ class TelethonDownloaderBot:
             origin_group = self.telethon_utils.get_origin_group(message)
             channel_id = self.telethon_utils.get_channel_id(message)
 
+            self.logger.info(f"download_media file_info: {file_info} sender_id: {message.sender_id} origin_group: {origin_group} channel_id: {channel_id}")
+
             target_download_dir, final_destination_dir = self.download_manager.get_download_dirs(file_extension, origin_group, channel_id)
 
             initial_message = await message.reply(f"Added to queued {file_info}...")
@@ -125,7 +127,7 @@ class TelethonDownloaderBot:
             file_size = self.telethon_utils.get_file_size(message)
 
             original_filename = os.path.join(target_download_dir, file_info)
-            self.download_tracker.add_download(message.sender_id, origin_group, message.grouped_id, message.id, original_filename, message.media)
+            self.download_tracker.add_download(message.sender_id, message.grouped_id, message.id, original_filename, message.media, channel_id)
 
             download_summary_downloading = DownloadSummary(message, file_info, final_destination_dir, start_time, 0, file_size, origin_group, channel_id, status='downloading')
             self.download_history_manager.add_or_update_entry(download_summary_downloading.to_dict())
