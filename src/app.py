@@ -217,9 +217,9 @@ class TelethonDownloaderBot:
                         await event.edit(text, buttons=buttons)
                     else:
                         await event.answer("Keyboard manager not initialized.")
-            elif action == 'cancel':
+            elif action == 'ok':
                 if message_id in self.downloaded_files:
-                    summary_text = self.downloaded_files[message_id].get('summary_text', "Download operation cancelled.")
+                    summary_text = self.downloaded_files[message_id].get('summary_text', "Download operation ok.")
                     del self.downloaded_files[message_id]
                     await event.edit(summary_text, buttons=None)
                 else:

@@ -9,7 +9,7 @@ class ButtonGenerator:
         try:
             buttons = [
                 [KeyboardButtonCallback("Move", data=f"move_{message_id}".encode('utf-8'))],
-                [KeyboardButtonCallback("Cancel", data=f"cancel_{message_id}".encode('utf-8'))]
+                [KeyboardButtonCallback("Ok", data=f"ok_{message_id}".encode('utf-8'))]
             ]
             return ReplyInlineMarkup(buttons)
         except Exception as e:
