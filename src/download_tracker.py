@@ -25,7 +25,7 @@ class DownloadTracker:
             # Keep only the last 500 entries
             json.dump(data[-500:], f, indent=2)
 
-    def add_download(self, user_id, media_group_id, message_id, original_filename, media, channel_id, chat_id, filename):
+    def add_download(self, media_group_id, message_id, original_filename, media, channel_id, user_id, filename):
         data = self._read_data()
         for entry in data:
             if entry.get('message_id') == message_id and entry.get('channel_id') == channel_id:
@@ -33,7 +33,6 @@ class DownloadTracker:
                 return
 
         new_entry = {
-            "user_id": user_id,
             "media_group_id": media_group_id,
             "message_id": message_id,
             "original_filename": original_filename,
@@ -44,7 +43,7 @@ class DownloadTracker:
             "media": str(media),
             "status": "downloading",
             "channel_id": channel_id,
-            "chat_id": chat_id
+            "user_id": user_id
         }
         
         data.append(new_entry)

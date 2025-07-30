@@ -1,5 +1,6 @@
 import logging
 import os
+from telethon.tl.types import PeerChannel, PeerUser
 
 class TelethonUtils:
     def __init__(self, logger):
@@ -7,23 +8,27 @@ class TelethonUtils:
 
     def get_origin_group(self, message):
         try:
-            origin_group = "Unknown"
+            if message.fwd_from:
+                if isinstance(message.fwd_from.from_id, PeerChannel):
+                    return message.fwd_from.from_id.channel_id
+                elif isinstance(message.fwd_from.from_id, PeerUser):
+                    return message.fwd_from.from_id.user_id
             if message.peer_id:
                 if hasattr(message.peer_id, 'channel_id') and message.peer_id.channel_id:
-                    origin_group = message.peer_id.channel_id
+                    return message.peer_id.channel_id
                 elif hasattr(message.peer_id, 'user_id') and message.peer_id.user_id:
-                    origin_group = message.peer_id.user_id
-            return origin_group
+                    return message.peer_id.user_id
+            return "Unknown"
         except Exception as e:
             self.logger.error(f"Error in get_origin_group: {e}")
             return "Unknown"
 
     def get_channel_id(self, message):
         try:
+            if message.fwd_from and isinstance(message.fwd_from.from_id, PeerChannel):
+                return message.fwd_from.from_id.channel_id
             if message.peer_id and hasattr(message.peer_id, 'channel_id'):
                 return message.peer_id.channel_id
-            elif message.fwd_from and hasattr(message.fwd_from, 'from_id') and hasattr(message.fwd_from.from_id, 'channel_id'):
-                return message.fwd_from.from_id.channel_id
             return None
         except Exception as e:
             self.logger.error(f"Error in get_channel_id: {e}")

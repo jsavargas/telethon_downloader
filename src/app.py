@@ -117,9 +117,9 @@ class TelethonDownloaderBot:
     async def download_media(self, event):
         await self.process_download(event.message.id, event.chat_id)
 
-    async def process_download(self, message_id, chat_id):
+    async def process_download(self, message_id, user_id):
         try:
-            message = await self.bot.get_messages(chat_id, ids=message_id)
+            message = await self.bot.get_messages(user_id, ids=message_id)
 
             self.logger.info(f"message:::: {message}")
 
@@ -138,7 +138,13 @@ class TelethonDownloaderBot:
             file_size = self.telethon_utils.get_file_size(message)
 
             original_filename = os.path.join(target_download_dir, file_info)
-            self.download_tracker.add_download(message.sender_id, message.grouped_id, message.id, original_filename, message.media, channel_id, chat_id, file_info)
+            from_id_value = None
+            if message.from_id:
+                if hasattr(message.from_id, 'channel_id'):
+                    from_id_value = message.from_id.channel_id
+                elif hasattr(message.from_id, 'user_id'):
+                    from_id_value = message.from_id.user_id
+            self.download_tracker.add_download(message.grouped_id, message.id, original_filename, message.media, from_id_value, user_id, file_info)
 
             download_summary_downloading = DownloadSummary(message, file_info, final_destination_dir, start_time, 0, file_size, origin_group, channel_id, status='downloading')
             self.download_history_manager.add_or_update_entry(download_summary_downloading.to_dict())
