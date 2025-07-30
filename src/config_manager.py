@@ -37,6 +37,13 @@ class ConfigManager:
                     }
                     self._write_config()
                     self.logger.info(f"Added [EXTENSIONS] section to {self.config_path}")
+                # Check if KEYWORDS section exists, if not, add it
+                if 'KEYWORDS' not in self.config:
+                    self.config['KEYWORDS'] = {
+                        'tanganana': '/download/tanganana',
+                    }
+                    self._write_config()
+                    self.logger.info(f"Added [KEYWORDS] section to {self.config_path}")
             else:
                 # Create a default config if it doesn't exist
                 self._create_default_config()
@@ -77,6 +84,9 @@ class ConfigManager:
             self.config['GROUP_PATH'] = {
                 '-10012345789': '/download/1001234577',
             }
+            self.config['KEYWORDS'] = {
+                'tanganana': '/download/tanganana',
+            }
             self._write_config()
         except Exception as e:
             self.logger.error(f"Error creating default config: {e}")
@@ -95,4 +105,12 @@ class ConfigManager:
             return self.config.get('GROUP_PATH', str(channel_id), fallback=None)
         except Exception as e:
             self.logger.error(f"Error getting group path for channel ID {channel_id}: {e}")
+            return None
+
+    def get_keyword_path(self, keyword):
+        try:
+            self._load_config() # Re-read config.ini to pick up new paths
+            return self.config.get('KEYWORDS', keyword.lower(), fallback=None)
+        except Exception as e:
+            self.logger.error(f"Error getting keyword path for keyword {keyword}: {e}")
             return None
