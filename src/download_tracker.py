@@ -25,18 +25,20 @@ class DownloadTracker:
             # Keep only the last 500 entries
             json.dump(data[-500:], f, indent=2)
 
-    def add_download(self, user_id, media_group_id, message_id, original_filename, media, channel_id):
+    def add_download(self, user_id, media_group_id, message_id, original_filename, media, channel_id, chat_id, filename):
         new_entry = {
             "user_id": user_id,
-            "channel_id": channel_id,
             "media_group_id": media_group_id,
             "message_id": message_id,
             "original_filename": original_filename,
+            "filename": filename,
             "download_date": datetime.now().isoformat(),
             "new_filename": None,
             "update_date": None,
             "media": str(media),
-            "status": "downloading"
+            "status": "downloading",
+            "channel_id": channel_id,
+            "chat_id": chat_id
         }
         
         data = self._read_data()
@@ -57,3 +59,20 @@ class DownloadTracker:
                 self.logger.info(f"Updated download status for {message_id} to {new_status}")
                 return
         self.logger.warning(f"Could not find download with message_id {message_id} to update status.")
+
+    def get_pending_downloads(self):
+        data = self._read_data()
+        return [d for d in data if d.get('status') == 'downloading']
+
+    def get_download_by_message_id(self, message_id):
+        data = self._read_data()
+        for entry in data:
+            if entry['message_id'] == message_id:
+                return entry
+        return None
+
+    def clear_pending_downloads(self):
+        data = self._read_data()
+        cleared_data = [d for d in data if d.get('status') != 'downloading']
+        self._write_data(cleared_data)
+        self.logger.info("Cleared all pending downloads.")

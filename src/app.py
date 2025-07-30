@@ -18,6 +18,8 @@ from keyboard_manager import KeyboardManager
 from download_history_manager import DownloadHistoryManager
 from commands import Commands
 from download_tracker import DownloadTracker
+from resume_manager import ResumeManager
+from pending_downloads_manager import PendingDownloadsManager
 
 VERSION = "4.0.10-r6"
 
@@ -91,6 +93,12 @@ class TelethonDownloaderBot:
             self.download_tracker = DownloadTracker(self.env_config.PATH_CONFIG, self.logger)
             self.logger.info("DownloadTracker initialized.")
 
+            self.resume_manager = ResumeManager(self.bot, self.logger)
+            self.logger.info("ResumeManager initialized.")
+
+            self.pending_downloads_manager = PendingDownloadsManager(self.download_tracker, self.logger, self)
+            self.logger.info("PendingDownloadsManager initialized.")
+
             self._add_handlers()
             self.logger.info("Event handlers added.")
         except Exception as e:
@@ -107,8 +115,11 @@ class TelethonDownloaderBot:
             self.logger.error(f"Error adding event handlers: {e}")
 
     async def download_media(self, event):
+        await self.process_download(event.message.id, event.chat_id)
+
+    async def process_download(self, message_id, chat_id, is_resume=False):
         try:
-            message = event.message
+            message = await self.bot.get_messages(chat_id, ids=message_id)
 
             self.logger.info(f"message:::: {message}")
 
@@ -126,8 +137,9 @@ class TelethonDownloaderBot:
 
             file_size = self.telethon_utils.get_file_size(message)
 
-            original_filename = os.path.join(target_download_dir, file_info)
-            self.download_tracker.add_download(message.sender_id, message.grouped_id, message.id, original_filename, message.media, channel_id)
+            if not is_resume:
+                original_filename = os.path.join(target_download_dir, file_info)
+                self.download_tracker.add_download(message.sender_id, message.grouped_id, message.id, original_filename, message.media, channel_id, chat_id, file_info)
 
             download_summary_downloading = DownloadSummary(message, file_info, final_destination_dir, start_time, 0, file_size, origin_group, channel_id, status='downloading')
             self.download_history_manager.add_or_update_entry(download_summary_downloading.to_dict())
@@ -213,7 +225,20 @@ class TelethonDownloaderBot:
             self.logger.info(f"Callback data received: {data}")
             parts = data.split('_')
             self.logger.info(f"Callback parts: {parts}")
-            action = parts[0]
+            action_parts = data.split('_')
+            action = '_'.join(action_parts[:2]) if action_parts[0] == 'resume' else action_parts[0]
+            self.logger.info(f"Action: {action}")
+
+            if action.startswith('resume'):
+                if action == 'resume_one':
+                    message_id = int(action_parts[2])
+                    await self.pending_downloads_manager.resume_one(message_id, event)
+                elif action == 'resume_all':
+                    await self.pending_downloads_manager.resume_all(event)
+                elif action == 'resume_cancel':
+                    await self.pending_downloads_manager.cancel(event)
+                return
+
             message_id = int(parts[1])
 
             if action == 'move':
@@ -356,6 +381,8 @@ class TelethonDownloaderBot:
             self.welcome_message_generator.log_welcome_message()
             try:
                 await self.bot.send_message(self.AUTHORIZED_USER_IDS[0], self.welcome_message_generator.get_message())
+                pending_downloads = self.download_tracker.get_pending_downloads()
+                await self.resume_manager.ask_to_resume(pending_downloads, self.AUTHORIZED_USER_IDS[0])
             except Exception as e:
                 self.logger.error(f"Error sending start message to authorized user: {e}")
             await self.bot.run_until_disconnected()
