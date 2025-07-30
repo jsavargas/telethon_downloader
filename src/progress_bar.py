@@ -1,5 +1,6 @@
 import time
 from telethon.tl.types import KeyboardButtonCallback, ReplyInlineMarkup
+import asyncio # Temporary import for debugging
 
 class ProgressBar:
     def __init__(self, initial_message, file_info, logger, download_dir, file_size, start_time, origin_group, user_id, progress_status_show, channel_id=None, cancellation_flag=None):

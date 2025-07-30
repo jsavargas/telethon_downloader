@@ -21,7 +21,7 @@ from download_tracker import DownloadTracker
 from resume_manager import ResumeManager
 from pending_downloads_manager import PendingDownloadsManager
 
-VERSION = "4.0.10-r7"
+VERSION = "4.0.10-r8"
 
 class TelethonDownloaderBot:
     def __init__(self):
@@ -145,7 +145,7 @@ class TelethonDownloaderBot:
             file_size = self.telethon_utils.get_file_size(message)
 
             original_filename = os.path.join(target_download_dir, file_info)
-            
+
             self.download_tracker.add_download(message.grouped_id, initial_message.id, original_filename, message.media, origin_group, user_id, file_info)
 
             download_summary_downloading = DownloadSummary(message, file_info, final_destination_dir, start_time, 0, file_size, origin_group, user_id, channel_id, status='downloading')
@@ -189,7 +189,7 @@ class TelethonDownloaderBot:
                     # Move file to completed directory
                     final_file_path = self.download_manager.move_to_completed(downloaded_file_path, final_destination_dir)
 
-                    self.downloaded_files[initial_message.id] = {
+                    self.downloaded_files[message.id] = {
                         'file_path': final_file_path,
                         'current_dir': self.env_config.BASE_DOWNLOAD_PATH # Start navigation from base download path
                     }
@@ -205,7 +205,7 @@ class TelethonDownloaderBot:
                     summary_text = summary.generate_summary()
                     self.download_history_manager.add_or_update_entry(summary.to_dict())
 
-                    self.downloaded_files[initial_message.id] = {
+                    self.downloaded_files[message.id] = {
                         'file_path': final_file_path,
                         'current_dir': self.env_config.BASE_DOWNLOAD_PATH, # Start navigation from base download path
                         'summary_text': summary_text
