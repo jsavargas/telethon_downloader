@@ -26,6 +26,12 @@ class DownloadTracker:
             json.dump(data[-500:], f, indent=2)
 
     def add_download(self, user_id, media_group_id, message_id, original_filename, media, channel_id, chat_id, filename):
+        data = self._read_data()
+        for entry in data:
+            if entry.get('message_id') == message_id and entry.get('channel_id') == channel_id:
+                self.logger.warning(f"Download with message_id {message_id} and channel_id {channel_id} already exists. Skipping.")
+                return
+
         new_entry = {
             "user_id": user_id,
             "media_group_id": media_group_id,
@@ -41,7 +47,6 @@ class DownloadTracker:
             "chat_id": chat_id
         }
         
-        data = self._read_data()
         data.append(new_entry)
         self._write_data(data)
         self.logger.info(f"Added new download to tracker: {message_id}")

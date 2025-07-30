@@ -23,7 +23,7 @@ class PendingDownloadsManager:
             else:
                 await event.edit(message.text, buttons=new_buttons)
 
-            await self.telethon_bot.process_download(download_info['message_id'], download_info['chat_id'], is_resume=True)
+            await self.telethon_bot.process_download(download_info['message_id'], download_info['chat_id'])
         else:
             self.logger.warning(f"Could not find download info for message ID: {message_id}")
 
@@ -31,7 +31,7 @@ class PendingDownloadsManager:
         self.logger.info("Resuming all pending downloads.")
         pending_downloads = self.download_tracker.get_pending_downloads()
         for download in pending_downloads:
-            await self.telethon_bot.process_download(download['message_id'], download['chat_id'], is_resume=True)
+            await self.telethon_bot.process_download(download['message_id'], download['chat_id'])
         await event.edit("Resuming all pending downloads.", buttons=None)
 
     async def cancel(self, event):
