@@ -1,3 +1,5 @@
+import asyncio
+
 class PendingDownloadsManager:
     def __init__(self, download_tracker, logger, telethon_bot):
         self.download_tracker = download_tracker
@@ -23,15 +25,17 @@ class PendingDownloadsManager:
             else:
                 await event.edit(message.text, buttons=new_buttons)
 
-            await self.telethon_bot.process_download(download_info['message_id'], download_info['chat_id'])
+            asyncio.create_task(self.telethon_bot.process_download(download_info['message_id'], download_info['chat_id']))
         else:
             self.logger.warning(f"Could not find download info for message ID: {message_id}")
 
     async def resume_all(self, event):
         self.logger.info("Resuming all pending downloads.")
         pending_downloads = self.download_tracker.get_pending_downloads()
+        self.logger.info(f"Found {len(pending_downloads)} pending downloads to resume.")
         for download in pending_downloads:
-            await self.telethon_bot.process_download(download['message_id'], download['chat_id'])
+            self.logger.info(f"Resuming download: {download}")
+            asyncio.create_task(self.telethon_bot.process_download(download['message_id'], download['chat_id']))
         await event.edit("Resuming all pending downloads.", buttons=None)
 
     async def cancel(self, event):
