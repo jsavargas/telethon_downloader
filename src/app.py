@@ -172,9 +172,9 @@ class TelethonDownloaderBot:
                     if media_to_download:
                         if self.env_config.PROGRESS_DOWNLOAD.lower() == 'true':
                             progress_bar = ProgressBar(initial_message, file_info, self.logger, final_destination_dir, file_size, start_time, origin_group, int(self.env_config.PROGRESS_STATUS_SHOW), channel_id)
-                            downloaded_file_path = await self.bot.download_media(media_to_download, file=target_download_dir, progress_callback=progress_bar.progress_callback)
+                            downloaded_file_path = await self.bot.download_media(media_to_download, file=os.path.join(target_download_dir, file_info), progress_callback=progress_bar.progress_callback)
                         else:
-                            downloaded_file_path = await self.bot.download_media(media_to_download, file=target_download_dir)
+                            downloaded_file_path = await self.bot.download_media(media_to_download, file=os.path.join(target_download_dir, file_info))
                     else:
                         self.logger.error(f"No downloadable media found in message {message.id}")
                         await initial_message.edit(f"Error: No downloadable media found in message.")
