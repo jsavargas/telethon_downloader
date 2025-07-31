@@ -51,6 +51,14 @@ class ConfigManager:
                     }
                     self._write_config()
                     self.logger.info(f"Added [REGEX_PATH] section to {self.config_path}")
+                # Check if REMOVE_PATTERNS section exists, if not, add it
+                if 'REMOVE_PATTERNS' not in self.config:
+                    self.config['REMOVE_PATTERNS'] = {
+                        '*': 'tif_,[tof_,0001',
+                        '-100123456': 'tif_',
+                    }
+                    self._write_config()
+                    self.logger.info(f"Added [REMOVE_PATTERNS] section to {self.config_path}")
             else:
                 # Create a default config if it doesn't exist
                 self._create_default_config()
@@ -96,6 +104,10 @@ class ConfigManager:
             }
             self.config['REGEX_PATH'] = {
                 '/example/i': '/download/example',
+            }
+            self.config['REMOVE_PATTERNS'] = {
+                '*': 'tif_,[tof_,0001',
+                '100123456': '2025',
             }
             self._write_config()
         except Exception as e:
@@ -144,3 +156,18 @@ class ConfigManager:
         except Exception as e:
             self.logger.error(f"Error getting all regex paths: {e}")
             return {}
+
+    def get_remove_patterns(self, group_id=None):
+        try:
+            self._load_config()
+            if 'REMOVE_PATTERNS' not in self.config:
+                return []
+            if (value := self.config.get('REMOVE_PATTERNS', str(group_id), fallback=None)) \
+                or (value := self.config.get('REMOVE_PATTERNS', '*', fallback=None)):
+                self.logger.info(f"get_remove_patterns remove_patterns_section {value} group_id {group_id}")
+            else:
+                return []
+            return [v.strip() for v in value.split(',') if v.strip()]
+        except Exception as e:
+            self.logger.error(f"Error getting remove patterns for group {group_id}: {e}")
+            return []

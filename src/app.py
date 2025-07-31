@@ -79,7 +79,7 @@ class TelethonDownloaderBot:
             self.active_downloads = {}
             self.logger.info("Downloaded files dictionary initialized.")
 
-            self.telethon_utils = TelethonUtils(self.logger)
+            self.telethon_utils = TelethonUtils(self.logger, self.config_manager)
             self.logger.info("TelethonUtils initialized.")
 
             self.keyboard_manager = KeyboardManager(self.logger, self.env_config.BASE_DOWNLOAD_PATH)
@@ -127,10 +127,10 @@ class TelethonDownloaderBot:
 
             self.logger.info(f"message:::: {message}")
 
-            file_info = self.telethon_utils.get_file_info(message)
             file_extension = self.telethon_utils.get_file_extension(message)
             origin_group = self.telethon_utils.get_origin_group(message)
             channel_id = self.telethon_utils.get_channel_id(message)
+            file_info = self.telethon_utils.get_file_info(message, origin_group)
 
             self.logger.info(f"download_media file_info: {file_info} sender_id: {message.sender_id} origin_group: {origin_group} channel_id: {channel_id}")
 

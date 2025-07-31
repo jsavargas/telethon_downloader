@@ -3,8 +3,9 @@ import os
 from telethon.tl.types import PeerChannel, PeerUser
 
 class TelethonUtils:
-    def __init__(self, logger):
+    def __init__(self, logger, config_manager):
         self.logger = logger
+        self.config_manager = config_manager
 
     def get_origin_group(self, message):
         try:
@@ -64,7 +65,7 @@ class TelethonUtils:
             self.logger.error(f"Error in get_file_extension: {e}")
             return ""
 
-    def get_file_info(self, message):
+    def get_file_info(self, message, origin_group=None):
         try:
             file_info = "media"
             if message.document:
@@ -72,6 +73,13 @@ class TelethonUtils:
                 file_info = file_name_attr.file_name if file_name_attr else 'unknown_document'
             elif message.photo:
                 file_info = f"photo_{message.photo.id}.jpg"
+
+            # Apply remove patterns
+            remove_patterns = self.config_manager.get_remove_patterns(origin_group)
+
+            for pattern in remove_patterns:
+                file_info = file_info.replace(pattern, '')
+
             return file_info
         except Exception as e:
             self.logger.error(f"Error in get_file_info: {e}")
