@@ -59,6 +59,10 @@ class YouTubeDownloader:
                 final_filename = None
                 if not is_playlist:
                     final_filename = ydl.prepare_filename(info_dict)
+                    if download_type == 'audio':
+                        # The postprocessor changes the extension, so we update it manually
+                        base, _ = os.path.splitext(final_filename)
+                        final_filename = base + '.mp3'
             
             self.logger.info(f"Successfully finished YouTube download for URL: {url}")
             return info_dict, final_filename

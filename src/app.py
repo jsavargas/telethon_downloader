@@ -247,7 +247,7 @@ class TelethonDownloaderBot:
                 return f"**Playlist {dl_type.capitalize()} Download Finished**\n\n**Playlist:** {info_dict.get('title', 'N/A')}\n**Folder:** {self.config.YOUTUBE_VIDEO_FOLDER if dl_type == 'video' else self.config.YOUTUBE_AUDIO_FOLDER}\n**Time:** {download_time:.2f}s"
             else:
                 total_bytes = info_dict.get('filesize') or info_dict.get('filesize_approx') or 0
-                return f"**{dl_type.capitalize()} Download Finished**\n\n**File:** {os.path.basename(final_filename)}\n**Folder:** {os.path.dirname(final_filename)}\n**Size:** {total_bytes/(1024*1024):.2f}MB\n**Time:** {download_time:.2f}s"
+                return f"**{dl_type.capitalize()} Download Finished**\n\n**File:** {os.path.basename(final_filename)}\n**Folder:** {os.path.dirname(final_filename)}\n**Size:** {total_bytes/(1024*1024):.2f}MB\n**Time:** {download_time:.2f}s\n\n"
 
         try:
             if download_type == 'both':
