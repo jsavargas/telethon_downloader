@@ -11,7 +11,7 @@ from config_manager import ConfigManager
 from welcome_message import WelcomeMessage
 from bot_versions import BotVersions
 from telethon import __version__ as telethon_version
-from telethon.tl.types import KeyboardButtonCallback, ReplyInlineMarkup
+from telethon.tl.types import KeyboardButtonCallback, ReplyInlineMarkup, KeyboardButton
 from telethon_utils import TelethonUtils
 from urllib.parse import quote, unquote
 from keyboard_manager import KeyboardManager
@@ -20,12 +20,14 @@ from commands import Commands
 from download_tracker import DownloadTracker
 from resume_manager import ResumeManager
 from pending_downloads_manager import PendingDownloadsManager
+from youtube_downloader import YouTubeDownloader
+import re
 
 VERSION = "4.0.10-r8"
 
 class TelethonDownloaderBot:
     def __init__(self):
-        self.logger = LoggerConfig(__name__).get_logger()
+        self.logger = LoggerConfig()
         self.env_config = None
         self.API_ID = None
         self.API_HASH = None
@@ -39,6 +41,7 @@ class TelethonDownloaderBot:
         self.downloaded_files = {}
         self.telethon_utils = None
         self.keyboard_manager = None
+        self.youtube_downloader = None
 
         try:
             self.env_config = EnvConfig(self.logger)
@@ -101,6 +104,9 @@ class TelethonDownloaderBot:
             self.pending_downloads_manager = PendingDownloadsManager(self.download_tracker, self.logger, self)
             self.logger.info("PendingDownloadsManager initialized.")
 
+            self.youtube_downloader = YouTubeDownloader(self.env_config.YOUTUBE_VIDEO_FOLDER)
+            self.logger.info("YouTubeDownloader initialized.")
+
             self._add_handlers()
             self.logger.info("Event handlers added.")
         except Exception as e:
@@ -110,11 +116,77 @@ class TelethonDownloaderBot:
     def _add_handlers(self):
         try:
             self.bot.add_event_handler(self.download_media, events.NewMessage(incoming=True, func=lambda e: (e.message.document or e.message.photo) and e.sender_id in self.AUTHORIZED_USER_IDS))
-            self.bot.add_event_handler(self.handle_callback_query, events.CallbackQuery)
+            self.bot.add_event_handler(self.handle_callback_query, events.CallbackQuery(func=lambda e: not e.data.startswith(b'yt_')))
             self.bot.add_event_handler(self.handle_new_folder_name, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and any(self.downloaded_files[msg_id].get('waiting_for_folder_name', False) for msg_id in self.downloaded_files)))
             self.bot.add_event_handler(self.handle_text_commands, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and e.message.text.startswith('/')))
+            self.bot.add_event_handler(self.download_youtube_video, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and ("youtube.com" in e.message.text or "youtu.be" in e.message.text)))
+            self.bot.add_event_handler(self.handle_youtube_callback, events.CallbackQuery(pattern=b'yt_download_'))
         except Exception as e:
             self.logger.error(f"Error adding event handlers: {e}")
+
+    async def handle_youtube_callback(self, event):
+        try:
+            data = event.data.decode('utf-8')
+            self.logger.info(f"YouTube callback data received: {data}")
+            parts = data.split('_')
+            action = parts[2]
+            message_id = int(parts[3])
+
+            message = await self.bot.get_messages(event.chat_id, ids=message_id)
+            text = message.text
+            match = re.search(r"https?://(www\.)?(youtube\.com|youtu\.be)/\S+", text)
+            if not match:
+                await event.edit("Could not find a valid YouTube URL in the message.")
+                return
+            url = match.group(0).rstrip(')')
+
+            if action == "all":
+                await event.edit("Starting download of the entire playlist...")
+                self.youtube_downloader.download_video(url, playlist=True)
+                await event.edit("Finished downloading the entire playlist.")
+            elif action == "first":
+                await event.edit("Starting download of the first video in the playlist...")
+                self.youtube_downloader.download_video(url, playlist=False)
+                await event.edit("Finished downloading the first video in the playlist.")
+
+        except Exception as e:
+            self.logger.error(f"Error handling YouTube callback: {e}")
+            await event.answer(f"Error processing your request: {e}")
+
+    async def download_youtube_video(self, event):
+        try:
+            self.logger.info(f"YouTube video download triggered for message ID: {event.message.id}")
+            text = event.message.text
+            match = re.search(r"https?://(www\.)?(youtube\.com|youtu\.be)/\S+", text)
+            if not match:
+                await event.reply("Could not find a valid YouTube URL in the message.")
+                return
+            url = match.group(0).rstrip(')')
+            video_info, is_playlist = self.youtube_downloader.get_video_info(url)
+
+            if video_info is None:
+                await event.reply("Could not process the YouTube URL. Please check the link and try again.")
+                return
+
+            if is_playlist:
+                buttons = [
+                    [KeyboardButtonCallback("Download All", data=f"yt_download_all_{event.message.id}")],
+                    [KeyboardButtonCallback("Download First", data=f"yt_download_first_{event.message.id}")]
+                ]
+                await event.reply("This is a playlist. Do you want to download all videos or just the first one?", buttons=buttons)
+            else:
+                video_title = video_info.get('title', 'default_video_title')
+                file_extension = video_info.get('ext', 'mp4')
+
+                target_download_dir, final_destination_dir = self.download_manager.get_download_dirs(file_extension, None, None, video_title)
+
+                await event.reply(f"Starting download of YouTube video: {video_title}")
+                self.youtube_downloader.download_video(url, download_path=self.env_config.YOUTUBE_VIDEO_FOLDER)
+                await event.reply(f"Finished downloading YouTube video: {video_title}")
+        except Exception as e:
+            self.logger.error(f"Error downloading YouTube video: {e}")
+            await event.reply(f"Error downloading YouTube video: {e}")
+
 
     async def download_media(self, event):
         self.logger.info(f"download_media triggered for message ID: {event.message.id}")

@@ -21,6 +21,8 @@ class WelcomeMessage:
             self.logger.info(f"DOWNLOAD_DIR                  : {self.env_config.BASE_DOWNLOAD_PATH}")
             self.logger.info(f"DOWNLOAD_INCOMPLETED_PATH     : {self.download_manager.default_incompleted_dir}")
             self.logger.info(f"DOWNLOAD_COMPLETED_PATH       : {self.download_manager.default_completed_dir}")        
+            self.logger.info(f"YOUTUBE_VIDEO_FOLDER          : {self.env_config.YOUTUBE_VIDEO_FOLDER}")        
+            self.logger.info(f"YOUTUBE_AUDIO_FOLDER          : {self.env_config.YOUTUBE_AUDIO_FOLDER}")        
             self.logger.info(f"DOWNLOAD_PATH_TORRENTS        : {self.download_manager.torrent_path}")
 
             # Assuming DOWNLOAD_PATH_TORRENTS is not directly from env_config, if it is, add it to env_config
