@@ -64,7 +64,6 @@ class TelethonDownloaderBot:
             self.config_manager = ConfigManager(self.env_config.PATH_CONFIG, self.logger, self.env_config.PUID, self.env_config.PGID)
             self.logger.info("ConfigManager initialized.")
 
-            # Ensure the config directory exists
             os.makedirs(self.env_config.PATH_CONFIG, exist_ok=True)
             self.logger.info(f"Ensured config directory exists: {self.env_config.PATH_CONFIG}")
 
@@ -119,109 +118,177 @@ class TelethonDownloaderBot:
             self.bot.add_event_handler(self.handle_callback_query, events.CallbackQuery(func=lambda e: not e.data.startswith(b'yt_')))
             self.bot.add_event_handler(self.handle_new_folder_name, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and any(self.downloaded_files[msg_id].get('waiting_for_folder_name', False) for msg_id in self.downloaded_files)))
             self.bot.add_event_handler(self.handle_text_commands, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and e.message.text.startswith('/')))
-            self.bot.add_event_handler(self.download_youtube_video, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and ("youtube.com" in e.message.text or "youtu.be" in e.message.text)))
-            self.bot.add_event_handler(self.handle_youtube_callback, events.CallbackQuery(pattern=b'yt_download_'))
+            
+            # New, robust handlers for YouTube
+            self.bot.add_event_handler(self.handle_youtube_link, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and ("youtube.com" in e.message.text or "youtu.be" in e.message.text)))
+            self.bot.add_event_handler(self.handle_youtube_playlist_choice, events.CallbackQuery(pattern=b'yt_'))
+
         except Exception as e:
             self.logger.error(f"Error adding event handlers: {e}")
 
-    async def _perform_youtube_download(self, message_to_edit, sender_id, url, is_playlist):
+    async def handle_youtube_link(self, event):
+        """
+        Detects a YouTube link, checks if it's a playlist, and either
+        starts the download or prompts the user to choose.
+        """
         try:
-            video_info, _, _ = self.youtube_downloader.get_video_info(url)
-            if video_info is None:
-                await message_to_edit.edit("Could not process the YouTube URL. Please check the link and try again.")
-                return
-
-            video_title = video_info.get('title', 'default_video_title')
-            file_size = video_info.get('filesize_approx') or 0
-
-            final_destination_dir = self.env_config.YOUTUBE_VIDEO_FOLDER
-
-            await message_to_edit.edit(f"Starting download of YouTube video: {video_title}")
-            start_time = time.time()
-            progress_bar = ProgressBar(message_to_edit, video_title, self.logger, final_destination_dir, file_size, start_time, sender_id, sender_id, 10)
-            download_info = self.youtube_downloader.download_video(url, download_path=final_destination_dir, playlist=is_playlist, progress_callback=progress_bar.progress_callback)
-            end_time = time.time()
-
-            if download_info:
-                download_time = end_time - start_time
-                download_speed = download_info['total_bytes'] / download_time if download_time > 0 else 0
-
-                summary_text = (
-                    f"**Download Finished**\n\n"
-                    f"**File Name:** {os.path.basename(download_info['filename'])}\n"
-                    f"**Download Folder:** {final_destination_dir}\n"
-                    f"**File Size:** {download_info['total_bytes'] / (1024*1024):.2f} MB\n"
-                    f"**Start Time:** {time.strftime('%H:%M:%S', time.localtime(start_time))}\n"
-                    f"**End Time:** {time.strftime('%H:%M:%S', time.localtime(end_time))}\n"
-                    f"**Download Time:** {download_time:.2f}s\n"
-                    f"**Download Speed:** {download_speed / (1024*1024):.2f} MB/s"
-                )
-                await message_to_edit.edit(summary_text)
-            else:
-                await message_to_edit.edit(f"Finished downloading YouTube video: {video_title}")
-        except Exception as e:
-            self.logger.error(f"Error performing YouTube download: {e}")
-            await message_to_edit.edit(f"Error downloading YouTube video: {e}")
-
-    async def handle_youtube_callback(self, event):
-        try:
-            data = event.data.decode('utf-8')
-            self.logger.info(f"YouTube callback data received: {data}")
-
-            # Edit message immediately to remove buttons and get the message object
-            processing_message = await event.edit("Processing your selection...")
-
-            parts = data.split('_')
-            action = parts[2]
-            message_id = int(parts[3])
-
-            message = await self.bot.get_messages(event.chat_id, ids=message_id)
-            text = message.text
-            match = re.search(r"https?://(www\.)?(youtube\.com|youtu\.be)/\S+", text)
+            self.logger.info(f"YouTube link detected in message ID: {event.message.id}")
+            match = re.search(r"https?://(www\.)?(youtube\.com|youtu\.be)/\S+", event.message.text)
             if not match:
-                await event.edit("Could not find a valid YouTube URL in the message.")
                 return
+
             url = match.group(0).rstrip(')')
+            
+            # Run the blocking I/O call in a separate thread
+            info, is_playlist, playlist_count = await asyncio.get_event_loop().run_in_executor(
+                None, self.youtube_downloader.get_video_info, url
+            )
 
-            if action == "all":
-                await self._perform_youtube_download(processing_message, event.sender_id, url, is_playlist=True)
-            elif action == "first":
-                await self._perform_youtube_download(processing_message, event.sender_id, url, is_playlist=False)
-
-        except Exception as e:
-            self.logger.error(f"Error handling YouTube callback: {e}")
-            await event.answer(f"Error processing your request: {e}")
-
-    async def download_youtube_video(self, event):
-        try:
-            self.logger.info(f"YouTube video download triggered for message ID: {event.message.id}")
-            text = event.message.text
-            match = re.search(r"https?://(www\.)?(youtube\.com|youtu\.be)/\S+", text)
-            if not match:
-                await event.reply("Could not find a valid YouTube URL in the message.")
-                return
-            url = match.group(0).rstrip(')')
-
-            processing_message = await event.reply("Processing YouTube link...")
-
-            video_info, is_playlist, playlist_count = self.youtube_downloader.get_video_info(url)
-
-            if video_info is None:
-                await processing_message.edit("Could not process the YouTube URL. Please check the link and try again.")
+            if info is None:
+                await event.reply("Could not process the YouTube URL. Please check the link and try again.")
                 return
 
             if is_playlist:
+                self.logger.info(f"URL is a playlist with {playlist_count} videos.")
                 buttons = [
-                    [KeyboardButtonCallback("Download All", data=f"yt_download_all_{event.message.id}")],
-                    [KeyboardButtonCallback("Download First", data=f"yt_download_first_{event.message.id}")]
+                    [KeyboardButtonCallback("Download First Video", data=f"yt_first_{event.message.id}")],
+                    [KeyboardButtonCallback(f"Download All ({playlist_count})", data=f"yt_all_{event.message.id}")]
                 ]
-                await processing_message.edit(f"This is a playlist with {playlist_count} videos. Do you want to download all videos or just the first one?", buttons=buttons)
+                await event.reply(f"This is a playlist with {playlist_count} videos. What would you like to do?", buttons=buttons)
             else:
-                await self._perform_youtube_download(processing_message, event.sender_id, url, is_playlist=False)
-        except Exception as e:
-            self.logger.error(f"Error downloading YouTube video: {e}")
-            await event.reply(f"Error downloading YouTube video: {e}")
+                self.logger.info("URL is a single video. Starting download.")
+                # Pass the original message event to the download function
+                await self._perform_youtube_download(event, url, is_playlist=False)
 
+        except Exception as e:
+            self.logger.error(f"Error in handle_youtube_link: {e}")
+            await event.reply(f"An error occurred while processing the YouTube link: {e}")
+
+    async def handle_youtube_playlist_choice(self, event):
+        """Handles the user's choice from the playlist buttons."""
+        try:
+            data = event.data.decode('utf-8')
+            self.logger.info(f"YouTube playlist callback received: {data}")
+
+            parts = data.split('_')
+            choice = parts[1]
+            original_message_id = int(parts[2])
+
+            message = await self.bot.get_messages(event.chat_id, ids=original_message_id)
+            if not message or not message.text:
+                await event.edit("Could not find the original message to get the URL.")
+                return
+
+            match = re.search(r"https?://(www\.)?(youtube\.com|youtu\.be)/\S+", message.text)
+            if not match:
+                await event.edit("Could not find a valid YouTube URL in the original message.")
+                return
+            
+            url = match.group(0).rstrip(')')
+
+            # Acknowledge the button press by editing the message
+            await event.edit(f"Selection received. Starting download...")
+
+            is_playlist = (choice == 'all')
+            # Pass the callback event to the download function
+            await self._perform_youtube_download(event, url, is_playlist=is_playlist)
+
+        except Exception as e:
+            self.logger.error(f"Error in handle_youtube_playlist_choice: {e}")
+            await event.answer(f"An error occurred: {e}")
+
+    async def _perform_youtube_download(self, event, url, is_playlist):
+        """Performs the actual download, progress reporting, and summary."""
+        
+        message_to_edit = None
+        # Determine if the event is a new message or a button press (callback)
+        if isinstance(event, events.CallbackQuery.Event):
+            message_to_edit = await event.get_message()
+        else: # It's a NewMessage event
+            message_to_edit = await event.reply("Preparing YouTube download...")
+
+        start_time = time.time()
+        last_update_time = 0
+        
+        # CRITICAL: Get the loop from the main thread where the bot is running
+        main_loop = asyncio.get_event_loop()
+
+        def _youtube_progress_hook(d):
+            nonlocal last_update_time
+            if d['status'] == 'downloading':
+                current_time = time.time()
+                # Throttle updates to avoid hitting Telegram API limits
+                if current_time - last_update_time < 2:
+                    return
+                
+                total_bytes = d.get('total_bytes') or d.get('total_bytes_estimate')
+                if not total_bytes: return
+
+                downloaded_bytes = d['downloaded_bytes']
+                percentage = (downloaded_bytes / total_bytes) * 100
+                speed = d.get('speed') or 0
+                eta = d.get('eta') or 0
+                
+                # Get title from the info_dict passed by yt-dlp
+                video_title = d.get('info_dict', {}).get('title', 'Unknown Video')
+                progress_title = f"Downloading Playlist: {video_title}" if is_playlist else "Downloading Video"
+
+                progress_text = (
+                    f"**{progress_title}**\n\n"
+                    f"**Progress:** {downloaded_bytes / (1024*1024):.2f}MB / {total_bytes / (1024*1024):.2f}MB ({percentage:.2f}%)\n"
+                    f"**Speed:** {speed / (1024*1024):.2f}MB/s\n"
+                    f"**ETA:** {eta:.0f}s"
+                )
+                
+                # Schedule the message edit on the main event loop
+                asyncio.run_coroutine_threadsafe(
+                    message_to_edit.edit(progress_text),
+                    main_loop # Use the loop from the main thread
+                )
+                last_update_time = current_time
+
+        try:
+            # Run the blocking download in a separate thread
+            info_dict, final_filename = await main_loop.run_in_executor(
+                None, # Use the default thread pool
+                self.youtube_downloader.download_video,
+                url,
+                self.env_config.YOUTUBE_VIDEO_FOLDER,
+                _youtube_progress_hook,
+                is_playlist
+            )
+
+            end_time = time.time()
+
+            if info_dict:
+                download_time = end_time - start_time
+                
+                if is_playlist:
+                    playlist_title = info_dict.get('title', 'Unknown Playlist')
+                    summary_text = (
+                        f"**Playlist Download Finished**\n\n"
+                        f"**Playlist:** {playlist_title}\n"
+                        f"**Download Folder:** {self.env_config.YOUTUBE_VIDEO_FOLDER}\n"
+                        f"**Total Time:** {download_time:.2f}s"
+                    )
+                else:
+                    total_bytes = info_dict.get('filesize') or info_dict.get('filesize_approx') or 0
+                    download_speed = total_bytes / download_time if download_time > 0 else 0
+                    summary_text = (
+                        f"**Download Finished**\n\n"
+                        f"**File Name:** {os.path.basename(final_filename)}\n"
+                        f"**Download Folder:** {self.env_config.YOUTUBE_VIDEO_FOLDER}\n"
+                        f"**File Size:** {total_bytes / (1024*1024):.2f} MB\n"
+                        f"**Download Time:** {download_time:.2f}s\n"
+                        f"**Download Speed:** {download_speed / (1024*1024):.2f} MB/s"
+                    )
+                await message_to_edit.edit(summary_text)
+            else:
+                await message_to_edit.edit("Could not download the YouTube video. Please check the logs for details.")
+
+        except Exception as e:
+            self.logger.error(f"Error in _perform_youtube_download: {e}")
+            await message_to_edit.edit(f"An error occurred during download: {e}")
 
     async def download_media(self, event):
         self.logger.info(f"download_media triggered for message ID: {event.message.id}")
@@ -293,17 +360,15 @@ class TelethonDownloaderBot:
                         return
                     end_time = time.time()
                     
-                    # Move file to completed directory
                     final_file_path = self.download_manager.move_to_completed(downloaded_file_path, final_destination_dir)
 
                     self.downloaded_files[message.id] = {
                         'file_path': final_file_path,
-                        'current_dir': self.env_config.BASE_DOWNLOAD_PATH # Start navigation from base download path
+                        'current_dir': self.env_config.BASE_DOWNLOAD_PATH
                     }
 
                     self.logger.info(f"Finished download of {file_info} to {final_file_path}")
                     
-                    # Add a small delay to ensure the last progress update is sent
                     await asyncio.sleep(0.5)
 
                     self.download_tracker.update_status(initial_message.id, 'completed', os.path.basename(final_file_path))
@@ -314,7 +379,7 @@ class TelethonDownloaderBot:
 
                     self.downloaded_files[message.id] = {
                         'file_path': final_file_path,
-                        'current_dir': self.env_config.BASE_DOWNLOAD_PATH, # Start navigation from base download path
+                        'current_dir': self.env_config.BASE_DOWNLOAD_PATH,
                         'summary_text': summary_text
                     }
 
@@ -387,7 +452,7 @@ class TelethonDownloaderBot:
                 if message_id in self.downloaded_files:
                     file_info = self.downloaded_files[message_id]
                     self.downloaded_files[message_id]['browser_chat_id'] = event.chat_id
-                    self.downloaded_files[message_id]['browser_message_id'] = event.message_id # This is the message with the buttons
+                    self.downloaded_files[message_id]['browser_message_id'] = event.message_id
                     if self.keyboard_manager:
                         summary_text = file_info.get('summary_text', "")
                         text, buttons = await self.keyboard_manager.send_directory_browser(message_id, file_info['current_dir'], summary_text=summary_text)
@@ -415,7 +480,7 @@ class TelethonDownloaderBot:
                 if message_id in self.downloaded_files:
                     current_base_dir = self.downloaded_files[message_id]['current_dir']
                     new_full_path = os.path.join(current_base_dir, selected_dir_name)
-                    self.downloaded_files[message_id]['current_dir'] = new_full_path # Update stored current_dir
+                    self.downloaded_files[message_id]['current_dir'] = new_full_path
                     if self.keyboard_manager:
                         text, buttons = await self.keyboard_manager.send_directory_browser(message_id, new_full_path, page=0)
                         await event.edit(text, buttons=buttons)
@@ -423,22 +488,20 @@ class TelethonDownloaderBot:
                         await event.answer("Keyboard manager not initialized.")
             elif action == 'nav':
                 nav_action = parts[2]
-                # current_dir from callback data is the directory *before* the navigation action
-                # We need to get the current_dir from self.downloaded_files for consistency
                 current_dir_from_state = self.downloaded_files[message_id]['current_dir']
                 page = int(parts[4])
 
                 if message_id in self.downloaded_files:
                     if nav_action == 'next':
                         page += 1
-                        self.downloaded_files[message_id]['current_dir'] = current_dir_from_state # Ensure consistency
+                        self.downloaded_files[message_id]['current_dir'] = current_dir_from_state
                     elif nav_action == 'back':
                         page -= 1
-                        self.downloaded_files[message_id]['current_dir'] = current_dir_from_state # Ensure consistency
+                        self.downloaded_files[message_id]['current_dir'] = current_dir_from_state
                     elif nav_action == 'up':
                         new_current_dir = os.path.dirname(current_dir_from_state)
                         self.downloaded_files[message_id]['current_dir'] = new_current_dir
-                        page = 0 # Reset page when going up
+                        page = 0
                     elif nav_action == 'this':
                         file_info = self.downloaded_files[message_id]
                         file_path = file_info['file_path']
@@ -453,7 +516,6 @@ class TelethonDownloaderBot:
                             await event.edit(f"{summary_text}\n\nError moving file.", buttons=None)
                         return
                     
-                    # Use the updated current_dir from state for sending the browser
                     if self.keyboard_manager:
                         text, buttons = await self.keyboard_manager.send_directory_browser(message_id, self.downloaded_files[message_id]['current_dir'], page)
                         await event.edit(text, buttons=buttons)
@@ -467,11 +529,8 @@ class TelethonDownloaderBot:
             self.logger.error(f"Unhandled exception in handle_callback_query: {e}")
             await event.answer(f"Error processing callback: {e}")
 
-    
-
     async def handle_new_folder_name(self, event):
         try:
-            # Find the message ID that is waiting for a folder name
             target_message_id = None
             for msg_id, file_info in self.downloaded_files.items():
                 if file_info.get('waiting_for_folder_name', False):
@@ -479,7 +538,7 @@ class TelethonDownloaderBot:
                     break
 
             if target_message_id is None:
-                return # Not waiting for a folder name
+                return
 
             new_folder_name = event.message.text
             current_dir = self.downloaded_files[target_message_id]['current_dir']
@@ -491,7 +550,6 @@ class TelethonDownloaderBot:
             self.download_manager._apply_permissions_and_ownership(new_folder_path)
             self.downloaded_files[target_message_id]['waiting_for_folder_name'] = False
 
-            # Move the file to the new folder
             file_info = self.downloaded_files[target_message_id]
             file_path = file_info['file_path']
             new_file_path = self.download_manager.move_file(file_path, new_folder_path)
@@ -504,7 +562,6 @@ class TelethonDownloaderBot:
             else:
                 await event.reply(f"Folder '{new_folder_name}' created, but there was an error moving the file.")
 
-            # Refresh the directory browser
             if browser_message_id and browser_chat_id:
                 self.logger.info(f"Refreshing browser for message {target_message_id}")
         except Exception as e:
