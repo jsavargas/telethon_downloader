@@ -129,14 +129,20 @@ class TelethonDownloaderBot:
     async def handle_youtube_link(self, event):
         try:
             self.logger.info(f"YouTube link detected in message ID: {event.message.id}")
+            
+            # Send a processing message immediately
+            processing_message = await event.reply("Processing YouTube link...")
+
             match = re.search(r"https?://(www\.)?(youtube\.com|youtu\.be)/\S+", event.message.text)
-            if not match: return
+            if not match: 
+                await processing_message.edit("Could not find a valid YouTube URL.")
+                return
 
             url = match.group(0).rstrip(')')
             info, is_playlist, playlist_count = await asyncio.get_event_loop().run_in_executor(None, self.youtube_downloader.get_video_info, url)
 
             if info is None:
-                await event.reply("Could not process the YouTube URL.")
+                await processing_message.edit("Could not process the YouTube URL.")
                 return
 
             if is_playlist:
@@ -145,7 +151,7 @@ class TelethonDownloaderBot:
                     [KeyboardButtonCallback("Download First", data=f"yt_playlist_first_{event.message.id}")],
                     [KeyboardButtonCallback(f"Download All ({playlist_count})", data=f"yt_playlist_all_{event.message.id}")]
                 ]
-                await event.reply(f"This is a playlist with {playlist_count} videos. What would you like to do?", buttons=buttons)
+                await processing_message.edit(f"This is a playlist with {playlist_count} videos. What would you like to do?", buttons=buttons)
             else:
                 self.logger.info("URL is a single video. Prompting for format.")
                 buttons = [
@@ -153,7 +159,7 @@ class TelethonDownloaderBot:
                     [KeyboardButtonCallback("Audio", data=f"yt_single_audio_{event.message.id}")],
                     [KeyboardButtonCallback("Both", data=f"yt_single_both_{event.message.id}")]
                 ]
-                await event.reply("What format would you like to download?", buttons=buttons)
+                await processing_message.edit("What format would you like to download?", buttons=buttons)
 
         except Exception as e:
             self.logger.error(f"Error in handle_youtube_link: {e}")
@@ -227,7 +233,7 @@ class TelethonDownloaderBot:
                     eta = d.get('eta') or 0
                     video_title = d.get('info_dict', {}).get('title', 'Unknown')
                     progress_title = f"Downloading {dl_type.capitalize()}s" if is_playlist else f"Downloading {dl_type.capitalize()}"
-                    progress_text = f"**{progress_title}:** {video_title}\n{percentage:.1f}% of {total_bytes/(1024*1024):.2f}MB at {speed/(1024*1024):.2f}MB/s, ETA: {eta:.0f}s"
+                    progress_text = f"**{progress_title}:** {video_title}\n\n**Download Speed:** {percentage:.1f}% of {total_bytes/(1024*1024):.2f}MB at {speed/(1024*1024):.2f}MB/s\n**ETA**: {eta:.0f}s"
                     asyncio.run_coroutine_threadsafe(message_to_edit.edit(progress_text, buttons=None), main_loop)
                     last_update_time = current_time
 
@@ -238,10 +244,10 @@ class TelethonDownloaderBot:
 
             download_time = end_time - start_time
             if is_playlist:
-                return f"**Playlist {dl_type.capitalize()} Download Finished**\n- **Playlist:** {info_dict.get('title', 'N/A')}\n- **Folder:** {self.config.YOUTUBE_VIDEO_FOLDER if dl_type == 'video' else self.config.YOUTUBE_AUDIO_FOLDER}\n- **Time:** {download_time:.2f}s"
+                return f"**Playlist {dl_type.capitalize()} Download Finished**\n\n**Playlist:** {info_dict.get('title', 'N/A')}\n**Folder:** {self.config.YOUTUBE_VIDEO_FOLDER if dl_type == 'video' else self.config.YOUTUBE_AUDIO_FOLDER}\n**Time:** {download_time:.2f}s"
             else:
                 total_bytes = info_dict.get('filesize') or info_dict.get('filesize_approx') or 0
-                return f"**{dl_type.capitalize()} Download Finished**\n- **File:** {os.path.basename(final_filename)}\n- **Folder:** {os.path.dirname(final_filename)}\n- **Size:** {total_bytes/(1024*1024):.2f}MB\n- **Time:** {download_time:.2f}s"
+                return f"**{dl_type.capitalize()} Download Finished**\n\n**File:** {os.path.basename(final_filename)}\n**Folder:** {os.path.dirname(final_filename)}\n**Size:** {total_bytes/(1024*1024):.2f}MB\n**Time:** {download_time:.2f}s"
 
         try:
             if download_type == 'both':
