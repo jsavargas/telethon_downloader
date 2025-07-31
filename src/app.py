@@ -162,10 +162,13 @@ class TelethonDownloaderBot:
                 await event.reply("Could not find a valid YouTube URL in the message.")
                 return
             url = match.group(0).rstrip(')')
-            video_info, is_playlist = self.youtube_downloader.get_video_info(url)
+
+            processing_message = await event.reply("Processing YouTube link...")
+
+            video_info, is_playlist, playlist_count = self.youtube_downloader.get_video_info(url)
 
             if video_info is None:
-                await event.reply("Could not process the YouTube URL. Please check the link and try again.")
+                await processing_message.edit("Could not process the YouTube URL. Please check the link and try again.")
                 return
 
             if is_playlist:
@@ -173,16 +176,18 @@ class TelethonDownloaderBot:
                     [KeyboardButtonCallback("Download All", data=f"yt_download_all_{event.message.id}")],
                     [KeyboardButtonCallback("Download First", data=f"yt_download_first_{event.message.id}")]
                 ]
-                await event.reply("This is a playlist. Do you want to download all videos or just the first one?", buttons=buttons)
+                await processing_message.edit(f"This is a playlist with {playlist_count} videos. Do you want to download all videos or just the first one?", buttons=buttons)
             else:
                 video_title = video_info.get('title', 'default_video_title')
                 file_extension = video_info.get('ext', 'mp4')
+                file_size = video_info.get('filesize_approx') or 0
 
                 target_download_dir, final_destination_dir = self.download_manager.get_download_dirs(file_extension, None, None, video_title)
 
-                await event.reply(f"Starting download of YouTube video: {video_title}")
-                self.youtube_downloader.download_video(url, download_path=self.env_config.YOUTUBE_VIDEO_FOLDER)
-                await event.reply(f"Finished downloading YouTube video: {video_title}")
+                await processing_message.edit(f"Starting download of YouTube video: {video_title}")
+                progress_bar = ProgressBar(processing_message, video_title, self.logger, final_destination_dir, file_size, time.time(), event.sender_id, event.sender_id, 10)
+                self.youtube_downloader.download_video(url, download_path=final_destination_dir, progress_callback=progress_bar.progress_callback)
+                await processing_message.edit(f"Finished downloading YouTube video: {video_title}")
         except Exception as e:
             self.logger.error(f"Error downloading YouTube video: {e}")
             await event.reply(f"Error downloading YouTube video: {e}")
