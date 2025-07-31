@@ -114,3 +114,13 @@ class ConfigManager:
         except Exception as e:
             self.logger.error(f"Error getting keyword path for keyword {keyword}: {e}")
             return None
+
+    def get_all_keywords(self):
+        try:
+            self._load_config() # Re-read config.ini to pick up new paths
+            if 'KEYWORDS' in self.config:
+                return {k: v for k, v in self.config.items('KEYWORDS')}
+            return {}
+        except Exception as e:
+            self.logger.error(f"Error getting all keywords: {e}")
+            return {}

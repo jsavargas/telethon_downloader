@@ -134,7 +134,7 @@ class TelethonDownloaderBot:
 
             self.logger.info(f"download_media file_info: {file_info} sender_id: {message.sender_id} origin_group: {origin_group} channel_id: {channel_id}")
 
-            target_download_dir, final_destination_dir = self.download_manager.get_download_dirs(file_extension, origin_group, channel_id)
+            target_download_dir, final_destination_dir = self.download_manager.get_download_dirs(file_extension, origin_group, channel_id, file_info)
 
             initial_message = await message.reply(f"Added to queued {file_info}...")
             start_time = time.time()
