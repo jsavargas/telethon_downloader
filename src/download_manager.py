@@ -47,46 +47,60 @@ class DownloadManager:
         except Exception as e:
             self.logger.error(f"Error ensuring directory {path} exists and setting permissions: {e}")
 
+    def _get_keyword_destination(self, file_info):
+        keywords = self.config_manager.get_all_keywords()
+        for keyword, path in keywords.items():
+            if keyword.lower() in file_info.lower():
+                self.logger.info(f"Keyword '{keyword}' found in filename. Proposed destination: {path}")
+                return path
+        return None
+
+    def _get_group_destination(self, origin_group_id, channel_id):
+        group_path = None
+        if channel_id:
+            group_path = self.config_manager.get_group_path(channel_id)
+        elif origin_group_id:
+            group_path = self.config_manager.get_group_path(origin_group_id)
+        if group_path:
+            self.logger.info(f"Group path '{group_path}' found. Proposed destination: {group_path}")
+        return group_path
+
+    def _get_torrent_destination(self, extension):
+        if extension.lower() == 'torrent' and self.torrent_path:
+            self.logger.info(f"Torrent detected. Proposed destination: {self.torrent_path}")
+            return self.torrent_path
+        return None
+
+    def _get_extension_destination(self, extension):
+        configured_path = self.config_manager.get_download_path(extension)
+        if configured_path:
+            self.logger.info(f"Extension path '{configured_path}' found. Proposed destination: {configured_path}")
+        return configured_path
+
     def get_download_dirs(self, extension, origin_group_id, channel_id, file_info):
         try:
-            # 1. Check for keyword-based path
-            keywords = self.config_manager.get_all_keywords()
-            for keyword, path in keywords.items():
-                if keyword.lower() in file_info.lower():
-                    final_destination_dir = path
-                    self.logger.info(f"Keyword '{keyword}' found in filename. Setting destination to {final_destination_dir}")
-                    self._ensure_dir_and_set_permissions(final_destination_dir)
-                    return self.temp_incompleted_dir, final_destination_dir
+            final_destination_dir = self.default_completed_dir
 
-            # 2. Check for group-specific path (overrides keyword if both apply)
-            group_path = self.config_manager.get_group_path(channel_id or origin_group_id) if (channel_id or origin_group_id) else None
+            # Order of precedence: Keyword > Group > Torrent > Extension > Default
+            keyword_dest = self._get_keyword_destination(file_info)
+            group_dest = self._get_group_destination(origin_group_id, channel_id)
+            torrent_dest = self._get_torrent_destination(extension)
+            extension_dest = self._get_extension_destination(extension)
 
-            if group_path:
-                final_destination_dir = group_path
-                self.logger.info(f"Group path '{group_path}' found. Setting destination to {final_destination_dir}")
-                self._ensure_dir_and_set_permissions(final_destination_dir)
-                return self.temp_incompleted_dir, final_destination_dir
+            if torrent_dest:
+                final_destination_dir = torrent_dest
+            elif keyword_dest:
+                final_destination_dir = keyword_dest
+            elif group_dest:
+                final_destination_dir = group_dest
+            elif extension_dest:
+                final_destination_dir = extension_dest
 
-            # 3. Handle torrents (overrides group/keyword if it's a torrent)
-            if extension.lower() == 'torrent' and self.torrent_path:
-                final_destination_dir = self.torrent_path
-                self.logger.info(f"Torrent detected. Setting destination to {final_destination_dir}")
-                self._ensure_dir_and_set_permissions(final_destination_dir)
-                return self.temp_incompleted_dir, final_destination_dir
-            
-            # 4. Check for extension-based path (overrides previous if it applies)
-            configured_path = self.config_manager.get_download_path(extension)
-            if configured_path:
-                final_destination_dir = configured_path
-                self.logger.info(f"Extension path '{configured_path}' found. Setting destination to {final_destination_dir}")
-                self._ensure_dir_and_set_permissions(final_destination_dir)
-                return self.temp_incompleted_dir, final_destination_dir
+            self._ensure_dir_and_set_permissions(final_destination_dir)
 
+            target_incompleted_dir = self.temp_incompleted_dir
 
-            # Ensure the final destination directory exists and has correct permissions
-            self._ensure_dir_and_set_permissions(self.default_completed_dir)
-
-            return self.default_incompleted_dir, self.default_completed_dir
+            return target_incompleted_dir, final_destination_dir
         except Exception as e:
             self.logger.error(f"Error getting download directories for extension {extension}, origin {origin_group_id}, and file {file_info}: {e}")
             return self.default_incompleted_dir, self.default_completed_dir # Fallback to default
