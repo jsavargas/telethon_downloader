@@ -13,6 +13,7 @@ class EnvConfig:
             self.DOWNLOAD_PATH_TORRENTS = os.environ.get('DOWNLOAD_PATH_TORRENTS', '/watch')
             self.YOUTUBE_VIDEO_FOLDER = os.environ.get('YOUTUBE_VIDEO_FOLDER', os.path.join(self.BASE_DOWNLOAD_PATH, "youtube", "videos"))
             self.YOUTUBE_AUDIO_FOLDER = os.environ.get('YOUTUBE_AUDIO_FOLDER', os.path.join(self.BASE_DOWNLOAD_PATH, "youtube", "audios"))
+            self.YOUTUBE_FORMAT_VIDEO = os.environ.get('YOUTUBE_FORMAT_VIDEO', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best')
             self.PATH_CONFIG = os.environ.get("PATH_CONFIG", '/config/')
             self.PUID = os.environ.get('PUID')
             self.PGID = os.environ.get('PGID')

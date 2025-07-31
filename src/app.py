@@ -104,7 +104,7 @@ class TelethonDownloaderBot:
             self.pending_downloads_manager = PendingDownloadsManager(self.download_tracker, self.logger, self)
             self.logger.info("PendingDownloadsManager initialized.")
 
-            self.youtube_downloader = YouTubeDownloader(self.env_config.YOUTUBE_VIDEO_FOLDER)
+            self.youtube_downloader = YouTubeDownloader(self.env_config)
             self.logger.info("YouTubeDownloader initialized.")
 
             self._add_handlers()
@@ -124,10 +124,53 @@ class TelethonDownloaderBot:
         except Exception as e:
             self.logger.error(f"Error adding event handlers: {e}")
 
+    async def _perform_youtube_download(self, message_to_edit, sender_id, url, is_playlist):
+        try:
+            video_info, _, _ = self.youtube_downloader.get_video_info(url)
+            if video_info is None:
+                await message_to_edit.edit("Could not process the YouTube URL. Please check the link and try again.")
+                return
+
+            video_title = video_info.get('title', 'default_video_title')
+            file_size = video_info.get('filesize_approx') or 0
+
+            final_destination_dir = self.env_config.YOUTUBE_VIDEO_FOLDER
+
+            await message_to_edit.edit(f"Starting download of YouTube video: {video_title}")
+            start_time = time.time()
+            progress_bar = ProgressBar(message_to_edit, video_title, self.logger, final_destination_dir, file_size, start_time, sender_id, sender_id, 10)
+            download_info = self.youtube_downloader.download_video(url, download_path=final_destination_dir, playlist=is_playlist, progress_callback=progress_bar.progress_callback)
+            end_time = time.time()
+
+            if download_info:
+                download_time = end_time - start_time
+                download_speed = download_info['total_bytes'] / download_time if download_time > 0 else 0
+
+                summary_text = (
+                    f"**Download Finished**\n\n"
+                    f"**File Name:** {os.path.basename(download_info['filename'])}\n"
+                    f"**Download Folder:** {final_destination_dir}\n"
+                    f"**File Size:** {download_info['total_bytes'] / (1024*1024):.2f} MB\n"
+                    f"**Start Time:** {time.strftime('%H:%M:%S', time.localtime(start_time))}\n"
+                    f"**End Time:** {time.strftime('%H:%M:%S', time.localtime(end_time))}\n"
+                    f"**Download Time:** {download_time:.2f}s\n"
+                    f"**Download Speed:** {download_speed / (1024*1024):.2f} MB/s"
+                )
+                await message_to_edit.edit(summary_text)
+            else:
+                await message_to_edit.edit(f"Finished downloading YouTube video: {video_title}")
+        except Exception as e:
+            self.logger.error(f"Error performing YouTube download: {e}")
+            await message_to_edit.edit(f"Error downloading YouTube video: {e}")
+
     async def handle_youtube_callback(self, event):
         try:
             data = event.data.decode('utf-8')
             self.logger.info(f"YouTube callback data received: {data}")
+
+            # Edit message immediately to remove buttons and get the message object
+            processing_message = await event.edit("Processing your selection...")
+
             parts = data.split('_')
             action = parts[2]
             message_id = int(parts[3])
@@ -141,13 +184,9 @@ class TelethonDownloaderBot:
             url = match.group(0).rstrip(')')
 
             if action == "all":
-                await event.edit("Starting download of the entire playlist...")
-                self.youtube_downloader.download_video(url, playlist=True)
-                await event.edit("Finished downloading the entire playlist.")
+                await self._perform_youtube_download(processing_message, event.sender_id, url, is_playlist=True)
             elif action == "first":
-                await event.edit("Starting download of the first video in the playlist...")
-                self.youtube_downloader.download_video(url, playlist=False)
-                await event.edit("Finished downloading the first video in the playlist.")
+                await self._perform_youtube_download(processing_message, event.sender_id, url, is_playlist=False)
 
         except Exception as e:
             self.logger.error(f"Error handling YouTube callback: {e}")
@@ -178,16 +217,7 @@ class TelethonDownloaderBot:
                 ]
                 await processing_message.edit(f"This is a playlist with {playlist_count} videos. Do you want to download all videos or just the first one?", buttons=buttons)
             else:
-                video_title = video_info.get('title', 'default_video_title')
-                file_extension = video_info.get('ext', 'mp4')
-                file_size = video_info.get('filesize_approx') or 0
-
-                target_download_dir, final_destination_dir = self.download_manager.get_download_dirs(file_extension, None, None, video_title)
-
-                await processing_message.edit(f"Starting download of YouTube video: {video_title}")
-                progress_bar = ProgressBar(processing_message, video_title, self.logger, final_destination_dir, file_size, time.time(), event.sender_id, event.sender_id, 10)
-                self.youtube_downloader.download_video(url, download_path=final_destination_dir, progress_callback=progress_bar.progress_callback)
-                await processing_message.edit(f"Finished downloading YouTube video: {video_title}")
+                await self._perform_youtube_download(processing_message, event.sender_id, url, is_playlist=False)
         except Exception as e:
             self.logger.error(f"Error downloading YouTube video: {e}")
             await event.reply(f"Error downloading YouTube video: {e}")
