@@ -1,4 +1,5 @@
 from telethon import TelegramClient, events
+from telethon.tl.types import Message
 import os
 import asyncio
 import time
@@ -42,6 +43,7 @@ class TelethonDownloaderBot:
         self.telethon_utils = None
         self.keyboard_manager = None
         self.youtube_downloader = None
+        self.active_youtube_prompts = {}
 
         try:
             self.env_config = EnvConfig(self.logger)
@@ -119,74 +121,89 @@ class TelethonDownloaderBot:
             self.bot.add_event_handler(self.handle_new_folder_name, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and any(self.downloaded_files[msg_id].get('waiting_for_folder_name', False) for msg_id in self.downloaded_files)))
             self.bot.add_event_handler(self.handle_text_commands, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and e.message.text.startswith('/')))
             
-            # New, robust handlers for YouTube
             self.bot.add_event_handler(self.handle_youtube_link, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and ("youtube.com" in e.message.text or "youtu.be" in e.message.text)))
             self.bot.add_event_handler(self.handle_youtube_choice, events.CallbackQuery(pattern=b'yt_'))
 
         except Exception as e:
             self.logger.error(f"Error adding event handlers: {e}")
 
+    async def _start_timeout_task(self, prompt_message, url):
+        prompt_id = prompt_message.id
+        self.active_youtube_prompts[prompt_id] = {"url": url, "event": prompt_message}
+        await asyncio.sleep(5)
+        if prompt_id in self.active_youtube_prompts:
+            await self._handle_youtube_timeout(prompt_id)
+
+    async def _handle_youtube_timeout(self, prompt_id):
+        self.logger.info(f"YouTube prompt {prompt_id} timed out.")
+        prompt_context = self.active_youtube_prompts.pop(prompt_id, None)
+        if not prompt_context: return
+
+        event = prompt_context["event"]
+        url = prompt_context["url"]
+        
+        await event.edit("Timed out. Defaulting to first video, video format.")
+        await self._perform_youtube_download(event, url, 'video', is_playlist=False)
+
     async def handle_youtube_link(self, event):
         try:
             self.logger.info(f"YouTube link detected in message ID: {event.message.id}")
-            
-            # Send a processing message immediately
             processing_message = await event.reply("Processing YouTube link...")
 
             match = re.search(r"https?://(www\.)?(youtube\.com|youtu\.be)/\S+", event.message.text)
             if not match: 
-                await processing_message.edit("Could not find a valid YouTube URL.")
-                return
+                await processing_message.edit("Could not find a valid YouTube URL."); return
 
             url = match.group(0).rstrip(')')
             info, is_playlist, playlist_count = await asyncio.get_event_loop().run_in_executor(None, self.youtube_downloader.get_video_info, url)
 
             if info is None:
-                await processing_message.edit("Could not process the YouTube URL.")
-                return
+                await processing_message.edit("Could not process the YouTube URL."); return
 
             if is_playlist:
-                self.logger.info(f"URL is a playlist with {playlist_count} videos.")
                 buttons = [
                     [KeyboardButtonCallback("Download First", data=f"yt_playlist_first_{event.message.id}")],
                     [KeyboardButtonCallback(f"Download All ({playlist_count})", data=f"yt_playlist_all_{event.message.id}")]
                 ]
                 await processing_message.edit(f"This is a playlist with {playlist_count} videos. What would you like to do?", buttons=buttons)
             else:
-                self.logger.info("URL is a single video. Prompting for format.")
                 buttons = [
                     [KeyboardButtonCallback("Video", data=f"yt_single_video_{event.message.id}")],
                     [KeyboardButtonCallback("Audio", data=f"yt_single_audio_{event.message.id}")],
                     [KeyboardButtonCallback("Both", data=f"yt_single_both_{event.message.id}")]
                 ]
                 await processing_message.edit("What format would you like to download?", buttons=buttons)
+            
+            asyncio.create_task(self._start_timeout_task(processing_message, url))
 
         except Exception as e:
             self.logger.error(f"Error in handle_youtube_link: {e}")
             await event.reply(f"An error occurred: {e}")
 
     async def handle_youtube_choice(self, event):
+        prompt_message = await event.get_message()
+        if prompt_message.id in self.active_youtube_prompts:
+            del self.active_youtube_prompts[prompt_message.id]
+        else: # Timeout already handled or invalid prompt
+            await event.answer("This action has expired."); return
+
         try:
             data = event.data.decode('utf-8')
             self.logger.info(f"YouTube choice callback received: {data}")
 
             parts = data.split('_')
-            source_type = parts[1]
+            source_type, download_scope, original_message_id_str = parts[1], parts[2], parts[3]
 
-            message = await event.get_message()
-            original_message = await self.bot.get_messages(event.chat_id, ids=message.reply_to_msg_id)
-
+            original_message = await self.bot.get_messages(event.chat_id, ids=int(original_message_id_str))
             if not original_message or not original_message.text:
                 await event.edit("Could not find the original message."); return
 
             match = re.search(r"https?://(www\.)?(youtube\.com|youtu\.be)/\S+", original_message.text)
             if not match: 
                 await event.edit("Could not find a URL in the original message."); return
-            
             url = match.group(0).rstrip(')')
 
             if source_type == 'playlist':
-                download_scope = parts[2]
                 is_playlist = (download_scope == 'all')
                 buttons = [
                     [KeyboardButtonCallback("Video", data=f"yt_final_video_{is_playlist}_{original_message.id}")],
@@ -194,26 +211,25 @@ class TelethonDownloaderBot:
                     [KeyboardButtonCallback("Both", data=f"yt_final_both_{is_playlist}_{original_message.id}")]
                 ]
                 await event.edit("What format would you like to download?", buttons=buttons)
+                # We need a new timeout for this second prompt
+                asyncio.create_task(self._start_timeout_task(prompt_message, url))
             
-            elif source_type == 'final':
-                download_type = parts[2]
-                is_playlist = parts[3] == 'True'
-                original_message_id = int(parts[4])
+            elif source_type == 'final' or source_type == 'single':
+                download_type = download_scope
+                is_playlist = (parts[3] == 'True') if source_type == 'final' else False
                 await event.edit(f"Selection received. Starting download...")
                 await self._perform_youtube_download(event, url, download_type, is_playlist)
-            
-            elif source_type == 'single':
-                download_type = parts[2]
-                original_message_id = int(parts[3])
-                await event.edit(f"Selection received. Starting download...")
-                await self._perform_youtube_download(event, url, download_type, is_playlist=False)
 
         except Exception as e:
             self.logger.error(f"Error in handle_youtube_choice: {e}")
             await event.answer(f"An error occurred: {e}")
 
     async def _perform_youtube_download(self, event, url, download_type, is_playlist):
-        message_to_edit = await event.get_message()
+        if isinstance(event, events.CallbackQuery.Event):
+            message_to_edit = await event.get_message()
+        else: # It's a Message object from a timeout
+            message_to_edit = event
+
         main_loop = asyncio.get_event_loop()
 
         async def download_and_summarize(dl_type):
@@ -233,7 +249,7 @@ class TelethonDownloaderBot:
                     eta = d.get('eta') or 0
                     video_title = d.get('info_dict', {}).get('title', 'Unknown')
                     progress_title = f"Downloading {dl_type.capitalize()}s" if is_playlist else f"Downloading {dl_type.capitalize()}"
-                    progress_text = f"**{progress_title}:** {video_title}\n\n**Download Speed:** {percentage:.1f}% of {total_bytes/(1024*1024):.2f}MB at {speed/(1024*1024):.2f}MB/s\n**ETA**: {eta:.0f}s"
+                    progress_text = f"**{progress_title}:** {video_title}\n{percentage:.1f}% of {total_bytes/(1024*1024):.2f}MB at {speed/(1024*1024):.2f}MB/s, ETA: {eta:.0f}s"
                     asyncio.run_coroutine_threadsafe(message_to_edit.edit(progress_text, buttons=None), main_loop)
                     last_update_time = current_time
 
@@ -244,10 +260,10 @@ class TelethonDownloaderBot:
 
             download_time = end_time - start_time
             if is_playlist:
-                return f"**Playlist {dl_type.capitalize()} Download Finished**\n\n**Playlist:** {info_dict.get('title', 'N/A')}\n**Folder:** {self.config.YOUTUBE_VIDEO_FOLDER if dl_type == 'video' else self.config.YOUTUBE_AUDIO_FOLDER}\n**Time:** {download_time:.2f}s"
+                return f"**Playlist {dl_type.capitalize()} Download Finished**\n- **Playlist:** {info_dict.get('title', 'N/A')}\n- **Folder:** {self.config.YOUTUBE_VIDEO_FOLDER if dl_type == 'video' else self.config.YOUTUBE_AUDIO_FOLDER}\n- **Time:** {download_time:.2f}s"
             else:
                 total_bytes = info_dict.get('filesize') or info_dict.get('filesize_approx') or 0
-                return f"**{dl_type.capitalize()} Download Finished**\n\n**File:** {os.path.basename(final_filename)}\n**Folder:** {os.path.dirname(final_filename)}\n**Size:** {total_bytes/(1024*1024):.2f}MB\n**Time:** {download_time:.2f}s\n\n"
+                return f"**{dl_type.capitalize()} Download Finished**\n- **File:** {os.path.basename(final_filename)}\n- **Folder:** {os.path.dirname(final_filename)}\n- **Size:** {total_bytes/(1024*1024):.2f}MB\n- **Time:** {download_time:.2f}s"
 
         try:
             if download_type == 'both':
