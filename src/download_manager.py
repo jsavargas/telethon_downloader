@@ -14,15 +14,12 @@ class DownloadManager:
             self.default_incompleted_dir = os.path.join(self.base_download_path, "incompleted")
             self.default_completed_dir = os.path.join(self.base_download_path, "completed")
             
-            os.makedirs(self.default_incompleted_dir, exist_ok=True)
-            self._apply_permissions_and_ownership(self.default_incompleted_dir)
-            os.makedirs(self.default_completed_dir, exist_ok=True)
-            self._apply_permissions_and_ownership(self.default_completed_dir)
+            self._ensure_dir_and_set_permissions(self.default_incompleted_dir)
+            self._ensure_dir_and_set_permissions(self.default_completed_dir)
 
             # Temporary directory for in-progress downloads when a specific final path is given
             self.temp_incompleted_dir = self.default_incompleted_dir
-            os.makedirs(self.temp_incompleted_dir, exist_ok=True)
-            self._apply_permissions_and_ownership(self.temp_incompleted_dir)
+            self._ensure_dir_and_set_permissions(self.temp_incompleted_dir)
         except Exception as e:
             self.logger.error(f"Error during DownloadManager initialization: {e}")
 
@@ -42,58 +39,54 @@ class DownloadManager:
         except Exception as e:
             self.logger.error(f"Unhandled exception in _apply_permissions_and_ownership for {path}: {e}")
 
+    def _ensure_dir_and_set_permissions(self, path):
+        try:
+            if not os.path.exists(path):
+                os.makedirs(path, exist_ok=True)
+                self._apply_permissions_and_ownership(path)
+        except Exception as e:
+            self.logger.error(f"Error ensuring directory {path} exists and setting permissions: {e}")
+
     def get_download_dirs(self, extension, origin_group_id, channel_id, file_info):
         try:
-            # Check for keyword-based path first
+            # 1. Check for keyword-based path
             keywords = self.config_manager.get_all_keywords()
             for keyword, path in keywords.items():
                 if keyword.lower() in file_info.lower():
-                    target_completed_dir = path
-                    self.logger.info(f"Keyword '{keyword}' found in filename. Setting destination to {target_completed_dir}")
-                    if not os.path.exists(target_completed_dir):
-                        os.makedirs(target_completed_dir, exist_ok=True)
-                        self._apply_permissions_and_ownership(target_completed_dir)
-                    return  self.temp_incompleted_dir, target_completed_dir   
+                    final_destination_dir = path
+                    self.logger.info(f"Keyword '{keyword}' found in filename. Setting destination to {final_destination_dir}")
+                    self._ensure_dir_and_set_permissions(final_destination_dir)
+                    return self.temp_incompleted_dir, final_destination_dir
 
-            # Check for group-specific path first
-            group_path = None
-            if channel_id:
-                group_path = self.config_manager.get_group_path(channel_id)
-            elif origin_group_id:
-                group_path = self.config_manager.get_group_path(origin_group_id)
+            # 2. Check for group-specific path (overrides keyword if both apply)
+            group_path = self.config_manager.get_group_path(channel_id or origin_group_id) if (channel_id or origin_group_id) else None
 
             if group_path:
-                target_completed_dir = group_path
+                final_destination_dir = group_path
+                self.logger.info(f"Group path '{group_path}' found. Setting destination to {final_destination_dir}")
+                self._ensure_dir_and_set_permissions(final_destination_dir)
+                return self.temp_incompleted_dir, final_destination_dir
 
-                # Only create and apply permissions if the directory doesn't exist
-                if not os.path.exists(target_completed_dir):
-                    os.makedirs(target_completed_dir, exist_ok=True)
-                    self._apply_permissions_and_ownership(target_completed_dir)
-
-                return self.temp_incompleted_dir, target_completed_dir
-
-            # Handle torrents
+            # 3. Handle torrents (overrides group/keyword if it's a torrent)
             if extension.lower() == 'torrent' and self.torrent_path:
-                os.makedirs(self.torrent_path, exist_ok=True)
-                self._apply_permissions_and_ownership(self.torrent_path)
-                return self.torrent_path, self.torrent_path # Download and complete in the same torrent path
-
+                final_destination_dir = self.torrent_path
+                self.logger.info(f"Torrent detected. Setting destination to {final_destination_dir}")
+                self._ensure_dir_and_set_permissions(final_destination_dir)
+                return self.temp_incompleted_dir, final_destination_dir
+            
+            # 4. Check for extension-based path (overrides previous if it applies)
             configured_path = self.config_manager.get_download_path(extension)
             if configured_path:
-                # If a specific path is configured, use it as the final destination
-                # and use a temporary incompleted directory
-                self.temp_incompleted_dir = self.temp_incompleted_dir
-                target_completed_dir = configured_path
-                
-                # Only create and apply permissions if the directory doesn't exist
-                if not os.path.exists(target_completed_dir):
-                    os.makedirs(target_completed_dir, exist_ok=True)
-                    self._apply_permissions_and_ownership(target_completed_dir)
+                final_destination_dir = configured_path
+                self.logger.info(f"Extension path '{configured_path}' found. Setting destination to {final_destination_dir}")
+                self._ensure_dir_and_set_permissions(final_destination_dir)
+                return self.temp_incompleted_dir, final_destination_dir
 
-                return self.temp_incompleted_dir, target_completed_dir
-            else:
-                # Otherwise, use the default incompleted/completed structure
-                return self.default_incompleted_dir, self.default_completed_dir
+
+            # Ensure the final destination directory exists and has correct permissions
+            self._ensure_dir_and_set_permissions(self.default_completed_dir)
+
+            return self.default_incompleted_dir, self.default_completed_dir
         except Exception as e:
             self.logger.error(f"Error getting download directories for extension {extension}, origin {origin_group_id}, and file {file_info}: {e}")
             return self.default_incompleted_dir, self.default_completed_dir # Fallback to default
