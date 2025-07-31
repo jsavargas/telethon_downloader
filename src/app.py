@@ -130,7 +130,7 @@ class TelethonDownloaderBot:
     async def _start_timeout_task(self, prompt_message, url):
         prompt_id = prompt_message.id
         self.active_youtube_prompts[prompt_id] = {"url": url, "event": prompt_message}
-        await asyncio.sleep(5)
+        await asyncio.sleep(self.env_config.YOUTUBE_TIMEOUT_OPTION)
         if prompt_id in self.active_youtube_prompts:
             await self._handle_youtube_timeout(prompt_id)
 
@@ -142,8 +142,8 @@ class TelethonDownloaderBot:
         event = prompt_context["event"]
         url = prompt_context["url"]
         
-        await event.edit("Timed out. Defaulting to first video, video format.")
-        await self._perform_youtube_download(event, url, 'video', is_playlist=False)
+        await event.edit(f"Timed out. Defaulting to first video, {self.env_config.YOUTUBE_DEFAULT_DOWNLOAD} format.")
+        await self._perform_youtube_download(event, url, self.env_config.YOUTUBE_DEFAULT_DOWNLOAD, is_playlist=False)
 
     async def handle_youtube_link(self, event):
         try:

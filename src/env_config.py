@@ -21,6 +21,8 @@ class EnvConfig:
             self.PROGRESS_DOWNLOAD = os.environ.get('PROGRESS_DOWNLOAD', 'True')
             self.PROGRESS_STATUS_SHOW = os.environ.get('PROGRESS_STATUS_SHOW', '10')
             self.MAX_CONCURRENT_TASKS = os.environ.get("TG_MAX_PARALLEL") or os.environ.get('MAX_CONCURRENT_TASKS', '4')
+            self.YOUTUBE_TIMEOUT_OPTION = int(os.environ.get('YOUTUBE_TIMEOUT_OPTION', '5'))
+            self.YOUTUBE_DEFAULT_DOWNLOAD = os.environ.get('YOUTUBE_DEFAULT_DOWNLOAD', 'video').lower()
         except Exception as e:
             self.logger.error(f"Error initializing EnvConfig: {e}")
 
