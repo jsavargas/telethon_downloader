@@ -1,3 +1,4 @@
+import re
 import os
 
 class DownloadManager:
@@ -47,6 +48,27 @@ class DownloadManager:
         except Exception as e:
             self.logger.error(f"Error ensuring directory {path} exists and setting permissions: {e}")
 
+    def _get_regex_destination(self, file_info):
+        regex_paths = self.config_manager.get_all_regex_paths()
+        for pattern, path in regex_paths.items():
+            try:
+                # Check for case-insensitive flag 'i'
+                flags = 0
+                if pattern.endswith('/i'):
+                    pattern = pattern[:-1]  
+                    flags = re.IGNORECASE
+                
+                # Remove enclosing slashes /.../
+                if pattern.startswith('/') and pattern.endswith('/'):
+                    pattern = pattern[1:-1]
+
+                if re.search(pattern, file_info, flags):
+                    self.logger.info(f"Regex pattern '{pattern}' matched in filename. Proposed destination: {path}")
+                    return path
+            except re.error as e:
+                self.logger.error(f"Invalid regex pattern '{pattern}': {e}")
+        return None
+
     def _get_keyword_destination(self, file_info):
         keywords = self.config_manager.get_all_keywords()
         for keyword, path in keywords.items():
@@ -81,14 +103,17 @@ class DownloadManager:
         try:
             final_destination_dir = self.default_completed_dir
 
-            # Order of precedence: Keyword > Group > Torrent > Extension > Default
+            # Order of precedence: Torrent > Regex > Keyword > Group > Extension > Default
+            torrent_dest = self._get_torrent_destination(extension)
+            regex_dest = self._get_regex_destination(file_info)
             keyword_dest = self._get_keyword_destination(file_info)
             group_dest = self._get_group_destination(origin_group_id, channel_id)
-            torrent_dest = self._get_torrent_destination(extension)
             extension_dest = self._get_extension_destination(extension)
 
             if torrent_dest:
                 final_destination_dir = torrent_dest
+            elif regex_dest:
+                final_destination_dir = regex_dest
             elif keyword_dest:
                 final_destination_dir = keyword_dest
             elif group_dest:

@@ -44,6 +44,13 @@ class ConfigManager:
                     }
                     self._write_config()
                     self.logger.info(f"Added [KEYWORDS] section to {self.config_path}")
+                # Check if REGEX_PATH section exists, if not, add it
+                if 'REGEX_PATH' not in self.config:
+                    self.config['REGEX_PATH'] = {
+                        '/example/i': '/download/example',
+                    }
+                    self._write_config()
+                    self.logger.info(f"Added [REGEX_PATH] section to {self.config_path}")
             else:
                 # Create a default config if it doesn't exist
                 self._create_default_config()
@@ -87,6 +94,9 @@ class ConfigManager:
             self.config['KEYWORDS'] = {
                 'tanganana': '/download/tanganana',
             }
+            self.config['REGEX_PATH'] = {
+                '/example/i': '/download/example',
+            }
             self._write_config()
         except Exception as e:
             self.logger.error(f"Error creating default config: {e}")
@@ -123,4 +133,14 @@ class ConfigManager:
             return {}
         except Exception as e:
             self.logger.error(f"Error getting all keywords: {e}")
+            return {}
+
+    def get_all_regex_paths(self):
+        try:
+            self._load_config() # Re-read config.ini to pick up new paths
+            if 'REGEX_PATH' in self.config:
+                return {k: v for k, v in self.config.items('REGEX_PATH')}
+            return {}
+        except Exception as e:
+            self.logger.error(f"Error getting all regex paths: {e}")
             return {}
