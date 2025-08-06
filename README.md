@@ -74,6 +74,16 @@ Enjoy an automated and organized downloading experience with telethon_downloader
 
  **TG_BOT_TOKEN** : <telegram BOT token generated at ´Creating a Telegram Bot´>
  
+ **TORRENT_MODE** [OPTIONAL]: <Mode for torrent handling. Set to 'qbittorrent' to enable qBittorrent API integration, or 'watch' for watch folder (default: watch)>
+
+ **QBT_HOST** [REQUIRED if TORRENT_MODE is 'qbittorrent']: <Hostname or IP address of the qBittorrent Web UI.>
+
+ **QBT_PORT** [REQUIRED if TORRENT_MODE is 'qbittorrent']: <Port of the qBittorrent Web UI (default: 8080)>
+
+ **QBT_USERNAME** [OPTIONAL]: <Username for qBittorrent Web UI authentication.>
+
+ **QBT_PASSWORD** [OPTIONAL]: <Password for qBittorrent Web UI authentication.>
+
  **PUID** [OPTIONAL]: <Unique identification of the user in the system, used for assigning permissions.> 
 
  **PGID** [OPTIONAL]: <Unique identifier for a group of users, used for assigning specific permissions to the group.> 
@@ -84,20 +94,6 @@ Enjoy an automated and organized downloading experience with telethon_downloader
 
  **TZ** [OPTIONAL]: <Sets the system timezone, adjusting it based on the geographical location of the server or user.> 
  >Example: America/Santiago
-
- **APP_LANGUAGE** [OPTIONAL]: <bot messages will appear in the language configured in this variable (default: en_EN)>
->NOTE: Now messages can be in English, Spanish, or any other language by modifying or adding language templates in the "locale" path.
-For example: Creating the template "de_DE.txt" for the German language and adding "de_DE" to the environment variable.
-
->NOTE: The community is encouraged to generate templates in the languages they use and add them to the "locale" folder of this project.
-
- **TG_UNZIP_TORRENTS** [OPTIONAL]: <In backlog (default: True)>
-
- **ENABLED_UNZIP** [OPTIONAL]: <Enables unzip functionality for zip files (default: True)>
-
- **ENABLED_UNRAR** [OPTIONAL]: <Enables unrar functionality for rar files (default: True)>
-
- **ENABLED_7Z** [OPTIONAL]: <In backlog (default: True)>
 
  **TG_MAX_PARALLEL** [OPTIONAL]: <maximum number of parallel downloads allowed (default: 4)>
 
@@ -152,7 +148,7 @@ A config.ini file is created that contains file extensions and paths where these
 ## By file extension
 
 ```ini
-[DEFAULT_PATH]
+[EXTENSIONS]
 mp4 = /download/mp4
 ```
 
@@ -173,21 +169,27 @@ mp4 = /download/mp4
 ## Example
 
 ```ini
-[DEFAULT]
+[EXTENSIONS]
 pdf = /download/pdf
 cbr = /download/pdf
-
-[DEFAULT_PATH]
-pdf = /download/pdf
+mp3 = /download/mp3
 flac = /download/mp3
 jpg = /download/jpg
 mp4 = /download/mp4
+mobi = /download/mobi
+
+[GROUP_PATH]
+-10012345789 = /download/1001234577
+
+[KEYWORDS]
+tanganana = /download/tanganana
 
 [REGEX_PATH]
 /example/i = /download/example
 
-[GROUP_PATH]
-0000000000 = /download/example
+[REMOVE_PATTERNS]
+* = tif_,[tof_,0001
+-100123456 = tif_
 ```
 
 # Available Commands
@@ -266,44 +268,44 @@ root@Jonas > id -g nobody
 
 ```dockerfile
 version: '3'
+
 services:
-  telethon-downloader:
+
+  telethon_downloader:
     image: jsavargas/telethon_downloader
-    container_name: telethon-downloader
+    container_name: telethon_downloader
     restart: unless-stopped
     network_mode: host
     environment:
-      - PUID=1000
-      - PGID=1000
-      - PERMISSIONS_FOLDER=777
-      - PERMISSIONS_FILE=755
-      - TG_AUTHORIZED_USER_ID=63460,645261 #<telegram chat_id authorized>
-      - TG_API_ID=<telegram API key generated at ´Generating Telegram API keys´>
-      - TG_API_HASH=<telegram API hash generated at ´Generating Telegram API keys´> 
-      - TG_BOT_TOKEN=<telegram BOT token generated at ´Creating a Telegram Bot´>
+      - PUID=99
+      - PGID=100
+      - API_ID=
+      - API_HASH= 
+      - BOT_TOKEN=
+      - AUTHORIZED_USER_ID=                             #<telegram chat_id authorized>
       - TZ=America/Santiago
-      - APP_LANGUAGE=es_ES        # OPTIONAL
-      - TG_UNZIP_TORRENTS=True    # OPTIONA
-      - ENABLED_UNZIP=True        # OPTIONA
-      - ENABLED_UNRAR=True        # OPTIONA
-      - TG_MAX_PARALLEL=4         # OPTIONAL
-      - TG_DL_TIMEOUT=4600        # OPTIONAL
-      - TG_PROGRESS_DOWNLOAD=True # OPTIONAL
-      - PROGRESS_STATUS_SHOW=10   # OPTIONAL
-      - YOUTUBE_FORMAT_AUDIO=bestaudio/best              # OPTIONAL
-      - YOUTUBE_FORMAT_VIDEO=bestvideo+bestaudio/best    # OPTIONAL
-      - YOUTUBE_DEFAULT_DOWNLOAD=VIDEO                   # OPTIONAL (AUDIO/VIDEO) 
-      - YOUTUBE_DEFAULT_EXTENSION=MKV                    # OPTIONAL (mkv/mp4) 
-      - YOUTUBE_SHOW_OPTION=True                         # OPTIONAL (True/False)
-      - YOUTUBE_TIMEOUT_OPTION=3                         # OPTIONAL
-      - YOUTUBE_AUDIO_FOLDER=/youtube/audio              # OPTIONAL
-      - YOUTUBE_VIDEO_FOLDER=/youtube/video              # OPTIONAL
+      - TG_MAX_PARALLEL=3                               # OPTIONAL
+      - TG_DL_TIMEOUT=4600                              # OPTIONAL
+      - TG_PROGRESS_DOWNLOAD=True                       # OPTIONAL (True/False)
+      - PROGRESS_STATUS_SHOW=10                         # OPTIONAL (10)
+      - YOUTUBE_FORMAT_AUDIO=bestaudio/best             # OPTIONAL (bestaudio/best)
+      - YOUTUBE_FORMAT_VIDEO=bestvideo+bestaudio/best   # OPTIONAL (bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best)
+      - YOUTUBE_DEFAULT_DOWNLOAD=VIDEO                  # OPTIONAL (AUDIO/VIDEO) 
+      - YOUTUBE_DEFAULT_EXTENSION=MKV                   # OPTIONAL (mkv/mp4) 
+      - YOUTUBE_SHOW_OPTION=True                        # OPTIONAL (True/False)
+      - YOUTUBE_TIMEOUT_OPTION=5                        # OPTIONAL (5)
+      - YOUTUBE_AUDIO_FOLDER=/youtube/audio             # OPTIONAL
+      - YOUTUBE_VIDEO_FOLDER=/youtube/video             # OPTIONAL
+      - TORRENT_MODE=qbittorrent                        # OPTIONAL (watch/qbittorrent)  
+      - QBT_HOST=192.168.1.10                           # OPTIONAL        
+      - QBT_PORT=8080                                   # OPTIONAL
+      - QBT_USERNAME=admin                              # OPTIONAL
+      - QBT_PASSWORD=adminadmin                         # OPTIONAL
     volumes:
       - /path/to/config:/config
-      - /path/to/download/torrent/watch:/watch
       - /path/to/download:/download
+      - /path/to/watch:/watch
       - /path/to/youtube:/youtube
-
 ```
 
 
@@ -316,9 +318,10 @@ services:
 - **Feature:** Unrar Files - Add the capability to unrar files directly from the bot.
 
 
-## [Version 5.0.0] - 2025-06-28
-- **Update:** Updated `pyrogram` to version 2.0.106.
-- **Update:** Updated `yt_dlp` to version 2025.06.25.
+## [Version 4.0.10] - 2025-08-06
+- **Feature:** Implemented torrent category selection when adding new torrents via qBittorrent API. Users can now choose from existing categories or add a new one.
+- **Fix:** Improved resume functionality for pending downloads, ensuring media is correctly retrieved and downloads can be resumed after bot restarts.
+- **Fix:** Resolved issue where category selection buttons would reappear after torrent processing.
 
 ## [Version 4.0.8] - 2025-02-28
 - **Update:** Updated `telethon` to version 1.39.0.
