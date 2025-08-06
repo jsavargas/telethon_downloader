@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - 'Dockerfile'
-      - 'telethon-downloader/**'
+      - 'src/**'
       - '.github/workflows/**'
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
 
       - name: Set version
         run: |
-          echo "version=$(cat telethon-downloader/app.py| grep "self.BOT_VERSION =" | awk -F'=' '{print $2}' | egrep -o "[0-9.a-z-]{1,}")" >> $GITHUB_ENV
+          echo "version=$(cat src/app.py| grep "VERSION =" | awk -F'=' '{print $2}' | egrep -o "[0-9.a-z-]{1,}")" >> $GITHUB_ENV
 
       - name: Docker meta
         id: meta
@@ -27,7 +27,6 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref_name == 'main' }}
             type=raw,value=${{ env.version }},enable=${{ github.ref_name == 'main' }}
             type=raw,value=${{ github.ref_name }},enable=${{ github.ref_name != 'main' }}
-            type=raw,value=pyrogram,enable=${{ github.ref_name == 'develop' }}
 
       - name: Docker meta for telegram-downloader
         id: meta-telegram
@@ -51,17 +50,8 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          platforms: linux/amd64, linux/arm/v7, linux/arm64
+          platforms: linux/amd64, linux/arm64
           file: ./Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
 
-      - name: Build and push telegram-downloader (pyrogram)
-        if: github.ref_name == 'develop'
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          platforms: linux/amd64, linux/arm/v7, linux/arm64
-          file: ./Dockerfile
-          push: true
-          tags: ${{ steps.meta-telegram.outputs.tags }}
