@@ -16,7 +16,6 @@ from telethon.tl.types import KeyboardButtonCallback, ReplyInlineMarkup, Keyboar
 from telethon_utils import TelethonUtils
 from urllib.parse import quote, unquote
 from keyboard_manager import KeyboardManager
-from download_history_manager import DownloadHistoryManager
 from commands import Commands
 from download_tracker import DownloadTracker
 from resume_manager import ResumeManager
@@ -88,10 +87,6 @@ class TelethonDownloaderBot:
 
             self.keyboard_manager = KeyboardManager(self.logger, self.env_config.BASE_DOWNLOAD_PATH)
             self.logger.info("KeyboardManager initialized.")
-
-            self.HISTORY_FILE_PATH = os.path.join(self.env_config.PATH_CONFIG, 'download_history.json')
-            self.download_history_manager = DownloadHistoryManager(self.HISTORY_FILE_PATH)
-            self.logger.info("DownloadHistoryManager initialized.")
 
             self.commands_manager = Commands(VERSION, self.welcome_message_generator, self.logger)
             self.logger.info("Commands manager initialized.")
@@ -297,7 +292,7 @@ class TelethonDownloaderBot:
             channel_id = self.telethon_utils.get_channel_id(message)
             file_info = self.telethon_utils.get_file_info(message, origin_group)
 
-            self.logger.info(f"download_media file_info: {file_info} sender_id: {message.sender_id} origin_group: {origin_group} channel_id: {channel_id}")
+            self.logger.info(f"download_media file_info: [{message.id}] {file_info} sender_id: {message.sender_id} origin_group: {origin_group} channel_id: {channel_id}")
 
             target_download_dir, final_destination_dir = self.download_manager.get_download_dirs(file_extension, origin_group, channel_id, file_info)
 
@@ -311,10 +306,9 @@ class TelethonDownloaderBot:
 
             original_filename = os.path.join(target_download_dir, file_info)
 
-            self.download_tracker.add_download(message.grouped_id, initial_message.id, original_filename, message.media, origin_group, user_id, file_info)
+            self.download_tracker.add_download(message.id, message.id, original_filename, message.media, origin_group, user_id, file_info)
 
             download_summary_downloading = DownloadSummary(message, file_info, final_destination_dir, start_time, 0, file_size, origin_group, user_id, channel_id, status='downloading')
-            self.download_history_manager.add_or_update_entry(download_summary_downloading.to_dict())
 
             progress_bar = None
 
@@ -378,8 +372,8 @@ class TelethonDownloaderBot:
                             await initial_message.edit(f"Error: Failed to move file {file_info} to completed directory.")
                 except asyncio.CancelledError:
                     self.logger.info(f"Caught asyncio.CancelledError for download of {file_info} (message ID: {initial_message.id}).")
-                    self.download_tracker.update_status(initial_message.id, 'cancelled')
-                    self.download_tracker.remove_download(initial_message.id)
+                    self.download_tracker.update_status(message.id, 'cancelled')
+                    self.download_tracker.remove_download(message.id)
                     if os.path.exists(download_path_with_filename):
                         os.remove(download_path_with_filename)
                         self.logger.info(f"Deleted partially downloaded file: {download_path_with_filename}")
@@ -664,15 +658,14 @@ class TelethonDownloaderBot:
     
 
     async def _finalize_download_processing(self, initial_message, message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, file_extension, final_file_path):
-        self.logger.info(f"Finished download of {file_info} to {final_file_path}")
+        self.logger.info(f"Finished download of [{message.id}] {file_info} to {final_file_path}")
         
         await asyncio.sleep(0.5)
 
-        self.download_tracker.update_status(initial_message.id, 'completed', os.path.basename(final_file_path))
+        self.download_tracker.update_status(message.id, 'completed', os.path.basename(final_file_path))
 
         summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, status='completed')
         summary_text = summary.generate_summary()
-        self.download_history_manager.add_or_update_entry(summary.to_dict())
 
         self.downloaded_files[message.id] = {
             'file_path': final_file_path,
