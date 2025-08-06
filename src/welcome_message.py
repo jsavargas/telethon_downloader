@@ -35,9 +35,11 @@ class WelcomeMessage:
     def get_message(self):
         try:
             return (
-                f"Telegram Downloader Bot Started\n\n"
-                f"bot version: {self.versions.bot_version}\n"
-                f"teleton version: {self.versions.telethon_version}"
+                f"**Telegram Downloader Bot Started**\n\n"
+                f"**python version:** {sys.version.split(' ')[0]}\n"
+                f"**bot version:** {self.versions.bot_version}\n"
+                f"**teleton version:** {self.versions.telethon_version}\n"
+                f"**yt-dlp version:** {self.versions.yt_dlp_version}"
             )
         except Exception as e:
             self.logger.error(f"Error generating welcome message: {e}")
