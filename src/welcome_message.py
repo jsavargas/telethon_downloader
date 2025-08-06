@@ -1,4 +1,5 @@
 import time
+import sys
 from telethon import __version__ as telethon_version
 
 class WelcomeMessage:
@@ -11,8 +12,10 @@ class WelcomeMessage:
     def log_welcome_message(self):
         try:
             self.logger.info(f"Starting Telegram Downloader Bot Started : {time.strftime('%Y/%m/%d %H:%M:%S')}")
+            self.logger.info(f"PYTHON_VERSION                : {sys.version.split(' ')[0]}")
             self.logger.info(f"BOT_VERSION                   : {self.versions.bot_version}")
             self.logger.info(f"TELETHON_VERSION              : {self.versions.telethon_version}")
+            self.logger.info(f"YT_DLP_VERSION                : {self.versions.yt_dlp_version}")
             self.logger.info(f"API_ID                        : {self.env_config.API_ID[:3]}***") # Masking part of the ID
             self.logger.info(f"API_HASH                      : {self.env_config.API_HASH[:5]}****************") # Masking part of the hash
             self.logger.info(f"BOT_TOKEN                     : {self.env_config.BOT_TOKEN[:10]}***********************") # Masking part of the token
