@@ -24,7 +24,7 @@ from pending_downloads_manager import PendingDownloadsManager
 from youtube_downloader import YouTubeDownloader
 import re
 
-VERSION = "4.0.10-r8"
+VERSION = "4.0.10-r10"
 
 class TelethonDownloaderBot:
     def __init__(self):
@@ -69,7 +69,7 @@ class TelethonDownloaderBot:
             os.makedirs(self.env_config.PATH_CONFIG, exist_ok=True)
             self.logger.info(f"Ensured config directory exists: {self.env_config.PATH_CONFIG}")
 
-            self.download_manager = DownloadManager(self.env_config.BASE_DOWNLOAD_PATH, self.config_manager, self.logger, self.env_config.PUID, self.env_config.PGID, self.env_config.DOWNLOAD_PATH_TORRENTS)
+            self.download_manager = DownloadManager(self.env_config.BASE_DOWNLOAD_PATH, self.config_manager, self.logger, self.env_config, self.env_config.PUID, self.env_config.PGID, self.env_config.DOWNLOAD_PATH_TORRENTS)
             self.logger.info("DownloadManager initialized.")
 
             self.download_semaphore = asyncio.Semaphore(int(self.env_config.MAX_CONCURRENT_TASKS))
@@ -123,6 +123,7 @@ class TelethonDownloaderBot:
             
             self.bot.add_event_handler(self.handle_youtube_link, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and ("youtube.com" in e.message.text or "youtu.be" in e.message.text)))
             self.bot.add_event_handler(self.handle_youtube_choice, events.CallbackQuery(pattern=b'yt_'))
+            self.bot.add_event_handler(self.handle_new_category_name, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and any(self.downloaded_files[msg_id].get('waiting_for_category_name', False) for msg_id in self.downloaded_files)))
 
         except Exception as e:
             self.logger.error(f"Error adding event handlers: {e}")
@@ -349,42 +350,32 @@ class TelethonDownloaderBot:
                         await initial_message.edit(f"Error: No downloadable media found in message.")
                         return
                     end_time = time.time()
-                    
-                    final_file_path = self.download_manager.move_to_completed(downloaded_file_path, final_destination_dir)
 
-                    self.downloaded_files[message.id] = {
-                        'file_path': final_file_path,
-                        'current_dir': self.env_config.BASE_DOWNLOAD_PATH
-                    }
-
-                    self.logger.info(f"Finished download of {file_info} to {final_file_path}")
-                    
-                    await asyncio.sleep(0.5)
-
-                    self.download_tracker.update_status(initial_message.id, 'completed', os.path.basename(final_file_path))
-
-                    summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, status='completed')
-                    summary_text = summary.generate_summary()
-                    self.download_history_manager.add_or_update_entry(summary.to_dict())
-
-                    self.downloaded_files[message.id] = {
-                        'file_path': final_file_path,
-                        'current_dir': self.env_config.BASE_DOWNLOAD_PATH,
-                        'summary_text': summary_text
-                    }
-
-                    buttons = None
-                    if file_extension.lower() != 'torrent':
-                        buttons = summary.get_buttons(self.keyboard_manager)
-
-                    try:
-                        if buttons:
-                            await initial_message.edit(summary_text, buttons=buttons.rows)
+                    if file_extension.lower() == 'torrent':
+                        self.downloaded_files[initial_message.id] = {
+                            'original_message_id': message.id,
+                            'downloaded_file_path': downloaded_file_path,
+                            'final_destination_dir': final_destination_dir,
+                            'file_info': file_info,
+                            'file_extension': file_extension,
+                            'file_size': file_size,
+                            'origin_group': origin_group,
+                            'user_id': user_id,
+                            'channel_id': channel_id,
+                            'start_time': start_time,
+                            'end_time': end_time,
+                            'initial_message_id': initial_message.id,
+                            'initial_message_chat_id': initial_message.chat_id
+                        }
+                        await self._ask_for_torrent_category(initial_message, downloaded_file_path, final_destination_dir)
+                        return # Exit here, processing continues after category selection
+                    else:
+                        final_file_path = self.download_manager.move_to_completed(downloaded_file_path, final_destination_dir)
+                        if final_file_path:
+                            await self._finalize_download_processing(initial_message, message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, file_extension, final_file_path)
                         else:
-                            await initial_message.edit(summary_text)
-                    except Exception as edit_error:
-                        self.logger.error(f"Error editing message with buttons for {file_info}: {edit_error}")
-                        await initial_message.edit(f"Download completed, but error displaying buttons: {edit_error}")
+                            self.logger.error(f"Failed to move file {file_info} to completed directory.")
+                            await initial_message.edit(f"Error: Failed to move file {file_info} to completed directory.")
                 except asyncio.CancelledError:
                     self.logger.info(f"Caught asyncio.CancelledError for download of {file_info} (message ID: {initial_message.id}).")
                     self.download_tracker.update_status(initial_message.id, 'cancelled')
@@ -406,8 +397,69 @@ class TelethonDownloaderBot:
             parts = data.split('_')
             self.logger.info(f"Callback parts: {parts}")
             action_parts = data.split('_')
-            action = '_'.join(action_parts[:2]) if action_parts[0] == 'resume' or (action_parts[0] == 'cancel' and action_parts[1] == 'download') else action_parts[0]            
+            action = '_'.join(action_parts[:2]) if action_parts[0] == 'resume' or (action_parts[0] == 'cancel' and action_parts[1] == 'download') else action_parts[0]
+            if action_parts[0] == 'category':
+                action = action_parts[0]            
             
+            if action == 'category':
+                message_id = int(parts[1])
+                category = unquote(parts[2]) if len(parts) > 2 else None
+
+                if message_id not in self.downloaded_files:
+                    await event.answer("Original download information not found.")
+                    return
+
+                torrent_path = self.downloaded_files[message_id]['downloaded_file_path']
+                destination_path = self.downloaded_files[message_id]['final_destination_dir']
+
+                if category == 'new':
+                    self.downloaded_files[message_id]['waiting_for_category_name'] = True
+                    await self.bot.edit_message(event.chat_id, message_id, "Please send the name for the new category.", buttons=None)
+                elif category == 'none':
+                    download_info = self.downloaded_files[message_id]
+                    downloaded_file_path = download_info['downloaded_file_path']
+                    final_destination_dir = download_info['final_destination_dir']
+                    file_info = download_info['file_info']
+                    file_extension = download_info['file_extension']
+                    file_size = download_info['file_size']
+                    origin_group = download_info['origin_group']
+                    user_id = download_info['user_id']
+                    channel_id = download_info['channel_id']
+                    start_time = download_info['start_time']
+                    end_time = time.time()
+                    initial_message = await self.bot.get_messages(download_info['initial_message_chat_id'], ids=download_info['initial_message_id'])
+                    original_message = await self.bot.get_messages(download_info['user_id'], ids=download_info['original_message_id'])
+
+                    final_file_path = self.download_manager.move_to_completed(downloaded_file_path, final_destination_dir, category=None)
+                    if final_file_path:
+                        await self.bot.edit_message(initial_message.chat_id, initial_message.id, "Processing torrent...", buttons=None)
+                        await self._finalize_download_processing(initial_message, original_message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, file_extension, final_file_path)
+                    else:
+                        await self.bot.edit_message(event.chat_id, message_id, "Failed to add torrent.", buttons=None)
+                else:
+                    download_info = self.downloaded_files[message_id]
+                    downloaded_file_path = download_info['downloaded_file_path']
+                    final_destination_dir = download_info['final_destination_dir']
+                    file_info = download_info['file_info']
+                    file_extension = download_info['file_extension']
+                    file_size = download_info['file_size']
+                    origin_group = download_info['origin_group']
+                    user_id = download_info['user_id']
+                    channel_id = download_info['channel_id']
+                    start_time = download_info['start_time']
+                    end_time = time.time()
+                    initial_message = await self.bot.get_messages(download_info['initial_message_chat_id'], ids=download_info['initial_message_id'])
+                    original_message = await self.bot.get_messages(download_info['user_id'], ids=download_info['original_message_id'])
+
+                    final_file_path = self.download_manager.move_to_completed(downloaded_file_path, final_destination_dir, category=category)
+                    if final_file_path:
+                        await self.bot.edit_message(initial_message.chat_id, initial_message.id, "Processing torrent...", buttons=None)
+                        await self._finalize_download_processing(initial_message, original_message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, file_extension, final_file_path)
+                    else:
+                        await self.bot.edit_message(event.chat_id, message_id, "Failed to add torrent.", buttons=None)
+                del self.downloaded_files[message_id]
+                return
+
             if data.startswith('cancel_download'):
                 message_id = int(parts[2])
                 self.logger.info(f"Cancelling download for message ID: {message_id}")
@@ -563,6 +615,89 @@ class TelethonDownloaderBot:
         if message_text.startswith('/'):
             command_name = message_text.split(' ')[0]
             await self.commands_manager.execute_command(command_name, event)
+
+    async def handle_new_category_name(self, event):
+        try:
+            target_message_id = None
+            for msg_id, file_info in self.downloaded_files.items():
+                if file_info.get('waiting_for_category_name', False):
+                    target_message_id = msg_id
+                    break
+
+            if target_message_id is None:
+                return
+
+            new_category_name = event.message.text
+            torrent_path = self.downloaded_files[target_message_id]['downloaded_file_path']
+            destination_path = self.downloaded_files[target_message_id]['final_destination_dir']
+            browser_message_id = self.downloaded_files[target_message_id].get('browser_message_id', None)
+            browser_chat_id = self.downloaded_files[target_message_id].get('browser_chat_id', None)
+
+            final_file_path = self.download_manager.move_to_completed(torrent_path, destination_path, category=new_category_name)
+
+            if final_file_path:
+                # Retrieve original message details for _finalize_download_processing
+                download_info = self.downloaded_files[target_message_id]
+                original_message_id = download_info['original_message_id']
+                original_message = await self.bot.get_messages(download_info['user_id'], ids=original_message_id)
+                file_info = download_info['file_info']
+                file_extension = download_info['file_extension']
+                file_size = download_info['file_size']
+                origin_group = download_info['origin_group']
+                user_id = download_info['user_id']
+                channel_id = download_info['channel_id']
+                start_time = download_info['start_time']
+                end_time = time.time()
+                initial_message = await self.bot.get_messages(download_info['initial_message_chat_id'], ids=download_info['initial_message_id'])
+
+                await self.bot.edit_message(initial_message.chat_id, initial_message.id, "Processing torrent...", buttons=None)
+                await self._finalize_download_processing(initial_message, original_message, file_info, destination_path, start_time, end_time, file_size, origin_group, user_id, channel_id, file_extension, final_file_path)
+                await event.delete()
+            else:
+                await self.bot.edit_message(browser_chat_id, browser_message_id, "Failed to add torrent.", buttons=None)
+
+            del self.downloaded_files[target_message_id]
+        except Exception as e:
+            self.logger.error(f"Error handling new category name: {e}")
+            await event.reply(f"Error creating new category: {e}")
+
+    
+
+    async def _finalize_download_processing(self, initial_message, message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, file_extension, final_file_path):
+        self.logger.info(f"Finished download of {file_info} to {final_file_path}")
+        
+        await asyncio.sleep(0.5)
+
+        self.download_tracker.update_status(initial_message.id, 'completed', os.path.basename(final_file_path))
+
+        summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, status='completed')
+        summary_text = summary.generate_summary()
+        self.download_history_manager.add_or_update_entry(summary.to_dict())
+
+        self.downloaded_files[message.id] = {
+            'file_path': final_file_path,
+            'current_dir': self.env_config.BASE_DOWNLOAD_PATH,
+            'summary_text': summary_text
+        }
+
+        buttons = None
+        if file_extension.lower() != 'torrent':
+            buttons = summary.get_buttons(self.keyboard_manager)
+
+        try:
+            await initial_message.edit(summary_text, buttons=buttons.rows if buttons else None)
+        except Exception as edit_error:
+            self.logger.error(f"Error editing message with buttons for {file_info}: {edit_error}")
+            await initial_message.edit(f"Download completed, but error displaying buttons: {edit_error}")
+
+    async def _ask_for_torrent_category(self, message, torrent_path, destination_path):
+        categories = self.download_manager.torrent_manager.get_categories()
+        buttons = []
+        for category in categories:
+            buttons.append([KeyboardButtonCallback(category, data=f"category_{message.id}_{quote(category)}")])
+        buttons.append([KeyboardButtonCallback("Add New Category", data=f"category_{message.id}_new")])
+        buttons.append([KeyboardButtonCallback("No Category", data=f"category_{message.id}_none")])
+        await self.bot.edit_message(message.chat_id, message.id, "Choose a category for the torrent:", buttons=buttons)
 
     async def run(self):
         try:

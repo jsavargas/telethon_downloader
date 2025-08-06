@@ -23,6 +23,11 @@ class EnvConfig:
             self.MAX_CONCURRENT_TASKS = os.environ.get("TG_MAX_PARALLEL") or os.environ.get('MAX_CONCURRENT_TASKS', '4')
             self.YOUTUBE_TIMEOUT_OPTION = int(os.environ.get('YOUTUBE_TIMEOUT_OPTION', '5'))
             self.YOUTUBE_DEFAULT_DOWNLOAD = os.environ.get('YOUTUBE_DEFAULT_DOWNLOAD', 'video').lower()
+            self.TORRENT_MODE = os.environ.get('TORRENT_MODE', 'watch').lower()
+            self.QBT_HOST = os.environ.get('QBT_HOST')
+            self.QBT_PORT = os.environ.get('QBT_PORT')
+            self.QBT_USERNAME = os.environ.get('QBT_USERNAME')
+            self.QBT_PASSWORD = os.environ.get('QBT_PASSWORD')
         except Exception as e:
             self.logger.error(f"Error initializing EnvConfig: {e}")
 

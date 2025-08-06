@@ -1,24 +1,27 @@
 import re
 import os
+import shutil
+from torrent_manager import TorrentManager
 
 class DownloadManager:
-    def __init__(self, base_download_path, config_manager, logger, puid=None, pgid=None, torrent_path=None):
+    def __init__(self, base_download_path, config_manager, logger, env_config, puid=None, pgid=None, torrent_path=None):
         self.base_download_path = base_download_path
         self.config_manager = config_manager
         self.logger = logger
+        self.env_config = env_config
         self.puid = puid
         self.pgid = pgid
         self.torrent_path = torrent_path
 
+        self.torrent_manager = TorrentManager(env_config, logger)
+
         try:
-            # Default incompleted and completed directories
             self.default_incompleted_dir = os.path.join(self.base_download_path, "incompleted")
             self.default_completed_dir = os.path.join(self.base_download_path, "completed")
             
             self._ensure_dir_and_set_permissions(self.default_incompleted_dir)
             self._ensure_dir_and_set_permissions(self.default_completed_dir)
 
-            # Temporary directory for in-progress downloads when a specific final path is given
             self.temp_incompleted_dir = self.default_incompleted_dir
             self._ensure_dir_and_set_permissions(self.temp_incompleted_dir)
         except Exception as e:
@@ -88,6 +91,9 @@ class DownloadManager:
         return group_path
 
     def _get_torrent_destination(self, extension):
+
+        if extension.lower() == 'torrent' and self.env_config.TORRENT_MODE != 'watch':
+            return os.path.join(self.env_config.BASE_DOWNLOAD_PATH, "torrents")
         if extension.lower() == 'torrent' and self.torrent_path:
             self.logger.info(f"Torrent detected. Proposed destination: {self.torrent_path}")
             return self.torrent_path
@@ -102,6 +108,7 @@ class DownloadManager:
     def get_download_dirs(self, extension, origin_group_id, channel_id, file_info):
         try:
             final_destination_dir = self.default_completed_dir
+            self.logger.info(f"get_download_dirs default_completed_dir: {final_destination_dir}")
 
             # Order of precedence: Torrent > Regex > Keyword > Group > Extension > Default
             torrent_dest = self._get_torrent_destination(extension)
@@ -121,6 +128,8 @@ class DownloadManager:
             elif extension_dest:
                 final_destination_dir = extension_dest
 
+            self.logger.info(f"get_download_dirs final_destination_dir: {final_destination_dir}")
+            
             self._ensure_dir_and_set_permissions(final_destination_dir)
 
             target_incompleted_dir = self.temp_incompleted_dir
@@ -130,8 +139,20 @@ class DownloadManager:
             self.logger.error(f"Error getting download directories for extension {extension}, origin {origin_group_id}, and file {file_info}: {e}")
             return self.default_incompleted_dir, self.default_completed_dir # Fallback to default
 
-    def move_to_completed(self, downloaded_file_path, target_completed_dir):
+    def move_to_completed(self, downloaded_file_path, target_completed_dir, category=None):
         try:
+            if downloaded_file_path.lower().endswith('.torrent'):
+                self.logger.info(f"Detected torrent file: {downloaded_file_path}. Handing to TorrentManager.")
+                processed_torrent_path = self.torrent_manager.add_torrent(downloaded_file_path, target_completed_dir, category)
+                if processed_torrent_path:
+                    self.logger.info(f"torrent file processed_torrent_path {processed_torrent_path} via TorrentManager.")
+                    self.logger.info(f"torrent file downloaded_file_path {downloaded_file_path} via TorrentManager.")
+                    self.logger.info(f"torrent file target_completed_dir {target_completed_dir} via TorrentManager.")
+                    return processed_torrent_path
+                else:
+                    self.logger.error(f"Failed to add torrent {downloaded_file_path} via TorrentManager.")
+                    return None # Indicate failure to the caller
+
             final_file_path = os.path.join(target_completed_dir, os.path.basename(downloaded_file_path))
             os.rename(downloaded_file_path, final_file_path)
             
