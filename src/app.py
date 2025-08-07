@@ -21,6 +21,7 @@ from download_tracker import DownloadTracker
 from resume_manager import ResumeManager
 from pending_downloads_manager import PendingDownloadsManager
 from youtube_downloader import YouTubeDownloader
+from direct_downloader import DirectDownloader
 import re
 
 VERSION = "4.0.10-r11"
@@ -104,6 +105,9 @@ class TelethonDownloaderBot:
             self.youtube_downloader = YouTubeDownloader(self.env_config)
             self.logger.info("YouTubeDownloader initialized.")
 
+            self.direct_downloader = DirectDownloader(self.env_config, self.logger, self.download_manager, self._finalize_download_processing)
+            self.logger.info("DirectDownloader initialized.")
+
             self._add_handlers()
             self.logger.info("Event handlers added.")
         except Exception as e:
@@ -117,7 +121,7 @@ class TelethonDownloaderBot:
             self.bot.add_event_handler(self.handle_new_folder_name, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and any(self.downloaded_files[msg_id].get('waiting_for_folder_name', False) for msg_id in self.downloaded_files)))
             self.bot.add_event_handler(self.handle_text_commands, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and e.message.text.startswith('/')))
             self.bot.add_event_handler(self.handle_magnet_link, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and e.message.text.startswith('magnet:?')))
-            
+            self.bot.add_event_handler(self.handle_direct_link, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and (e.message.text.startswith('http://') or e.message.text.startswith('https://')) and not ("youtube.com" in e.message.text or "youtu.be" in e.message.text)))
             self.bot.add_event_handler(self.handle_youtube_link, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and ("youtube.com" in e.message.text or "youtu.be" in e.message.text)))
             self.bot.add_event_handler(self.handle_youtube_choice, events.CallbackQuery(pattern=b'yt_'))
             self.bot.add_event_handler(self.handle_new_category_name, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and any(self.downloaded_files[msg_id].get('waiting_for_category_name', False) for msg_id in self.downloaded_files)))
@@ -628,6 +632,17 @@ class TelethonDownloaderBot:
             'initial_message_chat_id': initial_message.chat_id
         }
         await self._ask_for_torrent_source_category(initial_message, 'magnet', magnet_uri)
+
+    async def handle_direct_link(self, event):
+        try:
+            self.logger.info(f"Direct link detected in message ID: {event.message.id}")
+            self.download_type = 'link'
+            url = event.message.text.strip()
+            initial_message = await event.reply(f"Processing direct link: {url}")
+            await self.direct_downloader.download_file(event, url, initial_message)
+        except Exception as e:
+            self.logger.error(f"Error in handle_direct_link: {e}")
+            await event.reply(f"An error occurred: {e}")
 
     async def handle_new_category_name(self, event):
         try:
