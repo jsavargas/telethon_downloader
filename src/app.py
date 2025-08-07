@@ -432,8 +432,8 @@ class TelethonDownloaderBot:
                 action = 'group'
 
             if action == 'group':
-                action_type = parts[1]
-                user_facing_group_id = int(parts[2])
+                action_type = '_'.join(parts[1:-1])
+                user_facing_group_id = int(parts[-1])
 
                 internal_grouped_id = None
                 for gid, ginfo in self.media_groups.items():
@@ -455,7 +455,7 @@ class TelethonDownloaderBot:
                         'current_dir': self.env_config.BASE_DOWNLOAD_PATH,
                         'summary_text': f"Moving {group_info['total_files']} files.",
                         'browser_chat_id': event.chat_id,
-                        'browser_message_id': event.message.id
+                        'browser_message_id': event.message_id
                     }
                     summary_text = f"Moving {group_info['total_files']} files."
                     text, buttons = await self.keyboard_manager.send_directory_browser(initial_message_id, self.env_config.BASE_DOWNLOAD_PATH, summary_text=summary_text)
