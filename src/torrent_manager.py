@@ -69,3 +69,15 @@ class TorrentManager:
         except Exception as e:
             self.logger.error(f"Error getting categories from qBittorrent API: {e}")
             return []
+
+    def _add_magnet_qbt_api(self, magnet_uri, category=None):
+        if not self.qbt_client:
+            self.logger.error("qBittorrent client not initialized. Cannot add magnet link.")
+            return None
+        try:
+            self.qbt_client.torrents_add(urls=magnet_uri, category=category)
+            self.logger.info(f"Magnet link {magnet_uri} added via qBittorrent API with category '{category}'.")
+            return magnet_uri
+        except Exception as e:
+            self.logger.error(f"Error adding magnet link via qBittorrent API: {e}")
+            return None

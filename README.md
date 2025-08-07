@@ -320,6 +320,7 @@ services:
 
 ## [Version 4.0.10] - 2025-08-06
 - **Feature:** Implemented torrent category selection when adding new torrents via qBittorrent API. Users can now choose from existing categories or add a new one.
+- **Feature:** Added support for adding magnet links directly to qBittorrent with category selection.
 - **Fix:** Improved resume functionality for pending downloads, ensuring media is correctly retrieved and downloads can be resumed after bot restarts.
 - **Fix:** Resolved issue where category selection buttons would reappear after torrent processing.
 

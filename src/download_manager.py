@@ -198,3 +198,10 @@ class DownloadManager:
         except Exception as e:
             self.logger.error(f"Error moving file: {e}")
             return None
+
+    def add_magnet_link_with_category(self, magnet_uri, category=None):
+        if self.env_config.TORRENT_MODE == 'qbittorrent':
+            return self.torrent_manager._add_magnet_qbt_api(magnet_uri, category)
+        else:
+            self.logger.error(f"Magnet links can only be added with TORRENT_MODE set to 'qbittorrent'. Current mode: {self.env_config.TORRENT_MODE}")
+            return None
