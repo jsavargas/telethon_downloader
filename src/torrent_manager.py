@@ -52,7 +52,9 @@ class TorrentManager:
     def _add_torrent_watch_folder(self, torrent_file_path):
         watch_folder = self.env_config.DOWNLOAD_PATH_TORRENTS
         try:
-            shutil.move(torrent_file_path, watch_folder)
+            #new_path = os.path.join(watch_folder, os.path.basename(torrent_file_path))
+            #if os.path.exists(new_path):os.remove(new_path)
+            #shutil.move(torrent_file_path, watch_folder)
             self.logger.info(f"Torrent {os.path.basename(torrent_file_path)} moved to watch folder: {watch_folder}")
             return torrent_file_path
         except Exception as e:

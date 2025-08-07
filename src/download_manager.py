@@ -141,7 +141,7 @@ class DownloadManager:
 
     def move_to_completed(self, downloaded_file_path, target_completed_dir, category=None):
         try:
-            if downloaded_file_path.lower().endswith('.torrent'):
+            if self.env_config.TORRENT_MODE.lower() != 'watch' and downloaded_file_path.lower().endswith('.torrent'):
                 self.logger.info(f"Detected torrent file: {downloaded_file_path}. Handing to TorrentManager.")
                 processed_torrent_path = self.torrent_manager.add_torrent(downloaded_file_path, target_completed_dir, category)
                 if processed_torrent_path:
@@ -154,9 +154,12 @@ class DownloadManager:
                     self.logger.error(f"Failed to add torrent {downloaded_file_path} via TorrentManager.")
                     return None # Indicate failure to the caller
 
+            self.logger.info(f"move_to_completed downloaded_file_path {downloaded_file_path} .")
+            self.logger.info(f"move_to_completed target_completed_dir {target_completed_dir} .")
             final_file_path = os.path.join(target_completed_dir, os.path.basename(downloaded_file_path))
-            os.rename(downloaded_file_path, final_file_path)
-            
+            if os.path.exists(final_file_path): os.remove(final_file_path)
+            shutil.move(downloaded_file_path, final_file_path)
+
             # Set permissions and ownership
             if self.puid is not None and self.pgid is not None:
                 try:

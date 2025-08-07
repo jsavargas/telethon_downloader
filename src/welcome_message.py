@@ -29,6 +29,7 @@ class WelcomeMessage:
             self.logger.info(f"PROGRESS_DOWNLOAD             : {self.env_config.PROGRESS_DOWNLOAD}")
             self.logger.info(f"PROGRESS_STATUS_SHOW          : {self.env_config.PROGRESS_STATUS_SHOW}")
             self.logger.info(f"MAX_CONCURRENT_TASKS          : {self.env_config.MAX_CONCURRENT_TASKS}")
+            self.logger.info(f"TORRENT_MODE                  : {self.env_config.TORRENT_MODE}")
         except Exception as e:
             self.logger.error(f"Error logging welcome message: {e}")
 
