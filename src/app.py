@@ -327,7 +327,7 @@ class TelethonDownloaderBot:
                         'user_facing_group_id': int(message.date.timestamp())
                     }
                 self.media_groups[message.grouped_id]['total_files'] += 1
-                self.media_groups[message.grouped_id]['files'][message.id] = {'status': 'downloading', 'path': None, 'initial_message_id': initial_message.id}
+                self.media_groups[message.grouped_id]['files'][message.id] = {'status': 'downloading', 'path': None, 'initial_message_id': initial_message.id, 'filename': file_info}
                 if not self.media_groups[message.grouped_id]['initial_message_id']:
                     self.media_groups[message.grouped_id]['initial_message_id'] = initial_message.id
 
@@ -614,14 +614,17 @@ class TelethonDownloaderBot:
                             internal_group_id = file_info['internal_group_id']
                             group_info = self.media_groups[internal_group_id]
                             moved_files_count = 0
+                            moved_files_list = []
                             for msg_id, f_info in group_info['files'].items():
                                 if f_info.get('status') == 'completed' and f_info.get('path'):
                                     new_path = self.download_manager.move_file(f_info['path'], destination_dir)
                                     if new_path:
                                         moved_files_count += 1
+                                        moved_files_list.append(f_info['filename'])
                                         self.download_tracker.update_status(msg_id, 'completed', final_filename=new_path, download_type='file')
                             
-                            final_summary = f"{summary_text}\n\n{moved_files_count}/{group_info['total_files']} files moved successfully to {destination_dir}"
+                            files_str = "\n".join(moved_files_list)
+                            final_summary = f"Moved {moved_files_count}/{group_info['total_files']} files to **{destination_dir}**:\n{files_str}"
                             await event.edit(final_summary, buttons=None)
                             del self.downloaded_files[message_id]
                             del self.media_groups[internal_group_id]
@@ -674,14 +677,17 @@ class TelethonDownloaderBot:
                 internal_group_id = file_info['internal_group_id']
                 group_info = self.media_groups[internal_group_id]
                 moved_files_count = 0
+                moved_files_list = []
                 for msg_id, f_info in group_info['files'].items():
                     if f_info['status'] == 'completed' and f_info['path']:
                         new_path = self.download_manager.move_file(f_info['path'], new_folder_path)
                         if new_path:
                             moved_files_count += 1
+                            moved_files_list.append(f_info['filename'])
                             self.download_tracker.update_status(msg_id, 'completed', final_filename=new_path, download_type='file') # Assuming file type
                 
-                summary_text = f"Folder '{new_folder_name}' created and {moved_files_count}/{group_info['total_files']} files moved successfully."
+                files_str = "\n".join(moved_files_list)
+                summary_text = f"Created folder **{new_folder_name}** and moved {moved_files_count}/{group_info['total_files']} files to it:\n{files_str}"
                 await self.bot.edit_message(browser_chat_id, browser_message_id, summary_text, buttons=None)
                 del self.downloaded_files[target_message_id]
                 del self.media_groups[internal_group_id]
