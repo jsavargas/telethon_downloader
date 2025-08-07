@@ -33,7 +33,7 @@
 
 # Telegram Bot with Automatic Download
 
-This Telegram Bot, based on the [Telethon](https://github.com/LonamiWebs/Telethon) client, is designed to automatically download multimedia files sent to it. Additionally, it now has the capability to download videos or audios from YouTube and direct links to files via their URL.
+This Telegram Bot, based on the [Telethon](https://github.com/LonamiWebs/Telethon) client, is designed to automatically download multimedia files sent to it. Additionally, it now has the capability to download videos or audios from YouTube and direct links to files via their URL, intelligently handling .torrent files by passing them to the configured torrent client.
 
 ### What's new in this version:
 
@@ -43,7 +43,7 @@ This Telegram Bot, based on the [Telethon](https://github.com/LonamiWebs/Teletho
   - Files forwarded from groups are stored in specific folders identified by the group ID, allowing for more precise and customized organization (configurable in the .ini file).
 
 - **Extended Functionality:**
-  - Added the ability to download files via links.
+  - Added the ability to download files via direct links, with intelligent handling for .torrent files (passing them to the configured torrent client).
   - Implemented file renaming, zip, and rar file decompression features.
   - Introduced the capability to download YouTube videos or audio.
   - Enabled support for multiple languages in bot messages.
