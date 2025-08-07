@@ -25,7 +25,7 @@ from youtube_downloader import YouTubeDownloader
 from direct_downloader import DirectDownloader
 import re
 
-VERSION = "4.0.10-r13"
+VERSION = "4.0.10-r14"
 
 class TelethonDownloaderBot:
     def __init__(self):
