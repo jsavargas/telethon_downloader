@@ -449,6 +449,15 @@ class TelethonDownloaderBot:
                 initial_message_id = group_info['initial_message_id']
 
                 if action_type == 'move_all':
+                    for file_msg_id, file_info in group_info['files'].items():
+                        try:
+                            individual_initial_message_id = file_info['initial_message_id']
+                            message_to_edit = await self.bot.get_messages(event.chat_id, ids=individual_initial_message_id)
+                            if message_to_edit:
+                                await message_to_edit.edit(message_to_edit.text, buttons=None)
+                        except Exception as e:
+                            self.logger.error(f"Could not remove buttons from message {file_info.get('initial_message_id')}: {e}")
+
                     self.downloaded_files[initial_message_id] = {
                         'is_group': True,
                         'internal_group_id': internal_grouped_id,
