@@ -461,8 +461,7 @@ class TelethonDownloaderBot:
                     text, buttons = await self.keyboard_manager.send_directory_browser(initial_message_id, self.env_config.BASE_DOWNLOAD_PATH, summary_text=summary_text)
                     await event.edit(text, buttons=buttons)
                 elif action_type == 'ok':
-                    message = await event.get_message()
-                    await event.edit(message.text, buttons=None)
+                    await event.delete()
                     del self.media_groups[internal_grouped_id]
                 return
 
