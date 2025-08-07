@@ -316,20 +316,20 @@ class TelethonDownloaderBot:
             initial_message = await message.reply(f"Added to queued {file_info}...")
             start_time = time.time()
 
-            # Initialize media group tracking
-            if message.grouped_id:
-                if message.grouped_id not in self.media_groups:
-                    self.media_groups[message.grouped_id] = {
-                        'total_files': 0,
-                        'completed_files': 0,
-                        'files': {},
-                        'initial_message_id': None, # To store the message ID of the first file in the group
-                        'user_facing_group_id': int(message.date.timestamp())
-                    }
-                self.media_groups[message.grouped_id]['total_files'] += 1
-                self.media_groups[message.grouped_id]['files'][message.id] = {'status': 'downloading', 'path': None, 'initial_message_id': initial_message.id, 'filename': file_info}
-                if not self.media_groups[message.grouped_id]['initial_message_id']:
-                    self.media_groups[message.grouped_id]['initial_message_id'] = initial_message.id
+            # Initialize media group tracking by timestamp
+            group_key = int(message.date.timestamp())
+            if group_key not in self.media_groups:
+                self.media_groups[group_key] = {
+                    'total_files': 0,
+                    'completed_files': 0,
+                    'files': {},
+                    'initial_message_id': None,
+                    'user_facing_group_id': group_key
+                }
+            self.media_groups[group_key]['total_files'] += 1
+            self.media_groups[group_key]['files'][message.id] = {'status': 'downloading', 'path': None, 'initial_message_id': initial_message.id, 'filename': file_info}
+            if not self.media_groups[group_key]['initial_message_id']:
+                self.media_groups[group_key]['initial_message_id'] = initial_message.id
 
             self.download_cancellation_flags[initial_message.id] = asyncio.Event()
             self.logger.info(f"Populating download_cancellation_flags with message ID: {initial_message.id}")
@@ -435,13 +435,9 @@ class TelethonDownloaderBot:
                 action_type = '_'.join(parts[1:-1])
                 user_facing_group_id = int(parts[-1])
 
-                internal_grouped_id = None
-                for gid, ginfo in self.media_groups.items():
-                    if ginfo.get('user_facing_group_id') == user_facing_group_id:
-                        internal_grouped_id = gid
-                        break
-                
-                if not internal_grouped_id:
+                internal_grouped_id = user_facing_group_id # The key is now the timestamp
+
+                if internal_grouped_id not in self.media_groups:
                     await event.answer("Group information not found.")
                     return
 
@@ -828,14 +824,15 @@ class TelethonDownloaderBot:
             self.logger.error(f"Error editing message with buttons for {file_info}: {edit_error}")
             await initial_message.edit(f"Download completed, but error displaying buttons: {edit_error}")
 
-        if message.grouped_id and message.grouped_id in self.media_groups:
-            group_info = self.media_groups[message.grouped_id]
+        group_key = int(message.date.timestamp())
+        if group_key in self.media_groups:
+            group_info = self.media_groups[group_key]
             group_info['completed_files'] += 1
             group_info['files'][message.id]['status'] = 'completed'
             group_info['files'][message.id]['path'] = final_file_path
 
             if group_info['completed_files'] == group_info['total_files']:
-                await self._handle_media_group_completion(message.grouped_id, message.chat_id)
+                await self._handle_media_group_completion(group_key, message.chat_id)
 
     async def _handle_media_group_completion(self, grouped_id, chat_id):
         group_info = self.media_groups.get(grouped_id)
