@@ -148,6 +148,7 @@ class DownloadManager:
                     self.logger.info(f"torrent file processed_torrent_path {processed_torrent_path} via TorrentManager.")
                     self.logger.info(f"torrent file downloaded_file_path {downloaded_file_path} via TorrentManager.")
                     self.logger.info(f"torrent file target_completed_dir {target_completed_dir} via TorrentManager.")
+                    os.rename(downloaded_file_path, processed_torrent_path)
                     return processed_torrent_path
                 else:
                     self.logger.error(f"Failed to add torrent {downloaded_file_path} via TorrentManager.")

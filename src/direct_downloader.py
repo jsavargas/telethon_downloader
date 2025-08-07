@@ -48,7 +48,18 @@ class DirectDownloader:
                                 last_update_time = current_time
             
             end_time = time.time()
-            await self._finalize_download_processing(initial_message, event.message, file_name, final_destination_dir, start_time, end_time, total_size, event.sender_id, event.sender_id, None, file_extension, download_path)
+
+            if file_extension.lower() == 'torrent':
+                self.logger.info(f"Detected torrent file from direct link: {download_path}. Handing to DownloadManager.move_to_completed.")
+                final_file_path = self.download_manager.move_to_completed(download_path, final_destination_dir)
+                if not final_file_path:
+                    self.logger.error(f"Failed to add torrent from direct link: {download_path}")
+                    await initial_message.edit(f"Error: Failed to add torrent from link.")
+                    return
+            else:
+                final_file_path = download_path # For non-torrent files, the downloaded path is the final path for now
+
+            await self._finalize_download_processing(initial_message, event.message, file_name, final_destination_dir, start_time, end_time, total_size, event.sender_id, event.sender_id, None, file_extension, final_file_path)
 
         except Exception as e:
             self.logger.error(f"Error downloading direct link: {e}")
