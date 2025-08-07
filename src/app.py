@@ -460,9 +460,9 @@ class TelethonDownloaderBot:
                     summary_text = f"Moving {group_info['total_files']} files."
                     text, buttons = await self.keyboard_manager.send_directory_browser(initial_message_id, self.env_config.BASE_DOWNLOAD_PATH, summary_text=summary_text)
                     await event.edit(text, buttons=buttons)
-                elif action_type == 'cancel':
-                    summary_text = f"Group operation for {group_info['total_files']} files cancelled."
-                    await event.edit(summary_text, buttons=None)
+                elif action_type == 'ok':
+                    message = await event.get_message()
+                    await event.edit(message.text, buttons=None)
                     del self.media_groups[internal_grouped_id]
                 return
 
@@ -823,7 +823,7 @@ class TelethonDownloaderBot:
         summary_text = f"All {group_info['total_files']} files in the media group have been downloaded.\n\nWhat would you like to do with them?"
         buttons = [
             [KeyboardButtonCallback("Move All to New Folder", data=f"group_move_all_{user_facing_group_id}")],
-            [KeyboardButtonCallback("Cancel Group Operation", data=f"group_cancel_{user_facing_group_id}")]
+            [KeyboardButtonCallback("Ok Group Operation", data=f"group_ok_{user_facing_group_id}")]
         ]
         await self.bot.send_message(chat_id, summary_text, buttons=buttons)
 
