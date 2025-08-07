@@ -90,11 +90,11 @@ class TelethonDownloaderBot:
             self.keyboard_manager = KeyboardManager(self.logger, self.env_config.BASE_DOWNLOAD_PATH)
             self.logger.info("KeyboardManager initialized.")
 
-            self.commands_manager = Commands(VERSION, self.welcome_message_generator, self.logger)
-            self.logger.info("Commands manager initialized.")
-
             self.download_tracker = DownloadTracker(self.env_config.PATH_CONFIG, self.logger)
             self.logger.info("DownloadTracker initialized.")
+
+            self.commands_manager = Commands(VERSION, self.welcome_message_generator, self.download_tracker, self.download_manager, self.bot, self.logger)
+            self.logger.info("Commands manager initialized.")
 
             self.resume_manager = ResumeManager(self.bot, self.logger)
             self.logger.info("ResumeManager initialized.")
@@ -322,8 +322,9 @@ class TelethonDownloaderBot:
             file_size = self.telethon_utils.get_file_size(message)
 
             original_filename = os.path.join(target_download_dir, file_info)
+            download_path_with_filename = None # Initialize here
 
-            self.download_tracker.add_download(message.id, message.id, original_filename, message.media, origin_group, user_id, file_info, download_type=download_type if download_type else self.download_type)
+            self.download_tracker.add_download(initial_message.id, message.id, original_filename, message.media, origin_group, user_id, file_info, download_type=download_type if download_type else self.download_type, current_file_path=download_path_with_filename)
 
             download_summary_downloading = DownloadSummary(message, file_info, final_destination_dir, start_time, 0, file_size, origin_group, user_id, channel_id, status='downloading')
 
@@ -389,7 +390,7 @@ class TelethonDownloaderBot:
                             await initial_message.edit(f"Error: Failed to move file {file_info} to completed directory.")
                 except asyncio.CancelledError:
                     self.logger.info(f"Caught asyncio.CancelledError for download of {file_info} (message ID: {initial_message.id}).")
-                    self.download_tracker.update_status(message.id, 'cancelled', download_type=self.download_type)
+                    self.download_tracker.update_status(message.id, 'cancelled', final_filename=None, download_type=self.download_type)
                     self.download_tracker.remove_download(message.id, download_type=self.download_type)
                     if os.path.exists(download_path_with_filename):
                         os.remove(download_path_with_filename)
@@ -551,7 +552,7 @@ class TelethonDownloaderBot:
                         summary_text = file_info.get('summary_text', "")
                         new_file_path = self.download_manager.move_file(file_path, destination_dir)
                         if new_file_path:
-                            self.download_tracker.update_status(message_id, 'completed', new_file_path, download_type=self.download_type)
+                            self.download_tracker.update_status(message_id, 'completed', final_filename=new_file_path, download_type=self.download_type)
                             await event.edit(f"{summary_text}\n\nFile moved successfully to {new_file_path}", buttons=None)
                             del self.downloaded_files[message_id]
                         else:
@@ -597,7 +598,7 @@ class TelethonDownloaderBot:
             new_file_path = self.download_manager.move_file(file_path, new_folder_path)
 
             if new_file_path:
-                self.download_tracker.update_status(target_message_id, 'completed', new_file_path, download_type=self.download_type)
+                self.download_tracker.update_status(target_message_id, 'completed', final_filename=new_file_path, download_type=self.download_type)
                 summary_text = self.downloaded_files[target_message_id].get('summary_text', "")
                 await self.bot.edit_message(browser_chat_id, browser_message_id, f"{summary_text}\n\nFolder '{new_folder_name}' created and file moved successfully to {new_file_path}", buttons=None)
                 del self.downloaded_files[target_message_id]
@@ -612,9 +613,14 @@ class TelethonDownloaderBot:
 
     async def handle_text_commands(self, event):
         message_text = event.message.text
+        sender_id = event.sender_id
+
         if message_text.startswith('/'):
             command_name = message_text.split(' ')[0]
             await self.commands_manager.execute_command(command_name, event)
+        elif sender_id in self.commands_manager.active_rename_prompts:
+            # This is a response to a rename prompt
+            await self.commands_manager.handle_new_rename_input(event)
 
     async def handle_magnet_link(self, event):
         self.logger.info(f"Magnet link detected in message ID: {event.message.id}")
@@ -701,7 +707,7 @@ class TelethonDownloaderBot:
         
         await asyncio.sleep(0.5)
 
-        self.download_tracker.update_status(message.id, 'completed', os.path.basename(final_file_path), download_type=self.download_type)
+        self.download_tracker.update_status(message.id, 'completed', final_filename=final_file_path, download_type=self.download_type)
 
         summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, status='completed', download_type=self.download_type)
         summary_text = summary.generate_summary()
