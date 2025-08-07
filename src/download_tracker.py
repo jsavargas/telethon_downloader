@@ -25,7 +25,7 @@ class DownloadTracker:
             # Keep only the last 500 entries
             json.dump(data[-500:], f, indent=2)
 
-    def add_download(self, initial_bot_message_id, message_id, initial_filename, media, channel_id, user_id, filename, download_type='file', current_file_path=None):
+    def add_download(self, initial_bot_message_id, message_id, initial_filename, media, channel_id, user_id, filename, download_type='file', current_file_path=None, download_date=None):
         if download_type != 'file':
             self.logger.info(f"Skipping saving non-file download to tracker: {message_id} (Type: {download_type})")
             return
@@ -41,7 +41,7 @@ class DownloadTracker:
             "message_id": message_id,
             "initial_filename": initial_filename,
             "filename": filename,
-            "download_date": datetime.now().isoformat(),
+            "download_date": download_date,
             "new_filename": None,
             "update_date": None,
             "media": str(media),
@@ -66,7 +66,6 @@ class DownloadTracker:
             if entry['message_id'] == message_id:
                 entry['status'] = new_status
                 if new_status == 'completed':
-                    entry['download_date'] = datetime.now().isoformat()
                     if final_filename:
                         entry['current_file_path'] = final_filename
                 if final_filename:
