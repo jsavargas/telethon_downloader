@@ -259,11 +259,11 @@ class TelethonDownloaderBot:
 
             download_time = end_time - start_time
             if is_playlist:
-                summary = DownloadSummary(message_to_edit, info_dict.get('title', 'N/A'), self.config_manager.get_youtube_download_path(dl_type), start_time, end_time, 0, None, None, None, status='completed', download_type='youtube', env_config=self.env_config)
+                summary = DownloadSummary(message_to_edit, info_dict.get('title', 'N/A'), self.config_manager.get_youtube_download_path(dl_type), start_time, end_time, 0, None, None, None, status='completed', download_type='youtube')
                 return summary.generate_summary()
             else:
                 total_bytes = info_dict.get('filesize') or info_dict.get('filesize_approx') or 0
-                summary = DownloadSummary(message_to_edit, os.path.basename(final_filename), os.path.dirname(final_filename), start_time, end_time, total_bytes, None, None, None, status='completed', download_type='youtube', env_config=self.env_config)
+                summary = DownloadSummary(message_to_edit, os.path.basename(final_filename), os.path.dirname(final_filename), start_time, end_time, total_bytes, None, None, None, status='completed', download_type='youtube')
                 return summary.generate_summary()
 
         try:
@@ -321,7 +321,7 @@ class TelethonDownloaderBot:
 
             self.download_tracker.add_download(message.id, message.id, original_filename, message.media, origin_group, user_id, file_info, download_type=download_type if download_type else self.download_type)
 
-            download_summary_downloading = DownloadSummary(message, file_info, final_destination_dir, start_time, 0, file_size, origin_group, user_id, channel_id, status='downloading', env_config=self.env_config)
+            download_summary_downloading = DownloadSummary(message, file_info, final_destination_dir, start_time, 0, file_size, origin_group, user_id, channel_id, status='downloading')
 
             progress_bar = None
 
@@ -688,7 +688,7 @@ class TelethonDownloaderBot:
 
         self.download_tracker.update_status(message.id, 'completed', os.path.basename(final_file_path), download_type=self.download_type)
 
-        summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, status='completed', download_type=self.download_type, env_config=self.env_config)
+        summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, status='completed', download_type=self.download_type)
         summary_text = summary.generate_summary()
 
         self.downloaded_files[message.id] = {

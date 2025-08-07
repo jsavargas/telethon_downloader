@@ -1,9 +1,8 @@
 import time
 import logging
-from config_manager import ConfigManager
 
 class DownloadSummary:
-    def __init__(self, message, file_info, download_dir, start_time, end_time, file_size, origin_group, user_id=None, channel_id=None, status='downloading', download_type='file', env_config=None):
+    def __init__(self, message, file_info, download_dir, start_time, end_time, file_size, origin_group, user_id=None, channel_id=None, status='downloading', download_type='file'):
         self.message = message
         self.file_info = file_info
         self.download_dir = download_dir
@@ -16,7 +15,6 @@ class DownloadSummary:
         self.logger = logging.getLogger(__name__)
         self.status = status
         self.download_type = download_type
-        self.config_manager = ConfigManager(env_config.PATH_CONFIG, logging.getLogger(__name__), env_config.PUID, env_config.PGID)
 
     def generate_summary(self):
         try:
