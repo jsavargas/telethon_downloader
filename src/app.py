@@ -327,7 +327,7 @@ class TelethonDownloaderBot:
                         'user_facing_group_id': int(message.date.timestamp())
                     }
                 self.media_groups[message.grouped_id]['total_files'] += 1
-                self.media_groups[message.grouped_id]['files'][message.id] = {'status': 'downloading', 'path': None}
+                self.media_groups[message.grouped_id]['files'][message.id] = {'status': 'downloading', 'path': None, 'initial_message_id': initial_message.id}
                 if not self.media_groups[message.grouped_id]['initial_message_id']:
                     self.media_groups[message.grouped_id]['initial_message_id'] = initial_message.id
 
@@ -461,6 +461,15 @@ class TelethonDownloaderBot:
                     text, buttons = await self.keyboard_manager.send_directory_browser(initial_message_id, self.env_config.BASE_DOWNLOAD_PATH, summary_text=summary_text)
                     await event.edit(text, buttons=buttons)
                 elif action_type == 'ok':
+                    group_info = self.media_groups[internal_grouped_id]
+                    for file_msg_id, file_info in group_info['files'].items():
+                        try:
+                            individual_initial_message_id = file_info['initial_message_id']
+                            message_to_edit = await self.bot.get_messages(event.chat_id, ids=individual_initial_message_id)
+                            if message_to_edit:
+                                await message_to_edit.edit(message_to_edit.text, buttons=None)
+                        except Exception as e:
+                            self.logger.error(f"Could not remove buttons from message {file_info.get('initial_message_id')}: {e}")
                     await event.delete()
                     del self.media_groups[internal_grouped_id]
                 return
