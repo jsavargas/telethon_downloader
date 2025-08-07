@@ -3,6 +3,7 @@ from telethon.tl.types import Message
 import os
 import asyncio
 import time
+from datetime import datetime
 from logger_config import LoggerConfig
 from progress_bar import ProgressBar
 from download_summary import DownloadSummary
@@ -304,8 +305,6 @@ class TelethonDownloaderBot:
             file_info = self.telethon_utils.get_file_info(message, origin_group)
 
             self.logger.info(f"download_media file_info: [{message.id}] {file_info} sender_id: {message.sender_id} origin_group: {origin_group} channel_id: {channel_id}")
-            self.logger.info(f"download_media download_type: [{download_type}]")
-            self.logger.info(f"download_media self.download_type: [{self.download_type}]")
 
             if download_type:
                 self.download_type = download_type
@@ -324,7 +323,8 @@ class TelethonDownloaderBot:
                         'total_files': 0,
                         'completed_files': 0,
                         'files': {},
-                        'initial_message_id': None # To store the message ID of the first file in the group
+                        'initial_message_id': None, # To store the message ID of the first file in the group
+                        'user_facing_group_id': int(message.date.timestamp())
                     }
                 self.media_groups[message.grouped_id]['total_files'] += 1
                 self.media_groups[message.grouped_id]['files'][message.id] = {'status': 'downloading', 'path': None}
@@ -339,7 +339,7 @@ class TelethonDownloaderBot:
             original_filename = os.path.join(target_download_dir, file_info)
             download_path_with_filename = None # Initialize here
 
-            self.download_tracker.add_download(initial_message.id, message.id, original_filename, message.media, origin_group, user_id, file_info, download_type=download_type if download_type else self.download_type, current_file_path=download_path_with_filename)
+            self.download_tracker.add_download(initial_message.id, message.id, original_filename, message.media, origin_group, user_id, file_info, download_type=download_type if download_type else self.download_type, current_file_path=download_path_with_filename, download_date=int(message.date.timestamp()))
 
             download_summary_downloading = DownloadSummary(message, file_info, final_destination_dir, start_time, 0, file_size, origin_group, user_id, channel_id, status='downloading')
 
@@ -425,11 +425,47 @@ class TelethonDownloaderBot:
             self.logger.info(f"Callback parts: {parts}")
             action_parts = data.split('_')
             action = '_'.join(action_parts[:2]) if action_parts[0] == 'resume' or (action_parts[0] == 'cancel' and action_parts[1] == 'download') else action_parts[0]
+
             if action_parts[0] == 'category':
-                action = action_parts[0]
+                action = 'category'
             elif action_parts[0] == 'group':
-                action = action_parts[0]
-            
+                action = 'group'
+
+            if action == 'group':
+                action_type = parts[1]
+                user_facing_group_id = int(parts[2])
+
+                internal_grouped_id = None
+                for gid, ginfo in self.media_groups.items():
+                    if ginfo.get('user_facing_group_id') == user_facing_group_id:
+                        internal_grouped_id = gid
+                        break
+                
+                if not internal_grouped_id:
+                    await event.answer("Group information not found.")
+                    return
+
+                group_info = self.media_groups[internal_grouped_id]
+                initial_message_id = group_info['initial_message_id']
+
+                if action_type == 'move_all':
+                    self.downloaded_files[initial_message_id] = {
+                        'is_group': True,
+                        'internal_group_id': internal_grouped_id,
+                        'current_dir': self.env_config.BASE_DOWNLOAD_PATH,
+                        'summary_text': f"Moving {group_info['total_files']} files.",
+                        'browser_chat_id': event.chat_id,
+                        'browser_message_id': event.message.id
+                    }
+                    summary_text = f"Moving {group_info['total_files']} files."
+                    text, buttons = await self.keyboard_manager.send_directory_browser(initial_message_id, self.env_config.BASE_DOWNLOAD_PATH, summary_text=summary_text)
+                    await event.edit(text, buttons=buttons)
+                elif action_type == 'cancel':
+                    summary_text = f"Group operation for {group_info['total_files']} files cancelled."
+                    await event.edit(summary_text, buttons=None)
+                    del self.media_groups[internal_grouped_id]
+                return
+
             if action == 'category':
                 message_id = int(parts[1])
                 category = unquote(parts[2]) if len(parts) > 2 else None
@@ -439,15 +475,14 @@ class TelethonDownloaderBot:
                     return
 
                 download_info = self.downloaded_files[message_id]
-                source_type = download_info.get('source_type', 'file') # Default to 'file' for existing torrents
+                source_type = download_info.get('source_type', 'file')
 
                 if source_type == 'file':
                     torrent_path = download_info['downloaded_file_path']
                     destination_path = download_info['final_destination_dir']
                 elif source_type == 'magnet':
                     magnet_uri = download_info['source_data']
-                    # For magnet links, destination_path is not directly used here for adding, but might be needed for _finalize_download_processing
-                    destination_path = None # Or retrieve from download_info if stored for magnets
+                    destination_path = None
 
                 if category == 'new':
                     self.downloaded_files[message_id]['waiting_for_category_name'] = True
@@ -463,12 +498,12 @@ class TelethonDownloaderBot:
                         initial_message = await self.bot.get_messages(download_info['initial_message_chat_id'], ids=download_info['initial_message_id'])
                         original_message = await self.bot.get_messages(download_info['user_id'], ids=download_info['original_message_id'])
                         file_info = download_info['file_info']
-                        file_extension = download_info['file_extension'] if source_type == 'file' else 'torrent' # Assume torrent for magnet
-                        file_size = download_info['file_size'] if source_type == 'file' else 0 # No file size for magnet initially
-                        origin_group = download_info['origin_group'] if source_type == 'file' else None
+                        file_extension = download_info.get('file_extension', 'torrent')
+                        file_size = download_info.get('file_size', 0)
+                        origin_group = download_info.get('origin_group')
                         user_id = download_info['user_id']
-                        channel_id = download_info['channel_id'] if source_type == 'file' else None
-                        start_time = download_info['start_time'] if source_type == 'file' else time.time()
+                        channel_id = download_info.get('channel_id')
+                        start_time = download_info.get('start_time', time.time())
                         end_time = time.time()
 
                         await self.bot.edit_message(initial_message.chat_id, initial_message.id, "Processing torrent...", buttons=None)
@@ -484,17 +519,13 @@ class TelethonDownloaderBot:
                 await event.edit("Download cancelled.", buttons=None)
                 if message_id in self.download_cancellation_flags:
                     self.download_cancellation_flags[message_id].set()
-                    self.logger.info(f"Cancellation flag set for message ID: {message_id}")
                 if message_id in self.active_downloads:
                     self.active_downloads[message_id].cancel()
-                    self.logger.info(f"Download task cancelled for message ID: {message_id}")
                     del self.active_downloads[message_id]
                     del self.download_cancellation_flags[message_id]
                 else:
                     await event.answer("Could not find download to cancel.")
                 return
-
-            self.logger.info(f"Action: {action}")
 
             if action.startswith('resume'):
                 if action == 'resume_one':
@@ -513,12 +544,9 @@ class TelethonDownloaderBot:
                     file_info = self.downloaded_files[message_id]
                     self.downloaded_files[message_id]['browser_chat_id'] = event.chat_id
                     self.downloaded_files[message_id]['browser_message_id'] = event.message_id
-                    if self.keyboard_manager:
-                        summary_text = file_info.get('summary_text', "")
-                        text, buttons = await self.keyboard_manager.send_directory_browser(message_id, file_info['current_dir'], summary_text=summary_text)
-                        await event.edit(text, buttons=buttons)
-                    else:
-                        await event.answer("Keyboard manager not initialized.")
+                    summary_text = file_info.get('summary_text', "")
+                    text, buttons = await self.keyboard_manager.send_directory_browser(message_id, file_info['current_dir'], summary_text=summary_text)
+                    await event.edit(text, buttons=buttons)
             elif action == 'ok' or action == 'cancel':
                 if message_id in self.downloaded_files:
                     summary_text = self.downloaded_files[message_id].get('summary_text', "Download operation ok.")
@@ -541,11 +569,8 @@ class TelethonDownloaderBot:
                     current_base_dir = self.downloaded_files[message_id]['current_dir']
                     new_full_path = os.path.join(current_base_dir, selected_dir_name)
                     self.downloaded_files[message_id]['current_dir'] = new_full_path
-                    if self.keyboard_manager:
-                        text, buttons = await self.keyboard_manager.send_directory_browser(message_id, new_full_path, page=0)
-                        await event.edit(text, buttons=buttons)
-                    else:
-                        await event.answer("Keyboard manager not initialized.")
+                    text, buttons = await self.keyboard_manager.send_directory_browser(message_id, new_full_path, page=0)
+                    await event.edit(text, buttons=buttons)
             elif action == 'nav':
                 nav_action = parts[2]
                 current_dir_from_state = self.downloaded_files[message_id]['current_dir']
@@ -554,33 +579,48 @@ class TelethonDownloaderBot:
                 if message_id in self.downloaded_files:
                     if nav_action == 'next':
                         page += 1
-                        self.downloaded_files[message_id]['current_dir'] = current_dir_from_state
                     elif nav_action == 'back':
                         page -= 1
-                        self.downloaded_files[message_id]['current_dir'] = current_dir_from_state
                     elif nav_action == 'up':
-                        new_current_dir = os.path.dirname(current_dir_from_state)
-                        self.downloaded_files[message_id]['current_dir'] = new_current_dir
+                        current_dir_from_state = os.path.dirname(current_dir_from_state)
                         page = 0
-                    elif nav_action == 'this':
+                    
+                    self.downloaded_files[message_id]['current_dir'] = current_dir_from_state
+                    
+                    if nav_action == 'this':
                         file_info = self.downloaded_files[message_id]
-                        file_path = file_info['file_path']
                         destination_dir = current_dir_from_state
                         summary_text = file_info.get('summary_text', "")
-                        new_file_path = self.download_manager.move_file(file_path, destination_dir)
-                        if new_file_path:
-                            self.download_tracker.update_status(message_id, 'completed', final_filename=new_file_path, download_type=self.download_type)
-                            await event.edit(f"{summary_text}\n\nFile moved successfully to {new_file_path}", buttons=None)
+                        is_group_move = file_info.get('is_group', False)
+
+                        if is_group_move:
+                            internal_group_id = file_info['internal_group_id']
+                            group_info = self.media_groups[internal_group_id]
+                            moved_files_count = 0
+                            for msg_id, f_info in group_info['files'].items():
+                                if f_info.get('status') == 'completed' and f_info.get('path'):
+                                    new_path = self.download_manager.move_file(f_info['path'], destination_dir)
+                                    if new_path:
+                                        moved_files_count += 1
+                                        self.download_tracker.update_status(msg_id, 'completed', final_filename=new_path, download_type='file')
+                            
+                            final_summary = f"{summary_text}\n\n{moved_files_count}/{group_info['total_files']} files moved successfully to {destination_dir}"
+                            await event.edit(final_summary, buttons=None)
                             del self.downloaded_files[message_id]
+                            del self.media_groups[internal_group_id]
                         else:
-                            await event.edit(f"{summary_text}\n\nError moving file.", buttons=None)
+                            file_path = file_info['file_path']
+                            new_file_path = self.download_manager.move_file(file_path, destination_dir)
+                            if new_file_path:
+                                self.download_tracker.update_status(message_id, 'completed', final_filename=new_file_path, download_type=self.download_type)
+                                await event.edit(f"{summary_text}\n\nFile moved successfully to {new_file_path}", buttons=None)
+                                del self.downloaded_files[message_id]
+                            else:
+                                await event.edit(f"{summary_text}\n\nError moving file.", buttons=None)
                         return
                     
-                    if self.keyboard_manager:
-                        text, buttons = await self.keyboard_manager.send_directory_browser(message_id, self.downloaded_files[message_id]['current_dir'], page)
-                        await event.edit(text, buttons=buttons)
-                    else:
-                        await event.answer("Keyboard manager not initialized.")
+                    text, buttons = await self.keyboard_manager.send_directory_browser(message_id, current_dir_from_state, page)
+                    await event.edit(text, buttons=buttons)
                 else:
                     await event.answer("File information not found.")
 
@@ -597,30 +637,48 @@ class TelethonDownloaderBot:
                     target_message_id = msg_id
                     break
 
-            if target_message_id is None:
+            if not target_message_id:
                 return
 
+            file_info = self.downloaded_files[target_message_id]
+            is_group_move = file_info.get('is_group', False)
+
             new_folder_name = event.message.text
-            current_dir = self.downloaded_files[target_message_id]['current_dir']
+            current_dir = file_info['current_dir']
             new_folder_path = os.path.join(current_dir, new_folder_name)
-            browser_message_id = self.downloaded_files[target_message_id].get('browser_message_id', None)
-            browser_chat_id = self.downloaded_files[target_message_id].get('browser_chat_id', None)
+            browser_message_id = file_info.get('browser_message_id', None)
+            browser_chat_id = file_info.get('browser_chat_id', None)
 
             os.makedirs(new_folder_path, exist_ok=True)
             self.download_manager._apply_permissions_and_ownership(new_folder_path)
-            self.downloaded_files[target_message_id]['waiting_for_folder_name'] = False
+            file_info['waiting_for_folder_name'] = False
 
-            file_info = self.downloaded_files[target_message_id]
-            file_path = file_info['file_path']
-            new_file_path = self.download_manager.move_file(file_path, new_folder_path)
-
-            if new_file_path:
-                self.download_tracker.update_status(target_message_id, 'completed', final_filename=new_file_path, download_type=self.download_type)
-                summary_text = self.downloaded_files[target_message_id].get('summary_text', "")
-                await self.bot.edit_message(browser_chat_id, browser_message_id, f"{summary_text}\n\nFolder '{new_folder_name}' created and file moved successfully to {new_file_path}", buttons=None)
+            if is_group_move:
+                internal_group_id = file_info['internal_group_id']
+                group_info = self.media_groups[internal_group_id]
+                moved_files_count = 0
+                for msg_id, f_info in group_info['files'].items():
+                    if f_info['status'] == 'completed' and f_info['path']:
+                        new_path = self.download_manager.move_file(f_info['path'], new_folder_path)
+                        if new_path:
+                            moved_files_count += 1
+                            self.download_tracker.update_status(msg_id, 'completed', final_filename=new_path, download_type='file') # Assuming file type
+                
+                summary_text = f"Folder '{new_folder_name}' created and {moved_files_count}/{group_info['total_files']} files moved successfully."
+                await self.bot.edit_message(browser_chat_id, browser_message_id, summary_text, buttons=None)
                 del self.downloaded_files[target_message_id]
+                del self.media_groups[internal_group_id]
             else:
-                await event.reply(f"Folder '{new_folder_name}' created, but there was an error moving the file.")
+                file_path = file_info['file_path']
+                new_file_path = self.download_manager.move_file(file_path, new_folder_path)
+
+                if new_file_path:
+                    self.download_tracker.update_status(target_message_id, 'completed', final_filename=new_file_path, download_type=self.download_type)
+                    summary_text = file_info.get('summary_text', "")
+                    await self.bot.edit_message(browser_chat_id, browser_message_id, f"{summary_text}\n\nFolder '{new_folder_name}' created and file moved successfully to {new_file_path}", buttons=None)
+                    del self.downloaded_files[target_message_id]
+                else:
+                    await event.reply(f"Folder '{new_folder_name}' created, but there was an error moving the file.")
 
             if browser_message_id and browser_chat_id:
                 self.logger.info(f"Refreshing browser for message {target_message_id}")
@@ -728,18 +786,6 @@ class TelethonDownloaderBot:
 
         self.download_tracker.update_status(message.id, 'completed', final_filename=final_file_path, download_type=self.download_type)
 
-        # Update media group status
-        if message.grouped_id and message.grouped_id in self.media_groups:
-            group_info = self.media_groups[message.grouped_id]
-            group_info['completed_files'] += 1
-            group_info['files'][message.id]['status'] = 'completed'
-            group_info['files'][message.id]['path'] = final_file_path
-
-            if group_info['completed_files'] == group_info['total_files']:
-                # All files in the group are downloaded, present group actions
-                await self._handle_media_group_completion(message.grouped_id, initial_message.chat_id)
-                return # Exit here, group actions will handle the final message
-
         summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, status='completed', download_type=self.download_type)
         summary_text = summary.generate_summary()
 
@@ -759,19 +805,27 @@ class TelethonDownloaderBot:
             self.logger.error(f"Error editing message with buttons for {file_info}: {edit_error}")
             await initial_message.edit(f"Download completed, but error displaying buttons: {edit_error}")
 
+        if message.grouped_id and message.grouped_id in self.media_groups:
+            group_info = self.media_groups[message.grouped_id]
+            group_info['completed_files'] += 1
+            group_info['files'][message.id]['status'] = 'completed'
+            group_info['files'][message.id]['path'] = final_file_path
+
+            if group_info['completed_files'] == group_info['total_files']:
+                await self._handle_media_group_completion(message.grouped_id, message.chat_id)
+
     async def _handle_media_group_completion(self, grouped_id, chat_id):
         group_info = self.media_groups.get(grouped_id)
         if not group_info: return
 
-        initial_message_id = group_info['initial_message_id']
-        initial_message = await self.bot.get_messages(chat_id, ids=initial_message_id)
+        user_facing_group_id = group_info['user_facing_group_id']
 
         summary_text = f"All {group_info['total_files']} files in the media group have been downloaded.\n\nWhat would you like to do with them?"
         buttons = [
-            [KeyboardButtonCallback("Move All to New Folder", data=f"group_move_all_{grouped_id}")],
-            [KeyboardButtonCallback("Cancel Group Operation", data=f"group_cancel_{grouped_id}")]
+            [KeyboardButtonCallback("Move All to New Folder", data=f"group_move_all_{user_facing_group_id}")],
+            [KeyboardButtonCallback("Cancel Group Operation", data=f"group_cancel_{user_facing_group_id}")]
         ]
-        await initial_message.edit(summary_text, buttons=buttons)
+        await self.bot.send_message(chat_id, summary_text, buttons=buttons)
 
     async def _ask_for_torrent_source_category(self, initial_message, source_type, source_data):
         categories = self.download_manager.torrent_manager.get_categories()
