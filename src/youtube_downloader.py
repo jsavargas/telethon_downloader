@@ -32,7 +32,7 @@ class YouTubeDownloader:
             if download_type == 'video':
                 path = self.config.YOUTUBE_VIDEO_FOLDER
                 ydl_opts = {
-                    'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+                    'format': self.config.YOUTUBE_FORMAT_VIDEO,
                     'outtmpl': os.path.join(path, '%(title)s.%(ext)s'),
                     'progress_hooks': [progress_hook],
                     'noplaylist': not is_playlist,
@@ -40,7 +40,7 @@ class YouTubeDownloader:
             elif download_type == 'audio':
                 path = self.config.YOUTUBE_AUDIO_FOLDER
                 ydl_opts = {
-                    'format': 'bestaudio/best',
+                    'format': self.config.YOUTUBE_FORMAT_AUDIO,
                     'outtmpl': os.path.join(path, '%(title)s.%(ext)s'),
                     'progress_hooks': [progress_hook],
                     'noplaylist': not is_playlist,

@@ -10,29 +10,28 @@ services:
     environment:
       - PUID=99
       - PGID=100
-      - PERMISSIONS_FOLDER=777
-      - PERMISSIONS_FILE=755
-      - AUTHORIZED_USER_ID=    #<telegram chat_id authorized>
       - API_ID=
       - API_HASH= 
       - BOT_TOKEN=
+      - AUTHORIZED_USER_ID=                             #<telegram chat_id authorized>
       - TZ=America/Santiago
-      - APP_LANGUAGE=en_EN                              # OPTIONAL
-      - TG_UNZIP_TORRENTS=True                          # OPTIONAL (True/False)
-      - ENABLED_UNZIP=True                              # OPTIONAL (True/False)
-      - ENABLED_UNRAR=True                              # OPTIONAL (True/False)
-      - TG_MAX_PARALLEL=4                               # OPTIONAL
+      - TG_MAX_PARALLEL=3                               # OPTIONAL
       - TG_DL_TIMEOUT=4600                              # OPTIONAL
       - TG_PROGRESS_DOWNLOAD=True                       # OPTIONAL (True/False)
-      - PROGRESS_STATUS_SHOW=10                         # OPTIONAL
-      - YOUTUBE_FORMAT_AUDIO=bestaudio/best             # OPTIONAL
-      - YOUTUBE_FORMAT_VIDEO=bestvideo+bestaudio/best   # OPTIONAL
+      - PROGRESS_STATUS_SHOW=10                         # OPTIONAL (10)
+      - YOUTUBE_FORMAT_AUDIO=bestaudio/best             # OPTIONAL (bestaudio/best)
+      - YOUTUBE_FORMAT_VIDEO=bestvideo+bestaudio/best   # OPTIONAL (bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best)
       - YOUTUBE_DEFAULT_DOWNLOAD=VIDEO                  # OPTIONAL (AUDIO/VIDEO) 
       - YOUTUBE_DEFAULT_EXTENSION=MKV                   # OPTIONAL (mkv/mp4) 
       - YOUTUBE_SHOW_OPTION=True                        # OPTIONAL (True/False)
-      - YOUTUBE_TIMEOUT_OPTION=5                        # OPTIONAL
+      - YOUTUBE_TIMEOUT_OPTION=5                        # OPTIONAL (5)
       - YOUTUBE_AUDIO_FOLDER=/youtube/audio             # OPTIONAL
       - YOUTUBE_VIDEO_FOLDER=/youtube/video             # OPTIONAL
+      - TORRENT_MODE=qbittorrent                        # OPTIONAL (watch/qbittorrent)  
+      - QBT_HOST=192.168.1.10                           # OPTIONAL        
+      - QBT_PORT=8080                                   # OPTIONAL
+      - QBT_USERNAME=admin                              # OPTIONAL
+      - QBT_PASSWORD=adminadmin                         # OPTIONAL
     volumes:
       - /path/to/config:/config
       - /path/to/download:/download

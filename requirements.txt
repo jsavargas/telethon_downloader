@@ -1,3 +1,4 @@
 telethon
 yt-dlp
 qbittorrent-api
+aiohttp

@@ -1,14 +1,57 @@
 import logging
+import os
+from telethon.tl.types import Message
 
 class Commands:
-    def __init__(self, bot_version, welcome_message_generator, logger=None):
+    def __init__(self, bot_version, welcome_message_generator, download_tracker, download_manager, bot, logger=None):
         self.logger = logger if logger else logging.getLogger(__name__)
         self.bot_version = bot_version
         self.welcome_message_generator = welcome_message_generator
+        self.download_tracker = download_tracker
+        self.download_manager = download_manager
+        self.bot = bot
+        self.active_rename_prompts = {}
         self.command_dict = {
             "/version": self.version,
             "/start": self.start,
+            "/rename": self.rename,
         }
+
+    async def _perform_rename_operation(self, original_file_path, new_name_input, message_id, prompt_message):
+        try:
+            # Determine the new full path
+            if os.path.isabs(new_name_input): # If input is an absolute path
+                new_full_path = new_name_input
+            else: # If input is just a new name, assume same directory and preserve extension
+                file_extension = os.path.splitext(original_file_path)[1]
+                new_full_path = os.path.join(os.path.dirname(original_file_path), new_name_input + file_extension)
+            
+            # Ensure the target directory exists
+            os.makedirs(os.path.dirname(new_full_path), exist_ok=True)
+
+            # Move and rename the file
+            os.rename(original_file_path, new_full_path)
+            self.download_manager._apply_permissions_and_ownership(new_full_path)
+
+            # Update the download tracker
+            self.download_tracker.update_status(
+                message_id,
+                'completed',
+                final_filename=new_full_path,
+                download_type='file' # Assuming rename only for file downloads
+            )
+
+            await prompt_message.edit(f"File successfully renamed/moved from '{os.path.basename(original_file_path)}' to '{os.path.basename(new_full_path)}'.", buttons=None)
+            # await event.delete() # Delete the user's message with the new name - this is handled by the caller
+
+        except FileNotFoundError:
+            await prompt_message.edit(f"Error: Original file not found at {original_file_path}.", buttons=None)
+        except OSError as e:
+            await prompt_message.edit(f"Error renaming/moving file: {e}", buttons=None)
+            self.logger.error(f"Error renaming/moving file {original_file_path} to {new_full_path}: {e}")
+        except Exception as e:
+            self.logger.error(f"Unhandled error during rename: {e}")
+            await prompt_message.edit(f"An unexpected error occurred during rename: {e}", buttons=None)
 
     async def version(self, event):
         version_message = f"Bot Version: {self.bot_version}"
@@ -17,6 +60,49 @@ class Commands:
     async def start(self, event):
         version_message = self.welcome_message_generator.get_message()
         await event.reply(version_message)
+
+    async def rename(self, event):
+        if not event.message.is_reply:
+            await event.reply("Please reply to the file's download message or the file itself with /rename.")
+            return
+
+        replied_message_id = event.message.reply_to_msg_id
+        download_info = self.download_tracker.get_download_by_message_id(replied_message_id)
+
+        if not download_info:
+            await event.reply("Could not find download information for the replied message. Make sure it's a message from a file download.")
+            return
+
+        current_file_path = download_info.get('current_file_path')
+        if not current_file_path or not os.path.exists(current_file_path):
+            await event.reply(f"File not found at the recorded path: {current_file_path}. Cannot rename.")
+            return
+
+        args = event.message.text.split(' ', 1)
+        if len(args) > 1: # New name provided directly in the command
+            new_name_input = args[1].strip()
+            prompt_message = await event.reply(f"Renaming '{os.path.basename(current_file_path)}' to '{new_name_input}'...")
+            await self._perform_rename_operation(current_file_path, new_name_input, replied_message_id, prompt_message)
+            await event.delete() # Delete the user's command message
+        else: # No new name provided, prompt for it
+            self.active_rename_prompts[event.sender_id] = {
+                'message_id': replied_message_id,
+                'original_file_path': current_file_path,
+                'prompt_message': await event.reply(f"Please send the new name or full path for '{os.path.basename(current_file_path)}'.")
+            }
+
+    async def handle_new_rename_input(self, event):
+        sender_id = event.sender_id
+        if sender_id not in self.active_rename_prompts:
+            return # Not an active rename prompt
+
+        rename_info = self.active_rename_prompts.pop(sender_id) # Remove prompt after receiving input
+        original_file_path = rename_info['original_file_path']
+        prompt_message = rename_info['prompt_message']
+        new_name_input = event.message.text.strip()
+
+        await self._perform_rename_operation(original_file_path, new_name_input, rename_info['message_id'], prompt_message)
+        await event.delete() # Delete the user's message with the new name
 
     def register_command(self, command_name, handler_function):
         if not command_name.startswith('/'):

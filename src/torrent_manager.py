@@ -9,7 +9,7 @@ class TorrentManager:
         self.logger = logger
         self.qbt_client = None
 
-        if self.env_config.TORRENT_MODE == 'qbt_api':
+        if self.env_config.TORRENT_MODE == 'qbittorrent':
             self._init_qbt_client()
 
     def _init_qbt_client(self):
@@ -27,7 +27,7 @@ class TorrentManager:
             self.qbt_client = None
 
     def add_torrent(self, torrent_file_path, download_path=None, category=None):
-        if self.env_config.TORRENT_MODE == 'qbt_api':
+        if self.env_config.TORRENT_MODE == 'qbittorrent':
             return self._add_torrent_qbt_api(torrent_file_path, download_path, category)
         elif self.env_config.TORRENT_MODE == 'watch':
             return self._add_torrent_watch_folder(torrent_file_path)
@@ -52,7 +52,9 @@ class TorrentManager:
     def _add_torrent_watch_folder(self, torrent_file_path):
         watch_folder = self.env_config.DOWNLOAD_PATH_TORRENTS
         try:
-            shutil.move(torrent_file_path, watch_folder)
+            #new_path = os.path.join(watch_folder, os.path.basename(torrent_file_path))
+            #if os.path.exists(new_path):os.remove(new_path)
+            #shutil.move(torrent_file_path, watch_folder)
             self.logger.info(f"Torrent {os.path.basename(torrent_file_path)} moved to watch folder: {watch_folder}")
             return torrent_file_path
         except Exception as e:
@@ -69,3 +71,15 @@ class TorrentManager:
         except Exception as e:
             self.logger.error(f"Error getting categories from qBittorrent API: {e}")
             return []
+
+    def _add_magnet_qbt_api(self, magnet_uri, category=None):
+        if not self.qbt_client:
+            self.logger.error("qBittorrent client not initialized. Cannot add magnet link.")
+            return None
+        try:
+            self.qbt_client.torrents_add(urls=magnet_uri, category=category)
+            self.logger.info(f"Magnet link {magnet_uri} added via qBittorrent API with category '{category}'.")
+            return magnet_uri
+        except Exception as e:
+            self.logger.error(f"Error adding magnet link via qBittorrent API: {e}")
+            return None
