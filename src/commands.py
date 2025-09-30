@@ -1,6 +1,6 @@
 import logging
 import os
-from telethon.tl.types import Message, ReplyInlineMarkup, KeyboardButtonCallback
+from telethon.tl.types import Message, ReplyInlineMarkup, KeyboardButtonCallback, PeerUser, PeerChannel
 
 class Commands:
     def __init__(self, bot_version, welcome_message_generator, download_tracker, download_manager, bot, keyboard_manager, config_manager, telethon_utils, logger=None):
@@ -23,6 +23,7 @@ class Commands:
             "/addpath": self.addpath,
             "/help": self.help,
             "/addextensionpath": self.add_extension_path_command,
+            "/addgrouppath": self.add_group_path_command,
         }
         self.command_descriptions = {
             "/version": "Shows the bot version.",
@@ -31,7 +32,55 @@ class Commands:
             "/addpath": "Shows the menu to add new paths for extensions or groups.",
             "/help": "Shows this help message.",
             "/addextensionpath": "Sets the download path for an extension. Usage: /addextensionpath <ext> [<path>] or reply to a file with /addextensionpath [<path>]",
+            "/addgrouppath": "Sets the download path for a group. Usage: /addgrouppath <group_id> [<path>] or reply to a message with /addgrouppath [<path>]",
         }
+
+    async def add_group_path_command(self, event):
+        parts = event.message.text.split()
+        group_id = None
+        path = None
+
+        # 1. Determine Group ID
+        if event.message.is_reply:
+            replied = await event.get_reply_message()
+            if replied and replied.fwd_from and replied.fwd_from.from_id:
+                fwd_from_id = replied.fwd_from.from_id
+                if isinstance(fwd_from_id, PeerUser):
+                    group_id = str(fwd_from_id.user_id)
+                elif isinstance(fwd_from_id, PeerChannel):
+                    group_id = str(fwd_from_id.channel_id)
+
+        # 2. Parse arguments
+        if group_id: # Group ID from replied message
+            if len(parts) == 1: # /addgrouppath
+                path = os.path.join(self.download_manager.base_download_path, group_id.lstrip('-'))
+            elif len(parts) == 2: # /addgrouppath <path>
+                path = parts[1]
+            else:
+                await event.reply("Usage: Reply to a message with `/addgrouppath [<path>]`")
+                return
+        else: # No reply or not a forwarded message
+            if len(parts) == 2: # /addgrouppath <group_id>
+                group_id = parts[1]
+                path = os.path.join(self.download_manager.base_download_path, group_id.lstrip('-'))
+            elif len(parts) == 3: # /addgrouppath <group_id> <path>
+                _, group_id, path = parts
+            else:
+                await event.reply("Usage: `/addgrouppath <group_id> [<path>]`")
+                return
+
+        # 3. Validate and Save
+        if not group_id:
+            await event.reply("Could not determine the group ID.")
+            return
+
+        if not path.startswith('/'):
+            path = os.path.join(self.download_manager.base_download_path, path)
+
+        if self.config_manager.add_group_path(group_id, path):
+            await event.reply(f"Path for group '{group_id}' successfully set to `{path}`.")
+        else:
+            await event.reply(f"Error setting path for group '{group_id}'.")
 
     async def add_extension_path_command(self, event):
         parts = event.message.text.split()
