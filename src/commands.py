@@ -17,11 +17,11 @@ class Commands:
         self.active_add_extension_prompts = {}
         self.active_add_group_prompts = {}
         self.command_dict = {
+            "/help": self.help,
             "/version": self.version,
             "/start": self.start,
             "/rename": self.rename,
             "/addpath": self.addpath,
-            "/help": self.help,
             "/addextensionpath": self.add_extension_path_command,
             "/addgrouppath": self.add_group_path_command,
         }
