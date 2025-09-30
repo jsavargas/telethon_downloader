@@ -24,6 +24,7 @@ class Commands:
             "/addpath": self.addpath,
             "/addextensionpath": self.add_extension_path_command,
             "/addgrouppath": self.add_group_path_command,
+            "/id": self.get_id_command,
         }
         self.command_descriptions = {
             "/version": "Shows the bot version.",
@@ -33,7 +34,32 @@ class Commands:
             "/help": "Shows this help message.",
             "/addextensionpath": "Sets the download path for an extension. Usage: /addextensionpath <ext> [<path>] or reply to a file with /addextensionpath [<path>]",
             "/addgrouppath": "Sets the download path for a group. Usage: /addgrouppath <group_id> [<path>] or reply to a message with /addgrouppath [<path>]",
+            "/id": "Shows your user ID, or the ID of the replied-to message's origin.",
         }
+
+    async def get_id_command(self, event):
+        id_to_show = None
+        message_type = "Your"
+
+        if event.message.is_reply:
+            replied = await event.get_reply_message()
+            if replied:
+                message_type = "Replied message's"
+                if replied.fwd_from and replied.fwd_from.from_id:
+                    fwd_from_id = replied.fwd_from.from_id
+                    if isinstance(fwd_from_id, PeerUser):
+                        id_to_show = fwd_from_id.user_id
+                    elif isinstance(fwd_from_id, PeerChannel):
+                        id_to_show = fwd_from_id.channel_id
+                else:
+                    id_to_show = replied.chat_id
+        else:
+            id_to_show = event.sender_id
+
+        if id_to_show:
+            await event.reply(f"{message_type} ID is: `{id_to_show}`")
+        else:
+            await event.reply("Could not determine the ID.")
 
     async def add_group_path_command(self, event):
         parts = event.message.text.split()
