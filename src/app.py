@@ -95,7 +95,7 @@ class TelethonDownloaderBot:
             self.download_tracker = DownloadTracker(self.env_config.PATH_CONFIG, self.logger)
             self.logger.info("DownloadTracker initialized.")
 
-            self.commands_manager = Commands(VERSION, self.welcome_message_generator, self.download_tracker, self.download_manager, self.bot, self.keyboard_manager, self.config_manager, self.logger)
+            self.commands_manager = Commands(VERSION, self.welcome_message_generator, self.download_tracker, self.download_manager, self.bot, self.keyboard_manager, self.config_manager, self.telethon_utils, self.logger)
             self.logger.info("Commands manager initialized.")
 
             self.resume_manager = ResumeManager(self.bot, self.logger)

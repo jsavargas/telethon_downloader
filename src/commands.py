@@ -3,7 +3,7 @@ import os
 from telethon.tl.types import Message, ReplyInlineMarkup, KeyboardButtonCallback
 
 class Commands:
-    def __init__(self, bot_version, welcome_message_generator, download_tracker, download_manager, bot, keyboard_manager, config_manager, logger=None):
+    def __init__(self, bot_version, welcome_message_generator, download_tracker, download_manager, bot, keyboard_manager, config_manager, telethon_utils, logger=None):
         self.logger = logger if logger else logging.getLogger(__name__)
         self.bot_version = bot_version
         self.welcome_message_generator = welcome_message_generator
@@ -12,6 +12,7 @@ class Commands:
         self.bot = bot
         self.keyboard_manager = keyboard_manager
         self.config_manager = config_manager
+        self.telethon_utils = telethon_utils
         self.active_rename_prompts = {}
         self.active_add_extension_prompts = {}
         self.active_add_group_prompts = {}
@@ -29,22 +30,48 @@ class Commands:
             "/rename": "Renames a downloaded file. Reply to a file message with /rename <new_name>.",
             "/addpath": "Shows the menu to add new paths for extensions or groups.",
             "/help": "Shows this help message.",
-            "/addextensionpath": "Sets the download path for an extension. Usage: /addextensionpath <ext> [<path>]",
+            "/addextensionpath": "Sets the download path for an extension. Usage: /addextensionpath <ext> [<path>] or reply to a file with /addextensionpath [<path>]",
         }
 
     async def add_extension_path_command(self, event):
         parts = event.message.text.split()
-        
-        if len(parts) == 2:
-            _, extension = parts
-            path = os.path.join(self.download_manager.base_download_path, extension)
-        elif len(parts) == 3:
-            _, extension, path = parts
-            if not path.startswith('/'):
-                path = os.path.join(self.download_manager.base_download_path, path)
-        else:
-            await event.reply("Usage: /addextensionpath <extension> [<path>]")
+        extension = None
+        path = None
+
+        # 1. Determine Extension
+        if event.message.is_reply:
+            replied = await event.get_reply_message()
+            if replied and replied.file:
+                ext_from_file = self.telethon_utils.get_file_extension(replied)
+                if ext_from_file:
+                    extension = ext_from_file
+
+        # 2. Parse arguments based on context (reply or not)
+        if extension: # Extension from replied file
+            if len(parts) == 1: # /addextensionpath
+                path = os.path.join(self.download_manager.base_download_path, extension)
+            elif len(parts) == 2: # /addextensionpath <path>
+                path = parts[1]
+            else:
+                await event.reply("Usage: Reply to a file with `/addextensionpath [<path>]`")
+                return
+        else: # No reply or reply is not a file
+            if len(parts) == 2: # /addextensionpath <extension>
+                extension = parts[1]
+                path = os.path.join(self.download_manager.base_download_path, extension)
+            elif len(parts) == 3: # /addextensionpath <extension> <path>
+                _, extension, path = parts
+            else:
+                await event.reply("Usage: `/addextensionpath <extension> [<path>]`")
+                return
+
+        # 3. Validate and Save
+        if not extension:
+            await event.reply("Could not determine the extension.")
             return
+
+        if not path.startswith('/'):
+            path = os.path.join(self.download_manager.base_download_path, path)
 
         if self.config_manager.add_extension_path(extension, path):
             await event.reply(f"Path for `.{extension}` successfully set to `{path}`.")
