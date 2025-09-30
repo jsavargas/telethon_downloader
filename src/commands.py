@@ -20,7 +20,29 @@ class Commands:
             "/start": self.start,
             "/rename": self.rename,
             "/addpath": self.addpath,
+            "/help": self.help,
         }
+        self.command_descriptions = {
+            "/version": "Shows the bot version.",
+            "/start": "Shows the welcome message.",
+            "/rename": "Renames a downloaded file. Reply to a file message with /rename <new_name>.",
+            "/addpath": "Shows the menu to add new paths for extensions or groups.",
+            "/help": "Shows this help message.",
+        }
+
+    async def help(self, event):
+        help_text = self._get_help_text()
+        await event.reply(help_text)
+
+    def _get_help_text(self):
+        help_text = "Available commands:\n\n"
+        for command, description in self.command_descriptions.items():
+            help_text += f"{command}: {description}\n"
+        
+        help_text += "\n"
+        help_text += "GitHub: https://github.com/jsavargas/telegram-downloader\n"
+        help_text += "Docker Hub: https://hub.docker.com/r/jsavargas/telethon_downloader\n"
+        return help_text
 
     async def addpath(self, event):
         buttons = self.keyboard_manager.get_addpath_buttons()
@@ -105,8 +127,10 @@ class Commands:
         await event.reply(version_message)
 
     async def start(self, event):
-        version_message = self.welcome_message_generator.get_message()
-        await event.reply(version_message)
+        welcome_message = self.welcome_message_generator.get_message()
+        help_text = self._get_help_text()
+        combined_message = f"{welcome_message}\n\n{help_text}"
+        await event.reply(combined_message)
 
     async def rename(self, event):
         if not event.message.is_reply:
