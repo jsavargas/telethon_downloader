@@ -14,6 +14,7 @@ class Commands:
         self.config_manager = config_manager
         self.active_rename_prompts = {}
         self.active_add_extension_prompts = {}
+        self.active_add_group_prompts = {}
         self.command_dict = {
             "/version": self.version,
             "/start": self.start,
@@ -24,6 +25,11 @@ class Commands:
     async def addpath(self, event):
         buttons = self.keyboard_manager.get_addpath_buttons()
         await event.reply("Please choose an option:", buttons=buttons)
+
+    async def start_add_group_path(self, event):
+        sender_id = event.sender_id
+        self.active_add_group_prompts[sender_id] = {'state': 'waiting_for_group_id'}
+        await event.edit("Please send the group id", buttons=None)
 
     async def start_add_extension_path(self, event):
         sender_id = event.sender_id
@@ -40,6 +46,20 @@ class Commands:
         self.active_add_extension_prompts[sender_id]['state'] = 'waiting_for_path'
 
         # Now show the directory browser
+        temp_message = await event.reply("Loading directory browser...")
+        text, buttons = await self.keyboard_manager.send_directory_browser(temp_message.id, self.download_manager.base_download_path)
+        await temp_message.edit(text, buttons=buttons)
+
+    async def handle_group_id_input(self, event):
+        sender_id = event.sender_id
+        if sender_id not in self.active_add_group_prompts or self.active_add_group_prompts[sender_id]['state'] != 'waiting_for_group_id':
+            return
+
+        group_id = event.text.strip()
+        self.active_add_group_prompts[sender_id]['group_id'] = group_id
+        self.active_add_group_prompts[sender_id]['state'] = 'waiting_for_path'
+
+        # Show directory browser
         temp_message = await event.reply("Loading directory browser...")
         text, buttons = await self.keyboard_manager.send_directory_browser(temp_message.id, self.download_manager.base_download_path)
         await temp_message.edit(text, buttons=buttons)
