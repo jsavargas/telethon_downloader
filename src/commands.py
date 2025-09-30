@@ -21,6 +21,7 @@ class Commands:
             "/rename": self.rename,
             "/addpath": self.addpath,
             "/help": self.help,
+            "/addextensionpath": self.add_extension_path_command,
         }
         self.command_descriptions = {
             "/version": "Shows the bot version.",
@@ -28,7 +29,27 @@ class Commands:
             "/rename": "Renames a downloaded file. Reply to a file message with /rename <new_name>.",
             "/addpath": "Shows the menu to add new paths for extensions or groups.",
             "/help": "Shows this help message.",
+            "/addextensionpath": "Sets the download path for an extension. Usage: /addextensionpath <ext> [<path>]",
         }
+
+    async def add_extension_path_command(self, event):
+        parts = event.message.text.split()
+        
+        if len(parts) == 2:
+            _, extension = parts
+            path = os.path.join(self.download_manager.base_download_path, extension)
+        elif len(parts) == 3:
+            _, extension, path = parts
+            if not path.startswith('/'):
+                path = os.path.join(self.download_manager.base_download_path, path)
+        else:
+            await event.reply("Usage: /addextensionpath <extension> [<path>]")
+            return
+
+        if self.config_manager.add_extension_path(extension, path):
+            await event.reply(f"Path for `.{extension}` successfully set to `{path}`.")
+        else:
+            await event.reply(f"Error setting path for `.{extension}`.")
 
     async def help(self, event):
         help_text = self._get_help_text()
