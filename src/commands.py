@@ -1,21 +1,48 @@
 import logging
 import os
-from telethon.tl.types import Message
+from telethon.tl.types import Message, ReplyInlineMarkup, KeyboardButtonCallback
 
 class Commands:
-    def __init__(self, bot_version, welcome_message_generator, download_tracker, download_manager, bot, logger=None):
+    def __init__(self, bot_version, welcome_message_generator, download_tracker, download_manager, bot, keyboard_manager, config_manager, logger=None):
         self.logger = logger if logger else logging.getLogger(__name__)
         self.bot_version = bot_version
         self.welcome_message_generator = welcome_message_generator
         self.download_tracker = download_tracker
         self.download_manager = download_manager
         self.bot = bot
+        self.keyboard_manager = keyboard_manager
+        self.config_manager = config_manager
         self.active_rename_prompts = {}
+        self.active_add_extension_prompts = {}
         self.command_dict = {
             "/version": self.version,
             "/start": self.start,
             "/rename": self.rename,
+            "/addpath": self.addpath,
         }
+
+    async def addpath(self, event):
+        buttons = self.keyboard_manager.get_addpath_buttons()
+        await event.reply("Please choose an option:", buttons=buttons)
+
+    async def start_add_extension_path(self, event):
+        sender_id = event.sender_id
+        self.active_add_extension_prompts[sender_id] = {'state': 'waiting_for_extension'}
+        await event.edit("Please send the extension (e.g., pdf, jpg).", buttons=None)
+
+    async def handle_extension_input(self, event):
+        sender_id = event.sender_id
+        if sender_id not in self.active_add_extension_prompts or self.active_add_extension_prompts[sender_id]['state'] != 'waiting_for_extension':
+            return
+
+        extension = event.text.strip().lower()
+        self.active_add_extension_prompts[sender_id]['extension'] = extension
+        self.active_add_extension_prompts[sender_id]['state'] = 'waiting_for_path'
+
+        # Now show the directory browser
+        temp_message = await event.reply("Loading directory browser...")
+        text, buttons = await self.keyboard_manager.send_directory_browser(temp_message.id, self.download_manager.base_download_path)
+        await temp_message.edit(text, buttons=buttons)
 
     async def _perform_rename_operation(self, original_file_path, new_name_input, message_id, prompt_message):
         try:

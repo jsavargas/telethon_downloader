@@ -95,7 +95,7 @@ class TelethonDownloaderBot:
             self.download_tracker = DownloadTracker(self.env_config.PATH_CONFIG, self.logger)
             self.logger.info("DownloadTracker initialized.")
 
-            self.commands_manager = Commands(VERSION, self.welcome_message_generator, self.download_tracker, self.download_manager, self.bot, self.logger)
+            self.commands_manager = Commands(VERSION, self.welcome_message_generator, self.download_tracker, self.download_manager, self.bot, self.keyboard_manager, self.config_manager, self.logger)
             self.logger.info("Commands manager initialized.")
 
             self.resume_manager = ResumeManager(self.bot, self.logger)
@@ -122,6 +122,8 @@ class TelethonDownloaderBot:
             self.bot.add_event_handler(self.handle_callback_query, events.CallbackQuery(func=lambda e: not e.data.startswith(b'yt_')))
             self.bot.add_event_handler(self.handle_new_folder_name, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and any(self.downloaded_files[msg_id].get('waiting_for_folder_name', False) for msg_id in self.downloaded_files)))
             self.bot.add_event_handler(self.handle_text_commands, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and e.message.text.startswith('/')))
+            self.bot.add_event_handler(self.handle_add_path_new_folder_name, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and not e.message.text.startswith('/') and e.sender_id in self.commands_manager.active_add_extension_prompts and self.commands_manager.active_add_extension_prompts[e.sender_id].get('state') == 'waiting_for_new_folder_name'))
+            self.bot.add_event_handler(self.handle_add_extension_response, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and not e.message.text.startswith('/')))
             self.bot.add_event_handler(self.handle_magnet_link, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and e.message.text.startswith('magnet:?')))
             self.bot.add_event_handler(self.handle_direct_link, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and (e.message.text.startswith('http://') or e.message.text.startswith('https://')) and not ("youtube.com" in e.message.text or "youtu.be" in e.message.text)))
             self.bot.add_event_handler(self.handle_youtube_link, events.NewMessage(incoming=True, func=lambda e: e.sender_id in self.AUTHORIZED_USER_IDS and e.message.text and ("youtube.com" in e.message.text or "youtu.be" in e.message.text)))
@@ -130,6 +132,9 @@ class TelethonDownloaderBot:
 
         except Exception as e:
             self.logger.error(f"Error adding event handlers: {e}")
+
+    async def handle_add_extension_response(self, event):
+        await self.commands_manager.handle_extension_input(event)
 
     async def _start_timeout_task(self, prompt_message, url):
         prompt_id = prompt_message.id
@@ -421,6 +426,60 @@ class TelethonDownloaderBot:
         try:
             data = event.data.decode('utf-8')
             self.logger.info(f"Callback data received: {data}")
+
+            if data == 'add_extension_path':
+                await self.commands_manager.start_add_extension_path(event)
+                return
+
+            sender_id = event.sender_id
+            if sender_id in self.commands_manager.active_add_extension_prompts and self.commands_manager.active_add_extension_prompts[sender_id].get('state') == 'waiting_for_path':
+                parts = data.split('_')
+                action = parts[0]
+                message_id = int(parts[1])
+
+                if action == 'dir':
+                    selected_dir_name = unquote(parts[2])
+                    page = int(parts[3])
+                    current_base_dir = self.commands_manager.active_add_extension_prompts[sender_id].get('current_dir', self.env_config.BASE_DOWNLOAD_PATH)
+                    new_full_path = os.path.join(current_base_dir, selected_dir_name)
+                    self.commands_manager.active_add_extension_prompts[sender_id]['current_dir'] = new_full_path
+                    text, buttons = await self.keyboard_manager.send_directory_browser(message_id, new_full_path, page=0)
+                    await event.edit(text, buttons=buttons)
+                elif action == 'nav':
+                    nav_action = parts[2]
+                    current_dir_from_state = self.commands_manager.active_add_extension_prompts[sender_id].get('current_dir', self.env_config.BASE_DOWNLOAD_PATH)
+                    page = int(parts[4])
+
+                    if nav_action == 'next':
+                        page += 1
+                    elif nav_action == 'back':
+                        page -= 1
+                    elif nav_action == 'up':
+                        current_dir_from_state = os.path.dirname(current_dir_from_state)
+                        page = 0
+                    
+                    self.commands_manager.active_add_extension_prompts[sender_id]['current_dir'] = current_dir_from_state
+                    
+                    if nav_action == 'this':
+                        extension = self.commands_manager.active_add_extension_prompts[sender_id]['extension']
+                        path = current_dir_from_state
+                        self.config_manager.add_extension_path(extension, path)
+                        await event.edit(f"Path for `.{extension}` set to `{path}`.", buttons=None)
+                        del self.commands_manager.active_add_extension_prompts[sender_id]
+                        return
+
+                    text, buttons = await self.keyboard_manager.send_directory_browser(message_id, current_dir_from_state, page)
+                    await event.edit(text, buttons=buttons)
+                elif action == 'new':
+                    message_id = int(parts[1])
+                    self.commands_manager.active_add_extension_prompts[sender_id]['state'] = 'waiting_for_new_folder_name'
+                    self.commands_manager.active_add_extension_prompts[sender_id]['browser_message_id'] = message_id
+                    await event.edit("Please send the name for the new folder.")
+                elif action == 'cancel':
+                    del self.commands_manager.active_add_extension_prompts[sender_id]
+                    await event.edit("Operation cancelled.", buttons=None)
+                return
+
             parts = data.split('_')
             self.logger.info(f"Callback parts: {parts}")
             action_parts = data.split('_')
@@ -644,6 +703,34 @@ class TelethonDownloaderBot:
         except Exception as e:
             self.logger.error(f"Unhandled exception in handle_callback_query: {e}")
             await event.answer(f"Error processing callback: {e}")
+
+    async def handle_add_path_new_folder_name(self, event):
+        sender_id = event.sender_id
+        prompt_info = self.commands_manager.active_add_extension_prompts.get(sender_id)
+        if not prompt_info:
+            return
+
+        new_folder_name = event.text.strip()
+        current_dir = prompt_info.get('current_dir', self.env_config.BASE_DOWNLOAD_PATH)
+        new_folder_path = os.path.join(current_dir, new_folder_name)
+        message_id = prompt_info.get('browser_message_id')
+
+        try:
+            os.makedirs(new_folder_path, exist_ok=True)
+            self.download_manager._apply_permissions_and_ownership(new_folder_path)
+            self.logger.info(f"Created new folder: {new_folder_path}")
+
+            self.commands_manager.active_add_extension_prompts[sender_id]['state'] = 'waiting_for_path'
+            self.commands_manager.active_add_extension_prompts[sender_id]['current_dir'] = new_folder_path
+            
+            text, buttons = await self.keyboard_manager.send_directory_browser(message_id, new_folder_path, page=0)
+            
+            await self.bot.edit_message(event.chat_id, message_id, text, buttons=buttons)
+            await event.delete()
+
+        except Exception as e:
+            self.logger.error(f"Error creating new folder during add path: {e}")
+            await event.reply(f"Error creating folder: {e}")
 
     async def handle_new_folder_name(self, event):
         try:

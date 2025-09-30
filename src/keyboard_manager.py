@@ -1,5 +1,5 @@
 import os
-from telethon.tl.types import KeyboardButtonCallback, ReplyInlineMarkup
+from telethon.tl.types import KeyboardButtonCallback, ReplyInlineMarkup, KeyboardButtonRow
 from urllib.parse import quote, unquote
 
 class KeyboardManager:
@@ -30,7 +30,7 @@ class KeyboardManager:
             buttons.append(row)
 
         nav_buttons = []
-        if current_dir != self.base_download_path:
+        if current_dir != '/':
             nav_buttons.append(KeyboardButtonCallback("Up", data=f"nav_{message_id}_up_{quote(os.path.dirname(current_dir))}_{page}".encode('utf-8')))
         if page > 0:
             nav_buttons.append(KeyboardButtonCallback("Back", data=f"nav_{message_id}_back_{quote(current_dir)}_{page}".encode('utf-8')))
@@ -86,3 +86,14 @@ Page: {page + 1}/{total_pages if total_pages > 0 else 1}"""
         except Exception as e:
             self.logger.error(f"Error generating directory buttons: {e}")
             return None
+
+    def get_addpath_buttons(self):
+        buttons = [
+            KeyboardButtonRow([
+                KeyboardButtonCallback("Add Extension Path", data="add_extension_path".encode('utf-8'))
+            ]),
+            KeyboardButtonRow([
+                KeyboardButtonCallback("Add Group Path", data="add_group_path".encode('utf-8'))
+            ])
+        ]
+        return ReplyInlineMarkup(buttons)
