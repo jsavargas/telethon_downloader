@@ -35,20 +35,20 @@
 
 This Telegram Bot, based on the [Telethon](https://github.com/LonamiWebs/Telethon) client, is designed to automatically download multimedia files sent to it. Additionally, it now has the capability to download videos or audios from YouTube and direct links to files via their URL, intelligently handling .torrent files by passing them to the configured torrent client.
 
-### What's new in this version:
+# Features
 
-- **File Organization:**
-  - Downloaded files are sorted into folders based on their extension.
-  - Downloaded files can be organized into folders based on their name using regular expressions.
-  - Files forwarded from groups are stored in specific folders identified by the group ID, allowing for more precise and customized organization (configurable in the .ini file).
-
-- **Extended Functionality:**
-  - Added the ability to download files via direct links, with intelligent handling for .torrent files (passing them to the configured torrent client).
-  - Implemented file renaming, zip, and rar file decompression features.
-  - Introduced the capability to download YouTube videos or audio.
-  - Enabled support for multiple languages in bot messages.
-  - Introduced options to set permissions for downloaded and bot-generated folders and files.
-  - Added functionality to set paths for downloaded YouTube audios and videos.
+- **Automatic Downloads**: Automatically downloads files sent to the bot.
+- **YouTube & Direct Links**: Download videos/audios from YouTube and files from direct URLs.
+- **Torrent Support**: Handles `.torrent` files by passing them to a configured torrent client (qBittorrent or a watch folder).
+- **File Organization**:
+    - Sorts files into folders based on file extension, group/channel ID, or keywords in the filename.
+    - Customizable paths via `config.ini` or bot commands.
+- **Interactive Commands**:
+    - `/rename`: Rename downloaded files.
+    - `/addpath`: Interactive menu to configure download paths for extensions and groups.
+    - `/addextensionpath` & `/addgrouppath`: Quickly set download paths with a single command.
+- **Directory Browser**: An interactive directory browser to select paths when using `/addpath`. Includes "Up" and "New Folder" functionality.
+- **And more...**: See the "Available Commands" section for a full list.
 
 
 
@@ -194,21 +194,13 @@ tanganana = /download/tanganana
 
 # Available Commands
 
-- help                   
-- pyrogram               
-- ytdlp                  
-- version                
-- id                     
-- rename                 
-- move                   
-- addextensionpath       
-- delextensionpath       
-- addgrouppath           
-- delgrouppath           
-- addkeywordpath         
-- delkeywordpath         
-- addrenamegroup         
-- delrenamegroup         
+- `/version`: Shows the bot version.
+- `/start`: Shows the welcome message and help.
+- `/rename`: Renames a downloaded file. Reply to a file message with `/rename <new_name>`.
+- `/addpath`: Shows the menu to add new paths for extensions or groups.
+- `/help`: Shows this help message.
+- `/addextensionpath`: Sets the download path for an extension. Usage: `/addextensionpath <ext> [<path>]` or reply to a file with `/addextensionpath [<path>]`.
+- `/addgrouppath`: Sets the download path for a group. Usage: `/addgrouppath <group_id> [<path>]` or reply to a message with `/addgrouppath [<path>]`.         
 
 
 # Generating Telegram API keys
@@ -317,6 +309,17 @@ services:
 - **Feature:** Unzip Files - Add the capability to unzip files directly from the bot.
 - **Feature:** Unrar Files - Add the capability to unrar files directly from the bot.
 
+
+## [Version 4.0.11] - 2025-09-30
+- **Update:** Updated `telethon` to version 1.41.2.
+- **Update:** Updated `yt_dlp` to version 2025.09.26.
+- **Feature:** Added `/help` command to display available commands and project links.
+- **Feature:** The `/start` command now combines the welcome message with the help text.
+- **Feature:** Implemented `/addextensionpath` command to set download paths for extensions. It supports direct arguments or automatic extension detection from replied files, and handles relative paths.
+- **Feature:** Implemented `/addgrouppath` command to set download paths for groups. It supports direct arguments or automatic group ID detection from replied forwarded messages, and handles relative paths.
+- **Feature:** Added `/id` command to show the user's own ID or the ID of the replied message's origin.
+- **Enhancement:** The "Up" button in the directory browser now allows navigation up to the root directory (`/`).
+- **Enhancement:** The "New Folder" button is now functional within the interactive "Add Path" flows.
 
 ## [Version 4.0.10] - 2025-08-06
 - **Feature:** Implemented torrent category selection when adding new torrents via qBittorrent API. Users can now choose from existing categories or add a new one.

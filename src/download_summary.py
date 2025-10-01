@@ -32,6 +32,7 @@ class DownloadSummary:
                 )
             elif self.download_type == 'youtube':
                 summary_text = (
+                    f"\n\n\n"
                     f"YouTube download completed\n\n"
                     f"**Title:** {self.file_info}\n"
                     f"**Download Folder:** {self.download_dir}\n"

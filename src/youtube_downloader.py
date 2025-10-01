@@ -33,7 +33,7 @@ class YouTubeDownloader:
                 path = self.config.YOUTUBE_VIDEO_FOLDER
                 ydl_opts = {
                     'format': self.config.YOUTUBE_FORMAT_VIDEO,
-                    'outtmpl': os.path.join(path, '%(title)s.%(ext)s'),
+                    'outtmpl': os.path.join(path, '%(uploader)s', '%(title)s.%(ext)s'),
                     'progress_hooks': [progress_hook],
                     'noplaylist': not is_playlist,
                 }
@@ -41,7 +41,7 @@ class YouTubeDownloader:
                 path = self.config.YOUTUBE_AUDIO_FOLDER
                 ydl_opts = {
                     'format': self.config.YOUTUBE_FORMAT_AUDIO,
-                    'outtmpl': os.path.join(path, '%(title)s.%(ext)s'),
+                    'outtmpl': os.path.join(path, '%(uploader)s', '%(title)s.%(ext)s'),
                     'progress_hooks': [progress_hook],
                     'noplaylist': not is_playlist,
                     'postprocessors': [{

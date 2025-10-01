@@ -171,3 +171,27 @@ class ConfigManager:
         except Exception as e:
             self.logger.error(f"Error getting remove patterns for group {group_id}: {e}")
             return []
+
+    def add_extension_path(self, extension, path):
+        try:
+            if 'EXTENSIONS' not in self.config:
+                self.config['EXTENSIONS'] = {}
+            self.config['EXTENSIONS'][extension.lower()] = path
+            self._write_config()
+            self.logger.info(f"Added/Updated extension path: {extension.lower()} = {path}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error adding extension path for {extension}: {e}")
+            return False
+
+    def add_group_path(self, group_name, path):
+        try:
+            if 'GROUP_PATH' not in self.config:
+                self.config['GROUP_PATH'] = {}
+            self.config['GROUP_PATH'][group_name] = path
+            self._write_config()
+            self.logger.info(f"Added/Updated group path: {group_name} = {path}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error adding group path for {group_name}: {e}")
+            return False

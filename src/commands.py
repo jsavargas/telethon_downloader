@@ -1,21 +1,213 @@
 import logging
 import os
-from telethon.tl.types import Message
+from telethon.tl.types import Message, ReplyInlineMarkup, KeyboardButtonCallback, PeerUser, PeerChannel
 
 class Commands:
-    def __init__(self, bot_version, welcome_message_generator, download_tracker, download_manager, bot, logger=None):
+    def __init__(self, bot_version, welcome_message_generator, download_tracker, download_manager, bot, keyboard_manager, config_manager, telethon_utils, logger=None):
         self.logger = logger if logger else logging.getLogger(__name__)
         self.bot_version = bot_version
         self.welcome_message_generator = welcome_message_generator
         self.download_tracker = download_tracker
         self.download_manager = download_manager
         self.bot = bot
+        self.keyboard_manager = keyboard_manager
+        self.config_manager = config_manager
+        self.telethon_utils = telethon_utils
         self.active_rename_prompts = {}
+        self.active_add_extension_prompts = {}
+        self.active_add_group_prompts = {}
         self.command_dict = {
+            "/help": self.help,
             "/version": self.version,
             "/start": self.start,
             "/rename": self.rename,
+            "/addpath": self.addpath,
+            "/addextensionpath": self.add_extension_path_command,
+            "/addgrouppath": self.add_group_path_command,
+            "/id": self.get_id_command,
         }
+        self.command_descriptions = {
+            "/version": "Shows the bot version.",
+            "/start": "Shows the welcome message.",
+            "/rename": "Renames a downloaded file. Reply to a file message with /rename <new_name>.",
+            "/addpath": "Shows the menu to add new paths for extensions or groups.",
+            "/help": "Shows this help message.",
+            "/addextensionpath": "Sets the download path for an extension. Usage: /addextensionpath <ext> [<path>] or reply to a file with /addextensionpath [<path>]",
+            "/addgrouppath": "Sets the download path for a group. Usage: /addgrouppath <group_id> [<path>] or reply to a message with /addgrouppath [<path>]",
+            "/id": "Shows your user ID, or the ID of the replied-to message's origin.",
+        }
+
+    async def get_id_command(self, event):
+        id_to_show = None
+        message_type = "Your"
+
+        if event.message.is_reply:
+            replied = await event.get_reply_message()
+            if replied:
+                message_type = "Replied message's"
+                if replied.fwd_from and replied.fwd_from.from_id:
+                    fwd_from_id = replied.fwd_from.from_id
+                    if isinstance(fwd_from_id, PeerUser):
+                        id_to_show = fwd_from_id.user_id
+                    elif isinstance(fwd_from_id, PeerChannel):
+                        id_to_show = fwd_from_id.channel_id
+                else:
+                    id_to_show = replied.chat_id
+        else:
+            id_to_show = event.sender_id
+
+        if id_to_show:
+            await event.reply(f"{message_type} ID is: `{id_to_show}`")
+        else:
+            await event.reply("Could not determine the ID.")
+
+    async def add_group_path_command(self, event):
+        parts = event.message.text.split()
+        group_id = None
+        path = None
+
+        # 1. Determine Group ID
+        if event.message.is_reply:
+            replied = await event.get_reply_message()
+            if replied and replied.fwd_from and replied.fwd_from.from_id:
+                fwd_from_id = replied.fwd_from.from_id
+                if isinstance(fwd_from_id, PeerUser):
+                    group_id = str(fwd_from_id.user_id)
+                elif isinstance(fwd_from_id, PeerChannel):
+                    group_id = str(fwd_from_id.channel_id)
+
+        # 2. Parse arguments
+        if group_id: # Group ID from replied message
+            if len(parts) == 1: # /addgrouppath
+                path = os.path.join(self.download_manager.base_download_path, group_id.lstrip('-'))
+            elif len(parts) == 2: # /addgrouppath <path>
+                path = parts[1]
+            else:
+                await event.reply("Usage: Reply to a message with `/addgrouppath [<path>]`")
+                return
+        else: # No reply or not a forwarded message
+            if len(parts) == 2: # /addgrouppath <group_id>
+                group_id = parts[1]
+                path = os.path.join(self.download_manager.base_download_path, group_id.lstrip('-'))
+            elif len(parts) == 3: # /addgrouppath <group_id> <path>
+                _, group_id, path = parts
+            else:
+                await event.reply("Usage: `/addgrouppath <group_id> [<path>]`")
+                return
+
+        # 3. Validate and Save
+        if not group_id:
+            await event.reply("Could not determine the group ID.")
+            return
+
+        if not path.startswith('/'):
+            path = os.path.join(self.download_manager.base_download_path, path)
+
+        if self.config_manager.add_group_path(group_id, path):
+            await event.reply(f"Path for group '{group_id}' successfully set to `{path}`.")
+        else:
+            await event.reply(f"Error setting path for group '{group_id}'.")
+
+    async def add_extension_path_command(self, event):
+        parts = event.message.text.split()
+        extension = None
+        path = None
+
+        # 1. Determine Extension
+        if event.message.is_reply:
+            replied = await event.get_reply_message()
+            if replied and replied.file:
+                ext_from_file = self.telethon_utils.get_file_extension(replied)
+                if ext_from_file:
+                    extension = ext_from_file
+
+        # 2. Parse arguments based on context (reply or not)
+        if extension: # Extension from replied file
+            if len(parts) == 1: # /addextensionpath
+                path = os.path.join(self.download_manager.base_download_path, extension)
+            elif len(parts) == 2: # /addextensionpath <path>
+                path = parts[1]
+            else:
+                await event.reply("Usage: Reply to a file with `/addextensionpath [<path>]`")
+                return
+        else: # No reply or reply is not a file
+            if len(parts) == 2: # /addextensionpath <extension>
+                extension = parts[1]
+                path = os.path.join(self.download_manager.base_download_path, extension)
+            elif len(parts) == 3: # /addextensionpath <extension> <path>
+                _, extension, path = parts
+            else:
+                await event.reply("Usage: `/addextensionpath <extension> [<path>]`")
+                return
+
+        # 3. Validate and Save
+        if not extension:
+            await event.reply("Could not determine the extension.")
+            return
+
+        if not path.startswith('/'):
+            path = os.path.join(self.download_manager.base_download_path, path)
+
+        if self.config_manager.add_extension_path(extension, path):
+            await event.reply(f"Path for `.{extension}` successfully set to `{path}`.")
+        else:
+            await event.reply(f"Error setting path for `.{extension}`.")
+
+    async def help(self, event):
+        help_text = self._get_help_text()
+        await event.reply(help_text)
+
+    def _get_help_text(self):
+        help_text = "Available commands:\n\n"
+        for command, description in self.command_descriptions.items():
+            help_text += f"{command}: {description}\n"
+        
+        help_text += "\n"
+        help_text += "GitHub: https://github.com/jsavargas/telegram-downloader\n"
+        help_text += "Docker Hub: https://hub.docker.com/r/jsavargas/telethon_downloader\n"
+        return help_text
+
+    async def addpath(self, event):
+        buttons = self.keyboard_manager.get_addpath_buttons()
+        await event.reply("Please choose an option:", buttons=buttons)
+
+    async def start_add_group_path(self, event):
+        sender_id = event.sender_id
+        self.active_add_group_prompts[sender_id] = {'state': 'waiting_for_group_id'}
+        await event.edit("Please send the group id", buttons=None)
+
+    async def start_add_extension_path(self, event):
+        sender_id = event.sender_id
+        self.active_add_extension_prompts[sender_id] = {'state': 'waiting_for_extension'}
+        await event.edit("Please send the extension (e.g., pdf, jpg).", buttons=None)
+
+    async def handle_extension_input(self, event):
+        sender_id = event.sender_id
+        if sender_id not in self.active_add_extension_prompts or self.active_add_extension_prompts[sender_id]['state'] != 'waiting_for_extension':
+            return
+
+        extension = event.text.strip().lower()
+        self.active_add_extension_prompts[sender_id]['extension'] = extension
+        self.active_add_extension_prompts[sender_id]['state'] = 'waiting_for_path'
+
+        # Now show the directory browser
+        temp_message = await event.reply("Loading directory browser...")
+        text, buttons = await self.keyboard_manager.send_directory_browser(temp_message.id, self.download_manager.base_download_path)
+        await temp_message.edit(text, buttons=buttons)
+
+    async def handle_group_id_input(self, event):
+        sender_id = event.sender_id
+        if sender_id not in self.active_add_group_prompts or self.active_add_group_prompts[sender_id]['state'] != 'waiting_for_group_id':
+            return
+
+        group_id = event.text.strip()
+        self.active_add_group_prompts[sender_id]['group_id'] = group_id
+        self.active_add_group_prompts[sender_id]['state'] = 'waiting_for_path'
+
+        # Show directory browser
+        temp_message = await event.reply("Loading directory browser...")
+        text, buttons = await self.keyboard_manager.send_directory_browser(temp_message.id, self.download_manager.base_download_path)
+        await temp_message.edit(text, buttons=buttons)
 
     async def _perform_rename_operation(self, original_file_path, new_name_input, message_id, prompt_message):
         try:
@@ -58,8 +250,10 @@ class Commands:
         await event.reply(version_message)
 
     async def start(self, event):
-        version_message = self.welcome_message_generator.get_message()
-        await event.reply(version_message)
+        welcome_message = self.welcome_message_generator.get_message()
+        help_text = self._get_help_text()
+        combined_message = f"{welcome_message}\n\n{help_text}"
+        await event.reply(combined_message)
 
     async def rename(self, event):
         if not event.message.is_reply:
