@@ -29,6 +29,14 @@ class EnvConfig:
             self.QBT_PORT = (os.environ.get('QBT_PORT','8080')).strip()
             self.QBT_USERNAME = (os.environ.get('QBT_USERNAME') or "").strip()
             self.QBT_PASSWORD = (os.environ.get('QBT_PASSWORD') or "").strip()
+            
+            # Proxy Configuration
+            self.TG_PROXY_TYPE = (os.environ.get('TG_PROXY_TYPE') or 'http').strip().lower()
+            self.TG_PROXY_HOST = (os.environ.get('TG_PROXY_HOST') or "").strip()
+            self.TG_PROXY_PORT = (os.environ.get('TG_PROXY_PORT') or "").strip()
+            self.TG_PROXY_USERNAME = (os.environ.get('TG_PROXY_USERNAME') or "").strip()
+            self.TG_PROXY_PASSWORD = (os.environ.get('TG_PROXY_PASSWORD') or "").strip()
+            self.TG_PROXY_RDNS = (os.environ.get('TG_PROXY_RDNS') or "True").strip().lower() == "true"
         except Exception as e:
             self.logger.error(f"Error initializing EnvConfig: {e}")
 
