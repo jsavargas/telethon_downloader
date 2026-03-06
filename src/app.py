@@ -63,8 +63,36 @@ class TelethonDownloaderBot:
             self.BOT_TOKEN = self.env_config.BOT_TOKEN
             self.AUTHORIZED_USER_IDS = [int(uid.strip()) for uid in self.env_config.AUTHORIZED_USER_ID.split(',')]
             self.logger.info("API credentials and authorized users set.")
+            
+            proxy = None
+            if self.env_config.TG_PROXY_HOST and self.env_config.TG_PROXY_PORT:
+                try:
+                    import python_socks
+                    proxy_type_map = {
+                        'http': python_socks.ProxyType.HTTP,
+                        'socks4': python_socks.ProxyType.SOCKS4,
+                        'socks5': python_socks.ProxyType.SOCKS5
+                    }
+                    proxy_type = proxy_type_map.get(self.env_config.TG_PROXY_TYPE, python_socks.ProxyType.HTTP)
+                    
+                    proxy = {
+                        'proxy_type': proxy_type,
+                        'addr': self.env_config.TG_PROXY_HOST,
+                        'port': int(self.env_config.TG_PROXY_PORT),
+                        'rdns': self.env_config.TG_PROXY_RDNS
+                    }
+                    
+                    if self.env_config.TG_PROXY_USERNAME and self.env_config.TG_PROXY_PASSWORD:
+                        proxy['username'] = self.env_config.TG_PROXY_USERNAME
+                        proxy['password'] = self.env_config.TG_PROXY_PASSWORD
+                        
+                    self.logger.info(f"Proxy configured: {self.env_config.TG_PROXY_TYPE}://{self.env_config.TG_PROXY_HOST}:{self.env_config.TG_PROXY_PORT}")
+                except ImportError:
+                    self.logger.error("python-socks not installed, proxy configuration ignored. Please install python-socks[asyncio].")
+                except Exception as e:
+                    self.logger.error(f"Error configuring proxy: {e}")
 
-            self.bot = TelegramClient('bot', self.API_ID, self.API_HASH)
+            self.bot = TelegramClient('bot', self.API_ID, self.API_HASH, proxy=proxy)
             self.logger.info("TelegramClient initialized.")
 
             self.config_manager = ConfigManager(self.env_config.PATH_CONFIG, self.logger, self.env_config.PUID, self.env_config.PGID)

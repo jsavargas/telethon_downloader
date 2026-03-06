@@ -2,3 +2,4 @@ telethon
 yt-dlp
 qbittorrent-api
 aiohttp
+python-socks[asyncio]
