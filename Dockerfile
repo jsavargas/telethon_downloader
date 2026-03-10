@@ -1,26 +1,24 @@
-FROM python
+FROM python:3.13-alpine
 
 WORKDIR /app
 
 COPY requirements.txt requirements.txt
 
-RUN apt-get update && apt-get -qy dist-upgrade && \
-    apt-get install -qy --no-install-recommends \
+RUN apk add --no-cache \
     ffmpeg \
     unzip && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN python3 -m pip install --no-cache-dir --upgrade pip && \
-    python3 -m pip install -r requirements.txt
-
-
-
+    python3 -m pip install --no-cache-dir --upgrade pip && \
+    python3 -m pip install --no-cache-dir -r requirements.txt
 
 COPY src .
 
-RUN chmod +x /app/app.py
+RUN chmod +x /app/app.py && \
+    addgroup -g 1000 appuser && \
+    adduser -D -u 1000 -G appuser appuser && \
+    chown -R appuser:appuser /app
 
 VOLUME /download /watch /config
 
-ENTRYPOINT ["python", "app.py"]
+USER appuser
 
+ENTRYPOINT ["python", "app.py"]
