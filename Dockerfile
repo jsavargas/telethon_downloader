@@ -12,8 +12,13 @@ RUN apk add --no-cache \
 
 COPY src .
 
-RUN chmod +x /app/app.py
+RUN chmod +x /app/app.py && \
+    addgroup -g 1000 appuser && \
+    adduser -D -u 1000 -G appuser appuser && \
+    chown -R appuser:appuser /app
 
 VOLUME /download /watch /config
+
+USER appuser
 
 ENTRYPOINT ["python", "app.py"]
