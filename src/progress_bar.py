@@ -1,20 +1,7 @@
 import time
 from telethon.tl.types import KeyboardButtonCallback, ReplyInlineMarkup
 import asyncio # Temporary import for debugging
-
-
-def format_eta(seconds: float) -> str:
-    total_seconds = max(0, int(seconds))
-    hours = total_seconds // 3600
-    minutes = (total_seconds % 3600) // 60
-    secs = total_seconds % 60
-
-    if hours > 0:
-        return f"{hours}h {minutes}m {secs}s"
-    if minutes > 0:
-        return f"{minutes}m {secs}s"
-    return f"{secs}s"
-
+from utils import format_eta
 
 class ProgressBar:
     def __init__(self, initial_message, file_info, logger, download_dir, file_size, start_time, origin_group, user_id, progress_status_show, channel_id=None, cancellation_flag=None):
