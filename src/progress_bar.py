@@ -1,6 +1,7 @@
 import time
 from telethon.tl.types import KeyboardButtonCallback, ReplyInlineMarkup
 import asyncio # Temporary import for debugging
+from utils import format_eta
 
 class ProgressBar:
     def __init__(self, initial_message, file_info, logger, download_dir, file_size, start_time, origin_group, user_id, progress_status_show, channel_id=None, cancellation_flag=None):
@@ -45,13 +46,13 @@ class ProgressBar:
                     f"**Start Time:** {time.strftime('%H:%M:%S', time.localtime(self.start_time))}\n"
                     f"**Progress:** {current / (1024*1024):.2f}MB / {total / (1024*1024):.2f}MB ({percentage:.2f}%)\n"
                     f"**Speed:** {speed / (1024*1024):.2f}MB/s\n"
-                    f"**ETA:** {eta:.0f}s\n"
+                    f"**ETA:** {format_eta(eta)}\n"
                     f"**User Id:** {self.user_id}\n"
                     f"**Origin Group:** {self.origin_group}"
                 )
 
                 if self.channel_id:
-                    progress_text += f"\nChannel ID: {self.channel_id}"
+                    progress_text += f"\n**Channel ID:** {self.channel_id}"
                 
                 buttons = ReplyInlineMarkup([[
                     KeyboardButtonCallback("Cancel Download", data=f"cancel_download_{self.initial_message.id}".encode('utf-8'))
