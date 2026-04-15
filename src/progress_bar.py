@@ -65,7 +65,7 @@ class ProgressBar:
                 )
 
                 if self.channel_id:
-                    progress_text += f"\nChannel ID: {self.channel_id}"
+                    progress_text += f"\n**Channel ID:** {self.channel_id}"
                 
                 buttons = ReplyInlineMarkup([[
                     KeyboardButtonCallback("Cancel Download", data=f"cancel_download_{self.initial_message.id}".encode('utf-8'))
