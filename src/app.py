@@ -462,9 +462,14 @@ class TelethonDownloaderBot:
                 message_id = int(parts[1])
 
                 if action == 'dir':
-                    selected_dir_name = unquote(parts[2])
-                    page = int(parts[3])
                     current_base_dir = prompt_info.get('current_dir', self.env_config.BASE_DOWNLOAD_PATH)
+                    selected_dir_ref = parts[2]
+                    page = int(parts[3])
+                    if selected_dir_ref.isdigit():
+                        dirs = self.keyboard_manager.get_sorted_directories(current_base_dir)
+                        selected_dir_name = dirs[int(selected_dir_ref)]
+                    else:
+                        selected_dir_name = unquote(selected_dir_ref)
                     new_full_path = os.path.join(current_base_dir, selected_dir_name)
                     prompt_info['current_dir'] = new_full_path
                     text, buttons = await self.keyboard_manager.send_directory_browser(message_id, new_full_path, page=0)
@@ -472,7 +477,7 @@ class TelethonDownloaderBot:
                 elif action == 'nav':
                     nav_action = parts[2]
                     current_dir_from_state = prompt_info.get('current_dir', self.env_config.BASE_DOWNLOAD_PATH)
-                    page = int(parts[4])
+                    page = int(parts[3] if len(parts) == 4 else parts[4])
 
                     if nav_action == 'next':
                         page += 1
@@ -668,10 +673,15 @@ class TelethonDownloaderBot:
                 else:
                     await event.answer("File information not found.")
             elif action == 'dir':
-                selected_dir_name = unquote(parts[2])
-                page = int(parts[3])
                 if message_id in self.downloaded_files:
                     current_base_dir = self.downloaded_files[message_id]['current_dir']
+                    selected_dir_ref = parts[2]
+                    page = int(parts[3])
+                    if selected_dir_ref.isdigit():
+                        dirs = self.keyboard_manager.get_sorted_directories(current_base_dir)
+                        selected_dir_name = dirs[int(selected_dir_ref)]
+                    else:
+                        selected_dir_name = unquote(selected_dir_ref)
                     new_full_path = os.path.join(current_base_dir, selected_dir_name)
                     self.downloaded_files[message_id]['current_dir'] = new_full_path
                     text, buttons = await self.keyboard_manager.send_directory_browser(message_id, new_full_path, page=0)
@@ -679,7 +689,7 @@ class TelethonDownloaderBot:
             elif action == 'nav':
                 nav_action = parts[2]
                 current_dir_from_state = self.downloaded_files[message_id]['current_dir']
-                page = int(parts[4])
+                page = int(parts[3] if len(parts) == 4 else parts[4])
 
                 if message_id in self.downloaded_files:
                     if nav_action == 'next':

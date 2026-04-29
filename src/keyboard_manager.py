@@ -1,20 +1,27 @@
 import os
+import unicodedata
 from telethon.tl.types import KeyboardButtonCallback, ReplyInlineMarkup, KeyboardButtonRow
-from urllib.parse import quote, unquote
 
 class KeyboardManager:
     def __init__(self, logger, base_download_path):
         self.logger = logger
         self.base_download_path = base_download_path
 
-    async def send_directory_browser(self, message_id, current_dir, page=0, summary_text=""):
+    def get_sorted_directories(self, current_dir):
         all_items = os.listdir(current_dir)
         self.logger.info(f"Items in {current_dir}: {all_items}")
         dirs = [d for d in all_items if os.path.isdir(os.path.join(current_dir, d))]
         self.logger.info(f"Directories in {current_dir}: {dirs}")
         dirs.sort()
+        return dirs
 
-        items_per_page = 4
+    def format_directory_label(self, directory_name):
+        return unicodedata.normalize('NFC', str(directory_name))
+
+    async def send_directory_browser(self, message_id, current_dir, page=0, summary_text=""):
+        dirs = self.get_sorted_directories(current_dir)
+
+        items_per_page = 8
         total_pages = (len(dirs) + items_per_page - 1) // items_per_page
         
         start_index = page * items_per_page
@@ -24,19 +31,19 @@ class KeyboardManager:
         buttons = []
         for i in range(0, len(current_page_dirs), 2):
             row = []
-            row.append(KeyboardButtonCallback(current_page_dirs[i], data=f"dir_{message_id}_{quote(current_page_dirs[i])}_{page}".encode('utf-8')))
+            row.append(KeyboardButtonCallback(self.format_directory_label(current_page_dirs[i]), data=f"dir_{message_id}_{start_index + i}_{page}".encode('utf-8')))
             if i + 1 < len(current_page_dirs):
-                row.append(KeyboardButtonCallback(current_page_dirs[i+1], data=f"dir_{message_id}_{quote(current_page_dirs[i+1])}_{page}".encode('utf-8')))
+                row.append(KeyboardButtonCallback(self.format_directory_label(current_page_dirs[i+1]), data=f"dir_{message_id}_{start_index + i + 1}_{page}".encode('utf-8')))
             buttons.append(row)
 
         nav_buttons = []
         if current_dir != '/':
-            nav_buttons.append(KeyboardButtonCallback("Up", data=f"nav_{message_id}_up_{quote(os.path.dirname(current_dir))}_{page}".encode('utf-8')))
+            nav_buttons.append(KeyboardButtonCallback("Up", data=f"nav_{message_id}_up_{page}".encode('utf-8')))
         if page > 0:
-            nav_buttons.append(KeyboardButtonCallback("Back", data=f"nav_{message_id}_back_{quote(current_dir)}_{page}".encode('utf-8')))
-        nav_buttons.append(KeyboardButtonCallback("This", data=f"nav_{message_id}_this_{quote(current_dir)}_{page}".encode('utf-8')))
+            nav_buttons.append(KeyboardButtonCallback("Back", data=f"nav_{message_id}_back_{page}".encode('utf-8')))
+        nav_buttons.append(KeyboardButtonCallback("This", data=f"nav_{message_id}_this_{page}".encode('utf-8')))
         if page < total_pages - 1:
-            nav_buttons.append(KeyboardButtonCallback("Next", data=f"nav_{message_id}_next_{quote(current_dir)}_{page}".encode('utf-8')))
+            nav_buttons.append(KeyboardButtonCallback("Next", data=f"nav_{message_id}_next_{page}".encode('utf-8')))
         buttons.append(nav_buttons)
 
         buttons.append([KeyboardButtonCallback("New Folder", data=f"new_{message_id}".encode('utf-8'))])
@@ -66,19 +73,20 @@ Page: {page + 1}/{total_pages if total_pages > 0 else 1}"""
     def get_directory_buttons(self, message_id, current_page_dirs, page, current_dir, total_pages):
         try:
             buttons = []
+            start_index = page * 8
             for i in range(0, len(current_page_dirs), 2):
                 row = []
-                row.append(KeyboardButtonCallback(current_page_dirs[i], data=f"dir_{message_id}_{current_page_dirs[i]}_{page}".encode('utf-8')))
+                row.append(KeyboardButtonCallback(self.format_directory_label(current_page_dirs[i]), data=f"dir_{message_id}_{start_index + i}_{page}".encode('utf-8')))
                 if i + 1 < len(current_page_dirs):
-                    row.append(KeyboardButtonCallback(current_page_dirs[i+1], data=f"dir_{message_id}_{current_page_dirs[i+1]}_{page}".encode('utf-8')))
+                    row.append(KeyboardButtonCallback(self.format_directory_label(current_page_dirs[i+1]), data=f"dir_{message_id}_{start_index + i + 1}_{page}".encode('utf-8')))
                 buttons.append(row)
 
             nav_buttons = []
             if page > 0:
-                nav_buttons.append(KeyboardButtonCallback("Back", data=f"nav_{message_id}_back_{current_dir}_{page}".encode('utf-8')))
-            nav_buttons.append(KeyboardButtonCallback("This", data=f"nav_{message_id}_this_{current_dir}_{page}".encode('utf-8')))
+                nav_buttons.append(KeyboardButtonCallback("Back", data=f"nav_{message_id}_back_{page}".encode('utf-8')))
+            nav_buttons.append(KeyboardButtonCallback("This", data=f"nav_{message_id}_this_{page}".encode('utf-8')))
             if page < total_pages - 1:
-                nav_buttons.append(KeyboardButtonCallback("Next", data=f"nav_{message_id}_next_{current_dir}_{page}".encode('utf-8')))
+                nav_buttons.append(KeyboardButtonCallback("Next", data=f"nav_{message_id}_next_{page}".encode('utf-8')))
             buttons.append(nav_buttons)
 
             buttons.append([KeyboardButtonCallback("Cancel", data=f"cancel_{message_id}".encode('utf-8'))])
