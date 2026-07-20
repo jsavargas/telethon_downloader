@@ -163,7 +163,7 @@ class Commands:
             help_text += f"{command}: {description}\n"
         
         help_text += "\n"
-        help_text += "GitHub: https://github.com/jsavargas/telegram-downloader\n"
+        help_text += "GitHub: https://github.com/jsavargas/telethon_downloader\n"
         help_text += "Docker Hub: https://hub.docker.com/r/jsavargas/telethon_downloader\n"
         return help_text
 
