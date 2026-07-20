@@ -11,3 +11,4 @@ docker-compose.dev.yml
 *.example
 download_history.json
 *.ruls
+.claude/

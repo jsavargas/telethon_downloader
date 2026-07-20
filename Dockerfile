@@ -1,20 +1,20 @@
-FROM python
+FROM python:3.14-alpine AS builder
 
 WORKDIR /app
 
 COPY requirements.txt requirements.txt
 
-RUN apt-get update && apt-get -qy dist-upgrade && \
-    apt-get install -qy --no-install-recommends \
-    ffmpeg \
-    unzip && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache gcc musl-dev libffi-dev python3-dev && \
+    python3 -m pip install --no-cache-dir --upgrade pip && \
+    python3 -m pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-RUN python3 -m pip install --no-cache-dir --upgrade pip && \
-    python3 -m pip install -r requirements.txt
+FROM python:3.14-alpine
 
+WORKDIR /app
 
+RUN apk add --no-cache ffmpeg unzip
 
+COPY --from=builder /install /usr/local
 
 COPY src .
 
@@ -23,4 +23,3 @@ RUN chmod +x /app/app.py
 VOLUME /download /watch /config
 
 ENTRYPOINT ["python", "app.py"]
-
