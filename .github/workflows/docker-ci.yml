@@ -104,4 +104,4 @@ jobs:
 
       - name: Inspect image
         run: |
-          docker buildx imagetools inspect ${{ secrets.DOCKERHUB_USERNAME }}/telethon_downloader:${{ env.version }}
+          docker buildx imagetools inspect ${{ secrets.DOCKERHUB_USERNAME }}/telethon_downloader:${{ steps.meta.outputs.version }}
