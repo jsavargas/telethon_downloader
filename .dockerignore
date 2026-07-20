@@ -4,3 +4,4 @@ __pycache__/
 *.session-journal
 .env
 download/
+.claude/
