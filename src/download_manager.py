@@ -13,6 +13,8 @@ class DownloadManager:
         self.puid = puid
         self.pgid = pgid
         self.torrent_path = torrent_path
+        self.folder_permissions = env_config.PERMISSIONS_FOLDER
+        self.file_permissions = env_config.PERMISSIONS_FILE
 
         self.torrent_manager = TorrentManager(env_config, logger)
 
@@ -45,12 +47,25 @@ class DownloadManager:
                 except Exception as e:
                     self.logger.error(f"Error changing ownership of directory {path}: {e}")
             try:
-                os.chmod(path, 0o755) # Set permissions for directories
-                self.logger.info(f"Changed permissions of directory {path} to 0o755")
+                os.chmod(path, self.folder_permissions)
+                self.logger.info(f"Changed permissions of directory {path} to {oct(self.folder_permissions)}")
             except Exception as e:
                 self.logger.error(f"Error changing permissions of directory {path}: {e}")
         except Exception as e:
             self.logger.error(f"Unhandled exception in _apply_permissions_and_ownership for {path}: {e}")
+
+    def _apply_file_permissions_and_ownership(self, file_path):
+        if self.puid is not None and self.pgid is not None:
+            try:
+                os.chown(file_path, int(self.puid), int(self.pgid))
+                self.logger.info(f"Changed ownership of file {file_path} to {int(self.puid)}:{int(self.pgid)}")
+            except Exception as e:
+                self.logger.error(f"Error changing ownership of {file_path}: {e}")
+        try:
+            os.chmod(file_path, self.file_permissions)
+            self.logger.info(f"Changed permissions of file {file_path} to {oct(self.file_permissions)}")
+        except Exception as e:
+            self.logger.error(f"Error changing permissions of {file_path}: {e}")
 
     def _ensure_dir_and_set_permissions(self, path):
         try:
@@ -188,20 +203,8 @@ class DownloadManager:
 
             shutil.move(downloaded_file_path, final_file_path)
 
-            # Set permissions and ownership
-            if self.puid is not None and self.pgid is not None:
-                try:
-                    os.chown(final_file_path, int(self.puid), int(self.pgid))
-                    self.logger.info(f"Changed ownership of file {final_file_path} to {int(self.puid)}:{int(self.pgid)}")
-                except Exception as e:
-                    self.logger.error(f"Error changing ownership of {final_file_path}: {e}")
-            try:
-                os.chmod(final_file_path, 0o644) # Set read/write for owner, read-only for others
-                self.logger.info(f"Changed permissions of file {final_file_path} to 0o644")
-                return final_file_path
-            except Exception as e:
-                self.logger.error(f"Error changing permissions of {final_file_path}: {e}")
-                return final_file_path # Return path even if permissions fail
+            self._apply_file_permissions_and_ownership(final_file_path)
+            return final_file_path
         except Exception as e:
             self.logger.error(f"Error in move_to_completed for {downloaded_file_path}: {e}")
             return downloaded_file_path # Return original path if move fails
@@ -212,18 +215,7 @@ class DownloadManager:
             new_file_path = os.path.join(destination_dir, file_name)
             os.rename(file_path, new_file_path)
             
-            # Set permissions and ownership
-            if self.puid is not None and self.pgid is not None:
-                try:
-                    os.chown(new_file_path, int(self.puid), int(self.pgid))
-                    self.logger.info(f"Changed ownership of file {new_file_path} to {int(self.puid)}:{int(self.pgid)}")
-                except Exception as e:
-                    self.logger.error(f"Error changing ownership of {new_file_path}: {e}")
-            try:
-                os.chmod(new_file_path, 0o644) # Set read/write for owner, read-only for others
-                self.logger.info(f"Changed permissions of file {new_file_path} to 0o644")
-            except Exception as e:
-                self.logger.error(f"Error changing permissions of {new_file_path}: {e}")
+            self._apply_file_permissions_and_ownership(new_file_path)
 
             self.logger.info(f"File moved successfully to {new_file_path}")
             return new_file_path

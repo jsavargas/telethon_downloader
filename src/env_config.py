@@ -1,6 +1,11 @@
 import os
 import logging
 
+DEFAULT_FOLDER_PERMISSIONS = 0o755
+DEFAULT_FILE_PERMISSIONS = 0o644
+MAX_PERMISSIONS = 0o7777
+
+
 class EnvConfig:
     def __init__(self, logger):
         self.logger = logger
@@ -18,6 +23,8 @@ class EnvConfig:
             self.PATH_CONFIG = os.environ.get("PATH_CONFIG", '/config/').strip()
             self.PUID = (os.environ.get('PUID') or "").strip()
             self.PGID = (os.environ.get('PGID') or "").strip()
+            self.PERMISSIONS_FOLDER = self._parse_octal_permissions('PERMISSIONS_FOLDER', DEFAULT_FOLDER_PERMISSIONS)
+            self.PERMISSIONS_FILE = self._parse_octal_permissions('PERMISSIONS_FILE', DEFAULT_FILE_PERMISSIONS)
             self.YTDLP_VERSION = os.environ.get('YTDLP_VERSION', 'N/A').strip()
             self.PROGRESS_DOWNLOAD =  (os.environ.get("TG_PROGRESS_DOWNLOAD") or os.environ.get('PROGRESS_DOWNLOAD', 'True')).strip()
             self.PROGRESS_STATUS_SHOW = os.environ.get('PROGRESS_STATUS_SHOW', '10').strip()
@@ -31,6 +38,23 @@ class EnvConfig:
             self.QBT_PASSWORD = (os.environ.get('QBT_PASSWORD') or "").strip()
         except Exception as e:
             self.logger.error(f"Error initializing EnvConfig: {e}")
+
+    def _parse_octal_permissions(self, variable_name, default_permissions):
+        raw_value = (os.environ.get(variable_name) or "").strip()
+        if not raw_value:
+            return default_permissions
+
+        try:
+            permissions = int(raw_value, 8)
+        except ValueError:
+            self.logger.warning(f"Invalid {variable_name}='{raw_value}', expected octal (e.g. 775). Using default {oct(default_permissions)}")
+            return default_permissions
+
+        if not 0 <= permissions <= MAX_PERMISSIONS:
+            self.logger.warning(f"Out of range {variable_name}='{raw_value}'. Using default {oct(default_permissions)}")
+            return default_permissions
+
+        return permissions
 
     def validate_env(self):
         try:

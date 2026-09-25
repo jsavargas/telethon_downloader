@@ -1,4 +1,3 @@
-
 # Telethon Downloader
 
 [![](https://badgen.net/badge/icon/github?icon=github&label)](https://github.com/jsavargas/telethon_downloader)
@@ -88,9 +87,9 @@ Enjoy an automated and organized downloading experience with telethon_downloader
 
  **PGID** [OPTIONAL]: <Unique identifier for a group of users, used for assigning specific permissions to the group.> 
 
-**PERMISSIONS_FOLDER** [OPTIONAL]: <Folder permissions. (default: 777)>
+**PERMISSIONS_FOLDER** [OPTIONAL]: <Folder permissions in octal notation, e.g. 775 or 777. (default: 755)>
 
-**PERMISSIONS_FILE** [OPTIONAL]: <File permissions. (default: 755)>
+**PERMISSIONS_FILE** [OPTIONAL]: <File permissions in octal notation, e.g. 664 or 666. (default: 644)>
 
  **TZ** [OPTIONAL]: <Sets the system timezone, adjusting it based on the geographical location of the server or user.> 
  >Example: America/Santiago
