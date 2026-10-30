@@ -1,6 +1,6 @@
 import os
-import asyncio
 import time
+import asyncio
 import aiohttp
 
 class DirectDownloader:
@@ -10,11 +10,23 @@ class DirectDownloader:
         self.download_manager = download_manager
         self._finalize_download_processing = finalize_download_processing_callback
 
+    async def handle_direct_link(self, event):
+        try:
+            self.logger.info(f"Direct link detected in message ID: {event.message.id}")
+            url = event.message.text.strip()
+            initial_message = await event.reply(f"Processing direct link: {url}")
+            await self.download_file(event, url, initial_message)
+        except Exception as e:
+            self.logger.error(f"Error in handle_direct_link: {e}")
+            await event.reply(f"An error occurred: {e}")
+
     async def download_file(self, event, url, initial_message):
         try:
-            file_name = url.split('/')[-1]
+            file_name = url.rstrip('/').split('/')[-1]
             if '?' in file_name:
                 file_name = file_name.split('?')[0]
+            if not file_name:
+                file_name = f"direct_download_{int(time.time())}"
             
             file_extension = os.path.splitext(file_name)[1].lstrip('.') # Get extension without the dot
 
