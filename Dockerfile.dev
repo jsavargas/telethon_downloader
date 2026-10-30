@@ -1,0 +1,25 @@
+FROM python
+
+WORKDIR /app
+
+COPY requirements.txt requirements.txt
+
+RUN apt-get update && apt-get -qy dist-upgrade && \
+    apt-get install -qy --no-install-recommends \
+    ffmpeg \
+    unzip \
+    entr && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m pip install --no-cache-dir --upgrade pip && \
+    python3 -m pip install -r requirements.txt
+
+VOLUME /download /watch /config
+
+# Hot-reload: restart app when any .py file changes.
+# -r = restart the running command when a file changes
+# -n = don't run the command if no files match (non-interactive mode)
+# Note: entr -d watches for new files too — avoided here because
+# bot.session-journal gets rewritten constantly and would trigger
+# infinite restarts. A new .py file requires a container restart.
+CMD find /app -name '*.py' | entr -rn python app.py
