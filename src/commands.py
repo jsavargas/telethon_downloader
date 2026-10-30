@@ -1,6 +1,6 @@
 import logging
 import os
-from telethon.tl.types import Message, ReplyInlineMarkup, KeyboardButtonCallback, PeerUser, PeerChannel
+from telethon.tl.types import Message, PeerUser, PeerChannel
 
 class Commands:
     def __init__(self, bot_version, welcome_message_generator, download_tracker, download_manager, bot, keyboard_manager, config_manager, telethon_utils, logger=None):

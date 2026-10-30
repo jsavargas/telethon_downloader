@@ -1,5 +1,5 @@
 import time
-from telethon.tl.types import KeyboardButtonCallback
+from telethon import Button
 from urllib.parse import quote
 
 
@@ -91,7 +91,7 @@ class TorrentMagnetHandler:
         categories = self.download_manager.torrent_manager.get_categories()
         buttons = []
         for category in categories:
-            buttons.append([KeyboardButtonCallback(category, data=f"category_{initial_message.id}_{quote(category)}")])
-        buttons.append([KeyboardButtonCallback("Add New Category", data=f"category_{initial_message.id}_new")])
-        buttons.append([KeyboardButtonCallback("No Category", data=f"category_{initial_message.id}_none")])
+            buttons.append([Button.inline(category, data=f"category_{initial_message.id}_{quote(category)}".encode('utf-8'))])
+        buttons.append([Button.inline("Add New Category", data=f"category_{initial_message.id}_new".encode('utf-8'))])
+        buttons.append([Button.inline("No Category", data=f"category_{initial_message.id}_none".encode('utf-8'))])
         await self.bot.edit_message(initial_message.chat_id, initial_message.id, "Choose a category for the torrent:", buttons=buttons)

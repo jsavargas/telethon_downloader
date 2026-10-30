@@ -2,8 +2,7 @@ import asyncio
 import os
 import re
 import time
-from telethon import events
-from telethon.tl.types import KeyboardButtonCallback
+from telethon import events, Button
 from download_summary import DownloadSummary
 
 
@@ -36,8 +35,8 @@ class YouTubeHandler:
 
             if is_playlist:
                 buttons = [
-                    [KeyboardButtonCallback("Download First", data=f"yt_playlist_first_{event.message.id}")],
-                    [KeyboardButtonCallback(f"Download All ({playlist_count})", data=f"yt_playlist_all_{event.message.id}")]
+                    [Button.inline("Download First", data=f"yt_playlist_first_{event.message.id}".encode('utf-8'))],
+                    [Button.inline(f"Download All ({playlist_count})", data=f"yt_playlist_all_{event.message.id}".encode('utf-8'))]
                 ]
                 await processing_message.edit(
                     f"This is a playlist with {playlist_count} videos. What would you like to do?",
@@ -45,9 +44,9 @@ class YouTubeHandler:
                 )
             else:
                 buttons = [
-                    [KeyboardButtonCallback("Video", data=f"yt_single_video_{event.message.id}")],
-                    [KeyboardButtonCallback("Audio", data=f"yt_single_audio_{event.message.id}")],
-                    [KeyboardButtonCallback("Both", data=f"yt_single_both_{event.message.id}")]
+                    [Button.inline("Video", data=f"yt_single_video_{event.message.id}".encode('utf-8'))],
+                    [Button.inline("Audio", data=f"yt_single_audio_{event.message.id}".encode('utf-8'))],
+                    [Button.inline("Both", data=f"yt_single_both_{event.message.id}".encode('utf-8'))]
                 ]
                 await processing_message.edit("What format would you like to download?", buttons=buttons)
 
@@ -86,9 +85,9 @@ class YouTubeHandler:
             if source_type == 'playlist':
                 is_playlist = (download_scope == 'all')
                 buttons = [
-                    [KeyboardButtonCallback("Video", data=f"yt_final_video_{is_playlist}_{original_message.id}")],
-                    [KeyboardButtonCallback("Audio", data=f"yt_final_audio_{is_playlist}_{original_message.id}")],
-                    [KeyboardButtonCallback("Both", data=f"yt_final_both_{is_playlist}_{original_message.id}")]
+                    [Button.inline("Video", data=f"yt_final_video_{is_playlist}_{original_message.id}".encode('utf-8'))],
+                    [Button.inline("Audio", data=f"yt_final_audio_{is_playlist}_{original_message.id}".encode('utf-8'))],
+                    [Button.inline("Both", data=f"yt_final_both_{is_playlist}_{original_message.id}".encode('utf-8'))]
                 ]
                 await event.edit("What format would you like to download?", buttons=buttons)
                 asyncio.create_task(self._start_timeout_task(prompt_message, url))

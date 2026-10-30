@@ -1,5 +1,5 @@
 import os
-from telethon.tl.types import KeyboardButtonCallback
+from telethon import Button
 
 
 class FileBrowserHandler:
@@ -75,8 +75,8 @@ class FileBrowserHandler:
         user_facing_group_id = group_info['user_facing_group_id']
         summary_text = f"All {group_info['total_files']} files in the media group have been downloaded.\n\nWhat would you like to do with them?"
         buttons = [
-            [KeyboardButtonCallback("Move All to New Folder", data=f"group_move_all_{user_facing_group_id}")],
-            [KeyboardButtonCallback("Ok Group Operation", data=f"group_ok_{user_facing_group_id}")]
+            [Button.inline("Move All to New Folder", data=f"group_move_all_{user_facing_group_id}".encode('utf-8'))],
+            [Button.inline("Ok Group Operation", data=f"group_ok_{user_facing_group_id}".encode('utf-8'))]
         ]
         await self.bot.send_message(chat_id, summary_text, buttons=buttons)
 
