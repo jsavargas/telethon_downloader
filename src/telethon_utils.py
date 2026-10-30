@@ -72,7 +72,8 @@ class TelethonUtils:
             file_info = "media"
             if message.document:
                 file_name_attr = next((attr for attr in message.document.attributes if hasattr(attr, 'file_name')), None)
-                file_info = file_name_attr.file_name if file_name_attr and file_name_attr.file_name else str(message.document.id)
+                raw_name = file_name_attr.file_name if file_name_attr and file_name_attr.file_name else str(message.document.id)
+                file_info = os.path.basename(raw_name)
             elif message.photo:
                 file_info = f"photo_{message.photo.id}"
 

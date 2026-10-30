@@ -1,6 +1,6 @@
 import time
-from telethon.tl.types import KeyboardButtonCallback, ReplyInlineMarkup
-import asyncio # Temporary import for debugging
+from telethon import Button
+import asyncio
 
 class ProgressBar:
     def __init__(self, initial_message, file_info, logger, download_dir, file_size, start_time, origin_group, user_id, progress_status_show, channel_id=None, cancellation_flag=None):
@@ -53,12 +53,10 @@ class ProgressBar:
                 if self.channel_id:
                     progress_text += f"\nChannel ID: {self.channel_id}"
                 
-                buttons = ReplyInlineMarkup([[
-                    KeyboardButtonCallback("Cancel Download", data=f"cancel_download_{self.initial_message.id}".encode('utf-8'))
-                ]])
+                buttons = [[Button.inline("Cancel Download", data=f"cancel_download_{self.initial_message.id}".encode('utf-8'))]]
 
                 try:
-                    await self.initial_message.edit(progress_text, buttons=buttons.rows)
+                    await self.initial_message.edit(progress_text, buttons=buttons)
                 except Exception as e:
                     self.logger.error(f"Error updating progress message: {e}")
         except asyncio.CancelledError:

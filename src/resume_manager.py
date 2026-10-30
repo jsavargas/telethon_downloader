@@ -1,4 +1,4 @@
-from telethon.tl.types import KeyboardButtonCallback
+from telethon import Button
 
 class ResumeManager:
     def __init__(self, bot, logger):
@@ -17,9 +17,9 @@ class ResumeManager:
 
         for download in pending_downloads:
             filename = download.get('filename', f"Unknown File (ID: {download['message_id']})")
-            buttons.append([KeyboardButtonCallback(f"Resume {filename}", data=f"resume_one_{download['message_id']}")])
+            buttons.append([Button.inline(f"Resume {filename}", data=f"resume_one_{download['message_id']}".encode('utf-8'))])
 
-        buttons.append([KeyboardButtonCallback("Resume All", data="resume_all"), KeyboardButtonCallback("Cancel", data="resume_cancel")])
+        buttons.append([Button.inline("Resume All", data=b"resume_all"), Button.inline("Cancel", data=b"resume_cancel")])
 
         try:
             await self.bot.send_message(user_id, message_text, buttons=buttons)
