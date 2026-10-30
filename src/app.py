@@ -309,10 +309,6 @@ class TelethonDownloaderBot:
 
             self.logger.info(f"message:::: {message}")
 
-            # ACA guardar message en un archivo txt
-            with open(os.path.join(self.env_config.PATH_CONFIG, "message.txt"), "w") as f:
-                f.write(json.dumps(message.to_dict(), indent=4, default=str))
-
             file_extension = self.telethon_utils.get_file_extension(message)
             origin_group = self.telethon_utils.get_origin_group(message)
             channel_id = self.telethon_utils.get_channel_id(message)
@@ -429,7 +425,7 @@ class TelethonDownloaderBot:
                     self.logger.info(f"Caught asyncio.CancelledError for download of {file_info} (message ID: {initial_message.id}).")
                     self.download_tracker.update_status(message.id, 'cancelled', final_filename=None, download_type=self.download_type)
                     self.download_tracker.remove_download(message.id, download_type=self.download_type)
-                    if os.path.exists(download_path_with_filename):
+                    if download_path_with_filename and os.path.exists(download_path_with_filename):
                         os.remove(download_path_with_filename)
                         self.logger.info(f"Deleted partially downloaded file: {download_path_with_filename}")
                     await initial_message.edit(f"Download of {file_info} cancelled.", buttons=None)
