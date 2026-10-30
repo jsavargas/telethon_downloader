@@ -59,7 +59,7 @@ class DirectDownloader:
             else:
                 final_file_path = download_path # For non-torrent files, the downloaded path is the final path for now
 
-            await self._finalize_download_processing(initial_message, event.message, file_name, final_destination_dir, start_time, end_time, total_size, event.sender_id, event.sender_id, None, file_extension, final_file_path)
+            await self._finalize_download_processing(initial_message, event.message, file_name, final_destination_dir, start_time, end_time, total_size, event.sender_id, event.sender_id, None, file_extension, final_file_path, download_type='link')
 
         except Exception as e:
             self.logger.error(f"Error downloading direct link: {e}")

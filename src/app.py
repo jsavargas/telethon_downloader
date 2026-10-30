@@ -46,7 +46,6 @@ class TelethonDownloaderBot:
         self.keyboard_manager = None
         self.youtube_downloader = None
         self.active_youtube_prompts = {}
-        self.download_type = None
         self.media_groups = {}
 
         try:
@@ -162,7 +161,6 @@ class TelethonDownloaderBot:
     async def handle_youtube_link(self, event):
         try:
             self.logger.info(f"YouTube link detected in message ID: {event.message.id}")
-            self.download_type = 'youtube'
             processing_message = await event.reply("Processing YouTube link...")
 
             match = re.search(r"https?://(www\.)?(youtube\.com|youtu\.be)/\S+", event.message.text)
@@ -299,10 +297,9 @@ class TelethonDownloaderBot:
 
     async def download_media(self, event):
         self.logger.info(f"download_media triggered for message ID: {event.message.id}")
-        self.download_type = 'file'
-        await self.process_download(event.message.id, event.chat_id)
+        await self.process_download(event.message.id, event.chat_id, download_type='file')
 
-    async def process_download(self, message_id, user_id, download_type=None):
+    async def process_download(self, message_id, user_id, download_type='file'):
         self.logger.info(f"process_download called for message ID: {message_id}")
         try:
             message = await self.bot.get_messages(user_id, ids=message_id)
@@ -324,10 +321,7 @@ class TelethonDownloaderBot:
             if not _file_extension:
                 file_info = f"{file_info}.{file_extension}"
 
-            if download_type:
-                self.download_type = download_type
-            
-            self.logger.info(f"download_media self.download_type: [{self.download_type}]")
+            self.logger.info(f"download_media download_type: [{download_type}]")
 
             target_download_dir, final_destination_dir = self.download_manager.get_download_dirs(file_extension, origin_group, channel_id, file_info)
 
@@ -357,7 +351,7 @@ class TelethonDownloaderBot:
             original_filename = os.path.join(target_download_dir, file_info)
             download_path_with_filename = None # Initialize here
 
-            self.download_tracker.add_download(initial_message.id, message.id, original_filename, message.media, origin_group, user_id, file_info, download_type=download_type if download_type else self.download_type, current_file_path=download_path_with_filename, download_date=int(message.date.timestamp()))
+            self.download_tracker.add_download(initial_message.id, message.id, original_filename, message.media, origin_group, user_id, file_info, download_type=download_type, current_file_path=download_path_with_filename, download_date=int(message.date.timestamp()))
 
             download_summary_downloading = DownloadSummary(message, file_info, final_destination_dir, start_time, 0, file_size, origin_group, user_id, channel_id, status='downloading')
 
@@ -410,21 +404,22 @@ class TelethonDownloaderBot:
                             'start_time': start_time,
                             'end_time': end_time,
                             'initial_message_id': initial_message.id,
-                            'initial_message_chat_id': initial_message.chat_id
+                            'initial_message_chat_id': initial_message.chat_id,
+                            'download_type': download_type,
                         }
                         await self._ask_for_torrent_source_category(initial_message, 'file', downloaded_file_path)
                         return # Exit here, processing continues after category selection
                     else:
                         final_file_path = self.download_manager.move_to_completed(downloaded_file_path, final_destination_dir)
                         if final_file_path:
-                            await self._finalize_download_processing(initial_message, message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, file_extension, final_file_path)
+                            await self._finalize_download_processing(initial_message, message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, file_extension, final_file_path, download_type=download_type)
                         else:
                             self.logger.error(f"Failed to move file {file_info} to completed directory.")
                             await initial_message.edit(f"Error: Failed to move file {file_info} to completed directory.")
                 except asyncio.CancelledError:
                     self.logger.info(f"Caught asyncio.CancelledError for download of {file_info} (message ID: {initial_message.id}).")
-                    self.download_tracker.update_status(message.id, 'cancelled', final_filename=None, download_type=self.download_type)
-                    self.download_tracker.remove_download(message.id, download_type=self.download_type)
+                    self.download_tracker.update_status(message.id, 'cancelled', final_filename=None, download_type=download_type)
+                    self.download_tracker.remove_download(message.id, download_type=download_type)
                     if download_path_with_filename and os.path.exists(download_path_with_filename):
                         os.remove(download_path_with_filename)
                         self.logger.info(f"Deleted partially downloaded file: {download_path_with_filename}")
@@ -608,7 +603,7 @@ class TelethonDownloaderBot:
                         end_time = time.time()
 
                         await self.bot.edit_message(initial_message.chat_id, initial_message.id, "Processing torrent...", buttons=None)
-                        await self._finalize_download_processing(initial_message, original_message, file_info, destination_path, start_time, end_time, file_size, origin_group, user_id, channel_id, file_extension, final_file_path)
+                        await self._finalize_download_processing(initial_message, original_message, file_info, destination_path, start_time, end_time, file_size, origin_group, user_id, channel_id, file_extension, final_file_path, download_type=download_info.get('download_type', 'file'))
                     else:
                         await self.bot.edit_message(event.chat_id, message_id, "Failed to add torrent.", buttons=None)
                     del self.downloaded_files[message_id]
@@ -716,7 +711,7 @@ class TelethonDownloaderBot:
                             file_path = file_info['file_path']
                             new_file_path = self.download_manager.move_file(file_path, destination_dir)
                             if new_file_path:
-                                self.download_tracker.update_status(message_id, 'completed', final_filename=new_file_path, download_type=self.download_type)
+                                self.download_tracker.update_status(message_id, 'completed', final_filename=new_file_path, download_type=self.downloaded_files[message_id].get('download_type', 'file'))
                                 await event.edit(f"{summary_text}\n\nFile moved successfully to {new_file_path}", buttons=None)
                                 del self.downloaded_files[message_id]
                             else:
@@ -809,7 +804,7 @@ class TelethonDownloaderBot:
                 new_file_path = self.download_manager.move_file(file_path, new_folder_path)
 
                 if new_file_path:
-                    self.download_tracker.update_status(target_message_id, 'completed', final_filename=new_file_path, download_type=self.download_type)
+                    self.download_tracker.update_status(target_message_id, 'completed', final_filename=new_file_path, download_type=file_info.get('download_type', 'file'))
                     summary_text = file_info.get('summary_text', "")
                     await self.bot.edit_message(browser_chat_id, browser_message_id, f"{summary_text}\n\nFolder '{new_folder_name}' created and file moved successfully to {new_file_path}", buttons=None)
                     del self.downloaded_files[target_message_id]
@@ -837,7 +832,6 @@ class TelethonDownloaderBot:
         if self.env_config.TORRENT_MODE.lower() == 'watch':
             return
         self.logger.info(f"Magnet link detected in message ID: {event.message.id}")
-        self.download_type = 'magnet'
         magnet_uri = event.message.text
         initial_message = await event.reply(f"Magnet link received. Choosing category...")
 
@@ -845,7 +839,8 @@ class TelethonDownloaderBot:
             'original_message_id': event.message.id,
             'source_type': 'magnet',
             'source_data': magnet_uri,
-            'file_info': magnet_uri, # Using magnet URI as file_info for now
+            'file_info': magnet_uri,
+            'download_type': 'magnet',
             'user_id': event.sender_id,
             'initial_message_id': initial_message.id,
             'initial_message_chat_id': initial_message.chat_id
@@ -855,7 +850,6 @@ class TelethonDownloaderBot:
     async def handle_direct_link(self, event):
         try:
             self.logger.info(f"Direct link detected in message ID: {event.message.id}")
-            self.download_type = 'link'
             url = event.message.text.strip()
             initial_message = await event.reply(f"Processing direct link: {url}")
             await self.direct_downloader.download_file(event, url, initial_message)
@@ -903,7 +897,7 @@ class TelethonDownloaderBot:
                 initial_message = await self.bot.get_messages(download_info['initial_message_chat_id'], ids=download_info['initial_message_id'])
 
                 await self.bot.edit_message(initial_message.chat_id, initial_message.id, "Processing torrent...", buttons=None)
-                await self._finalize_download_processing(initial_message, original_message, file_info, destination_path, start_time, end_time, file_size, origin_group, user_id, channel_id, file_extension, final_file_path)
+                await self._finalize_download_processing(initial_message, original_message, file_info, destination_path, start_time, end_time, file_size, origin_group, user_id, channel_id, file_extension, final_file_path, download_type=download_info.get('download_type', 'file'))
                 await event.delete()
             else:
                 await self.bot.edit_message(browser_chat_id, browser_message_id, "Failed to add torrent.", buttons=None)
@@ -915,23 +909,23 @@ class TelethonDownloaderBot:
 
     
 
-    async def _finalize_download_processing(self, initial_message, message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, file_extension, final_file_path):
+    async def _finalize_download_processing(self, initial_message, message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, file_extension, final_file_path, download_type='file'):
         self.logger.info(f"Finished download of [{message.id}] [{file_info}] to [{final_file_path}]")
-        
+
         await asyncio.sleep(0.5)
 
-        self.download_tracker.update_status(message.id, 'completed', final_filename=final_file_path, download_type=self.download_type)
+        self.download_tracker.update_status(message.id, 'completed', final_filename=final_file_path, download_type=download_type)
 
-        # Extract filename from final_file_path and update file_info
         file_info = os.path.basename(final_file_path)
 
-        summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, status='completed', download_type=self.download_type)
+        summary = DownloadSummary(message, file_info, final_destination_dir, start_time, end_time, file_size, origin_group, user_id, channel_id, status='completed', download_type=download_type)
         summary_text = summary.generate_summary()
 
         self.downloaded_files[message.id] = {
             'file_path': final_file_path,
             'current_dir': self.env_config.BASE_DOWNLOAD_PATH,
-            'summary_text': summary_text
+            'summary_text': summary_text,
+            'download_type': download_type,
         }
 
         buttons = None
